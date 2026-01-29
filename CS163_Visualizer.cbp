@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="CS163_Visualizer" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/CS163_Visualizer" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="sfml-graphics-d" />
+					<Add library="sfml-window-d" />
+					<Add library="sfml-system-d" />
+					<Add library="sfml-audio-d" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/CS163_Visualizer" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+					<Add library="sfml-audio" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="C:/Users/LENOVO/Documents/libraries/SFML-2.6.1/include" />
+			<Add directory="include/Core" />
+			<Add directory="include/States" />
+			<Add directory="include/Utils/Graphics" />
+			<Add directory="include/Utils/Math" />
+			<Add directory="include/Utils/System" />
+			<Add directory="include/GUI" />
+			<Add directory="include" />
+		</Compiler>
+		<Linker>
+			<Add library="opengl32" />
+			<Add directory="C:/Users/LENOVO/Documents/libraries/SFML-2.6.1/lib" />
+		</Linker>
+		<Unit filename="CS163_visualizer.cpp" />
+		<Unit filename="include/Application.h" />
+		<Unit filename="include/GUI/Button.h" />
+		<Unit filename="include/GUI/MenuCard.h" />
+		<Unit filename="include/GUI/RoundedRectangleShape.h" />
+		<Unit filename="include/GUI/Squircle.h" />
+		<Unit filename="include/GUI/TitleBar.h" />
+		<Unit filename="include/ResourceManager.h" />
+		<Unit filename="include/State.h" />
+		<Unit filename="include/States/IntroState.h" />
+		<Unit filename="include/States/MenuState.h" />
+		<Unit filename="include/Utils/Graphics/Align.h" />
+		<Unit filename="include/Utils/Graphics/Layout.h" />
+		<Unit filename="include/Utils/Graphics/Theme.h" />
+		<Unit filename="include/Utils/Graphics/WindowControl.h" />
+		<Unit filename="include/Utils/Math/Easing.h" />
+		<Unit filename="include/Utils/Math/Smoothing.h" />
+		<Unit filename="include/Utils/Math/Spring.h" />
+		<Unit filename="include/Utils/System/WindowConfig.h" />
+		<Unit filename="src/Application.cpp" />
+		<Unit filename="src/GUI/Button.cpp" />
+		<Unit filename="src/GUI/MenuCard.cpp" />
+		<Unit filename="src/GUI/TitleBar.cpp" />
+		<Unit filename="src/ResourceManager.cpp" />
+		<Unit filename="src/States/IntroState.cpp" />
+		<Unit filename="src/States/MenuState.cpp" />
+		<Unit filename="src/Utils/Graphics/Layout.cpp" />
+		<Unit filename="src/Utils/Graphics/WindowControl.cpp" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
