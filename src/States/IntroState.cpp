@@ -1,5 +1,6 @@
 #include "IntroState.h"
 #include "MenuState.h" // Để chuyển cảnh sang Menu
+#include "CategoriesState.h" // Để chuyển cảnh sang Menu
 #include "Easing.h"
 #include <iostream>
 #include <cmath>
@@ -338,7 +339,8 @@ void IntroState::update(float dt)
         if(t >= 1.0f)
         {
             // Màn hình đã trắng xóa -> Chuyển cảnh
-            states.push(new MenuState(window, states));
+//            states.push(new MenuState(window, states));
+            states.push(new CategoriesState(window, states));
 
             // Reset transition (nếu sau này có pop state quay lại)
             isTransitioning = false;

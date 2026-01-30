@@ -63,6 +63,7 @@
 		<Unit filename="include/GUI/TitleBar.h" />
 		<Unit filename="include/ResourceManager.h" />
 		<Unit filename="include/State.h" />
+		<Unit filename="include/States/CategoriesState.h" />
 		<Unit filename="include/States/IntroState.h" />
 		<Unit filename="include/States/MenuState.h" />
 		<Unit filename="include/Utils/Graphics/Align.h" />
@@ -78,6 +79,7 @@
 		<Unit filename="src/GUI/MenuCard.cpp" />
 		<Unit filename="src/GUI/TitleBar.cpp" />
 		<Unit filename="src/ResourceManager.cpp" />
+		<Unit filename="src/States/CategoriesState.cpp" />
 		<Unit filename="src/States/IntroState.cpp" />
 		<Unit filename="src/States/MenuState.cpp" />
 		<Unit filename="src/Utils/Graphics/Layout.cpp" />

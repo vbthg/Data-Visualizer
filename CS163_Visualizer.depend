@@ -1,7 +1,8 @@
 # depslib dependency file v1.0
-1769649861 source:d:\cs163_visualizer\src\states\introstate.cpp
+1769704866 source:d:\cs163_visualizer\src\states\introstate.cpp
 	"IntroState.h"
 	"MenuState.h"
+	"CategoriesState.h"
 	"Easing.h"
 	<iostream>
 	<cmath>
@@ -506,24 +507,24 @@
 	"IntroState.h"
 	<iostream>
 
-1769681588 source:d:\cs163_visualizer\src\gui\menucard.cpp
-	"GUI/MenuCard.h"
+1769788200 source:d:\cs163_visualizer\src\gui\menucard.cpp
+	"MenuCard.h"
 	"ResourceManager.h"
 	"Smoothing.h"
+	"Easing.h"
 	<iostream>
 	<cmath>
 	<algorithm>
 
-1769681658 d:\cs163_visualizer\include\gui\menucard.h
+1769705189 d:\cs163_visualizer\include\gui\menucard.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
 	"Button.h"
 	"Squircle.h"
-	"Easing.h"
-	"Theme.h"
+	"Utils/Graphics/Theme.h"
 
-1769681041 source:d:\cs163_visualizer\src\states\menustate.cpp
+1769787821 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -533,7 +534,7 @@
 	<iostream>
 	<algorithm>
 
-1769681004 d:\cs163_visualizer\include\states\menustate.h
+1769782482 d:\cs163_visualizer\include\states\menustate.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<stack>
@@ -575,6 +576,27 @@
 	<cmath>
 	<algorithm>
 
-1769681843 d:\cs163_visualizer\include\utils\graphics\theme.h
+1769786665 d:\cs163_visualizer\include\utils\graphics\theme.h
 	<SFML/Graphics/Color.hpp>
+
+1769791785 d:\cs163_visualizer\include\states\categoriesstate.h
+	<SFML/Graphics.hpp>
+	<vector>
+	<stack>
+	"State.h"
+	"GUI/MenuCard.h"
+	"GUI/Button.h"
+	"GUI/Squircle.h"
+	"Utils/Graphics/Theme.h"
+
+1769791719 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
+	"States/CategoriesState.h"
+	"States/MenuState.h"
+	"GUI/MenuCard.h"
+	"ResourceManager.h"
+	"GUI/Squircle.h"
+	"Smoothing.h"
+	<SFML/OpenGL.hpp>
+	<iostream>
+	<cmath>
 

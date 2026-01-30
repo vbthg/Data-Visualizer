@@ -7,28 +7,29 @@ namespace Utils
     {
         namespace Theme
         {
-            // --- 1. VẬT LÝ & CHUYỂN ĐỘNG (PHYSICS) ---
+            // --- 1. VẬT LÝ & CHUYỂN ĐỘNG (PHYSICS & TIMING) ---
             namespace Animation
             {
-                // Button (Apple Style: Cứng, Đầm, Dứt khoát)
+                // -- Physics (Vật lý lò xo - Giữ nguyên) --
                 constexpr float ButtonStiffness = 700.0f;
                 constexpr float ButtonDamping = 40.0f;
 
-                // Menu Card (Accordion: Mềm mại hơn 1 chút để lướt)
                 constexpr float CardStiffness = 300.0f;
                 constexpr float CardDamping = 22.0f;
 
-                // --- MENU CARD (EASING) ---
-                // Thời gian chuyển cảnh (giây).
-                // 0.8f = Chậm rãi, điện ảnh
-                // 0.6f = Nhanh, gọn
+                // -- Sequence Timing (Mới: Cho Animation 4 giai đoạn) --
+                constexpr float Time_Feedback = 0.15f; // Giai đoạn 1: Click & Scale nhẹ
+                constexpr float Scale_Press = 1.03f;   // Độ scale khi nhấn
+
+                constexpr float Time_HeroMove = 0.5f;  // Giai đoạn 2: Hero bay
+                constexpr float Time_AlgoEntry = 0.4f; // Giai đoạn 3: Bảng Algo trượt lên
+
+                // Duration cũ (Giữ lại để tương thích code cũ nếu còn sót)
                 constexpr float CardAnimDuration = 0.6f;
 
-                // Tốc độ đổi màu (Color Smoothing)
+                // -- Smoothing (Mượt mà màu sắc) --
                 constexpr float ColorSmoothing = 0.08f;
-                constexpr float ColorSnapSpeed = 500.0f; // Ngưỡng ngắt màu
-
-                // Tốc độ đổi màu nền Background (Rất chậm & Mượt)
+                constexpr float ColorSnapSpeed = 500.0f;
                 constexpr float BgSmoothing = 0.2f;
                 constexpr float BgMinSpeed = 10.0f;
             }
@@ -36,34 +37,50 @@ namespace Utils
             // --- 2. HÌNH DÁNG & KÍCH THƯỚC (GEOMETRY) ---
             namespace Style
             {
-                // Squircle Curvature (Độ cong siêu elip)
-                // 4.0f = Chuẩn icon iOS/macOS (Rất đẹp)
+                // Squircle Curvature
                 constexpr float SquircleCurvature = 4.0f;
 
-                // Radius (Bán kính bo góc)
-                constexpr float ButtonRadius = 12.0f; // Nút bấm
-                constexpr float CardRadius = 48.0f;   // Bảng to (Container)
-                constexpr float ItemRadius = 48.0f;   // Thẻ con bên trong
+                // -- Kích thước Bảng Mới (Phân tách rõ ràng) --
 
-                // Kích thước Layout mặc định
-                constexpr float MenuWidth = 1100.0f;
-                constexpr float MenuHeight = 550.0f;
+                // 1. Bảng Categories (960x460)
+                constexpr float CatBoardW = 960.0f;
+                constexpr float CatBoardH = 460.0f;
+                constexpr float CatRadius = 48.0f;
+
+                // 2. Bảng Data Structures (1200x580)
+                constexpr float AlgoBoardW = 1200.0f;
+                constexpr float AlgoBoardH = 580.0f;
+                constexpr float AlgoRadius = 48.0f;
+
+                // Item con (Thẻ con bên trong bảng)
+                constexpr float ItemRadius = 48.0f;
+
+                // Radius Nút bấm
+                constexpr float ButtonRadius = 12.0f;
+
+                // -- Tương thích ngược (Backward Compatibility) --
+                // Map các tên biến cũ vào giá trị mới để tránh lỗi biên dịch
+                constexpr float MenuWidth = CatBoardW;
+                constexpr float MenuHeight = CatBoardH;
+                constexpr float CardRadius = CatRadius;
             }
 
             // --- 3. BẢNG MÀU (COLORS) ---
             namespace Color
             {
-                // Nền ứng dụng (Xám nhạt clean)
+                // Nền ứng dụng
                 const sf::Color Background = sf::Color(245, 245, 247);
+                const sf::Color Shadow = sf::Color(0, 0, 0, 30); // Bóng 30% (Chuẩn cũ)
 
-                // Bóng đổ (Shadow)
-                const sf::Color Shadow = sf::Color(0, 0, 0, 30);
+                // -- Minimalist Style (Mới) --
+                const sf::Color CardSurface = sf::Color::White;
+                const sf::Color CardSurfaceHover = sf::Color(252, 252, 254);
 
                 // Màu chữ
                 const sf::Color TextPrimary = sf::Color::Black;
                 const sf::Color TextSecondary = sf::Color(120, 120, 120);
 
-                // Màu Accent (Ví dụ: Màu hồng Juicy)
+                // Màu Accent
                 const sf::Color AccentPink = sf::Color(255, 105, 180);
             }
         }

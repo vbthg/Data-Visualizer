@@ -2,11 +2,9 @@
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <string>
-
 #include "Button.h"
 #include "Squircle.h"
-#include "Easing.h" // <--- 1. Dùng Spring
-#include "Theme.h"  // <--- 2. Dùng Theme
+#include "Utils/Graphics/Theme.h"
 
 namespace GUI
 {
@@ -18,26 +16,28 @@ namespace GUI
         MenuCard(int id, const std::string& title, const std::string& number, sf::Color themeColor);
         ~MenuCard();
 
+        // --- SETTERS: Gán hành động (Callbacks) ---
+        void setOnSelect(std::function<void()> callback);
+        void setOnViewMore(std::function<void()> callback);
+        void setOnStart(std::function<void()> callback);
+        void setOnBack(std::function<void()> callback);
+
+        // Layout & State
         void setCardPosition(CardPos pos, float radius);
-
-        // Thay vì reset timer, hàm này giờ chỉ set target cho Spring
         void setTarget(const sf::Vector2f& pos, const sf::Vector2f& size);
+        void setSelected(bool sel);
+        void setExpanded(bool exp);
 
-        void setSelected(bool selected);
-        void setExpanded(bool expanded);
-
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window,
-                         std::function<void()> onSelect,
-                         std::function<void()> onViewMore,
-                         std::function<void()> onStart,
-                         std::function<void()> onBack);
+        // --- HANDLE EVENT: Giờ chỉ cần Event và Window ---
+        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
 
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);
 
+        // Getters
+        sf::FloatRect getGlobalBounds() const;
         int getId() const { return id; }
         sf::Color getThemeColor() const { return themeColor; }
-
 
     private:
         int id;
@@ -45,32 +45,34 @@ namespace GUI
         bool selected;
         bool expanded;
 
-        // --- ANIMATION STATE (EASING) ---
-        float animTimer; // Thời gian đã chạy
+        // Callbacks (Lưu trữ hàm)
+        std::function<void()> actionSelect;
+        std::function<void()> actionViewMore;
+        std::function<void()> actionStart;
+        std::function<void()> actionBack;
 
-        // Cần lưu 3 trạng thái để Lerp: Bắt đầu -> Hiện tại -> Đích
+        // Animation Vars
+        float animTimer;
         sf::Vector2f startPos, currentPos, targetPos;
         sf::Vector2f startSize, currentSize, targetSize;
 
-        // Props layout
-        CardPos cardPos;
-        float cornerRadius;
-
-        // --- VISUALS ---
+        // Visuals
         float contentAlpha;
-        Squircle bgShape; // Dùng Squircle "xịn"
+        float cornerRadius;
+        CardPos cardPos;
 
-        // --- CONTENT ---
+        Squircle bgShape;
+
+        // Content
         sf::Text textNumber;
         sf::Text textTitle;
         sf::Text textBigTitle;
         sf::RectangleShape imgPlaceholder;
 
-        // --- SWIPE STATE ---
         sf::Vector2f currentBigTitlePos;
         sf::Vector2f currentImgPos;
 
-        // --- BUTTONS ---
+        // Buttons
         Button* btnViewMore;
         Button* btnBack;
         Button* btnStart;
