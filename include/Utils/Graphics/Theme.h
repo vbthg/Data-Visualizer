@@ -28,10 +28,30 @@ namespace Utils
                 constexpr float CardAnimDuration = 0.6f;
 
                 // -- Smoothing (Mượt mà màu sắc) --
-                constexpr float ColorSmoothing = 0.08f;
-                constexpr float ColorSnapSpeed = 500.0f;
+                constexpr float ColorSmoothing = 0.05f;
+                constexpr float ColorSnapSpeed = 1000.0f;
                 constexpr float BgSmoothing = 0.2f;
                 constexpr float BgMinSpeed = 10.0f;
+
+                constexpr float HeroDuration = 0.35f;
+
+
+
+                // --- [MỚI] MENU STATE IN-TRANSITION TIMING ---
+
+                // 1. Khoảng cách trễ giữa các thẻ (Waterfall effect)
+                // Giá trị 0.08f giúp thẻ đầu chạy ngay và các thẻ sau đuổi theo nhanh
+                constexpr float MenuStaggerDelay = 0.08f;
+
+                // 2. Thời gian để một thẻ trượt từ dưới lên đích
+                constexpr float MenuSlideDuration = 0.5f;
+
+                // 3. Thời gian để Subtitle hiện ra (Fade In)
+                constexpr float MenuSubtitleDuration = 0.6f;
+
+                // 4. Khoảng cách đẩy thẻ xuống dưới (Pixel)
+                // Tuy cái này là Geometry nhưng nó liên quan chặt chẽ đến Animation trượt
+                constexpr float MenuSlideDistance = 100.0f;
             }
 
             // --- 2. HÌNH DÁNG & KÍCH THƯỚC (GEOMETRY) ---
@@ -63,6 +83,9 @@ namespace Utils
                 constexpr float MenuWidth = CatBoardW;
                 constexpr float MenuHeight = CatBoardH;
                 constexpr float CardRadius = CatRadius;
+
+
+
             }
 
             // --- 3. BẢNG MÀU (COLORS) ---

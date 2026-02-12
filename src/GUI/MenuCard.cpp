@@ -48,6 +48,7 @@ namespace GUI
         btnStart->setCornerRadius(30.f);
 
         // Init State
+        textOpacity = -1;
         animTimer = 1.0f;
         currentPos = targetPos = startPos = {0, 0};
         currentSize = targetSize = startSize = {100, 100};
@@ -61,7 +62,9 @@ namespace GUI
 
         // BẢN CŨ: Mặc định trong suốt
         bgShape.setCurvature(Theme::Style::SquircleCurvature);
-        bgShape.setFillColor(sf::Color(255, 255, 255, 0));
+//        bgShape.setFillColor(sf::Color(255, 255, 255, 0));
+//        bgShape.setFillColor(sf::Color::Black);
+//        bgShape.setFillColor(sf::Color());
 
         // Init Callbacks
         actionSelect = nullptr;
@@ -188,11 +191,17 @@ namespace GUI
         }
 
         // 3. Logic Màu & Alpha (Giữ nguyên)
-        sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color(255, 255, 255, 0);
-        bgShape.setFillColor(Utils::Math::Smoothing::dampColor(bgShape.getFillColor(), targetColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
+
+        if(ghostMode) bgShape.setFillColor(sf::Color(255, 255, 255, 0));
+        else
+        {
+            sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color(255, 255, 255, 0);
+//            bgShape.setFillColor(targetColor);
+            bgShape.setFillColor(Utils::Math::Smoothing::dampColor(bgShape.getFillColor(), targetColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
+        }
 
         float desiredAlpha = (selected || expanded) ? 255.0f : 0.0f;
-        contentAlpha = Utils::Math::Smoothing::damp(contentAlpha, desiredAlpha, 0.05f, dt, 500.0f);
+        contentAlpha = Utils::Math::Smoothing::damp(contentAlpha, desiredAlpha, 0.3f, dt, 500.0f);
 
         float midX = currentPos.x + currentSize.x / 2.0f;
 
@@ -216,24 +225,54 @@ namespace GUI
             currentBigTitlePos = {currentPos.x + 200.f, currentPos.y + 100.f};
             currentImgPos = {midX, currentPos.y + 300.f};
 
+            // Tính tỉ lệ alpha (0.0 -> 1.0)
+//            float alphaFactor = currentOpacity / 255.0f;
+
             sf::Color numColor = (selected) ? sf::Color(255, 255, 255, 150) : themeColor;
-            textNumber.setFillColor(Utils::Math::Smoothing::dampColor(textNumber.getFillColor(), numColor, 0.1f, dt));
+            if(!fillOnSelect) numColor = sf::Color::Black;
+            if(textOpacity > -1) numColor.a = textOpacity;
+
+            textNumber.setFillColor(Utils::Math::Smoothing::dampColor(textNumber.getFillColor(), numColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
 
             sf::FloatRect nb = textNumber.getLocalBounds();
             textNumber.setOrigin(nb.left + nb.width/2.f, nb.top + nb.height/2.f);
             textNumber.setPosition(midX, currentPos.y + 40.f + nb.height/2.f);
 
             sf::Color titleColor = (selected) ? sf::Color::White : Theme::Color::TextPrimary;
-            textTitle.setFillColor(Utils::Math::Smoothing::dampColor(textTitle.getFillColor(), titleColor, 0.1f, dt));
+            if(!fillOnSelect) titleColor = sf::Color::Black;
+            if(textOpacity > -1) titleColor.a = textOpacity;
+
+            textTitle.setFillColor(Utils::Math::Smoothing::dampColor(textTitle.getFillColor(), titleColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
 
             sf::FloatRect tb = textTitle.getLocalBounds();
             textTitle.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height/2.f);
             textTitle.setPosition(midX, currentPos.y + 90.f + tb.height/2.f);
 
-            if(contentAlpha > 10.f) {
-                btnViewMore->setPosition({midX - 50.f, currentPos.y + 180.f});
-                btnViewMore->update(window, dt);
+            // [SỬA ĐOẠN NÀY] LOGIC NÚT VIEW MORE
+            // -----------------------------------------------------
+
+            // 1. Tính toán Opacity đích cho nút
+            float targetBtnAlpha = 255.0f;
+
+            // Nếu CategoriesState đang yêu cầu fade (textOpacity != -1) -> Gán theo nó
+            if (textOpacity > -1) {
+                targetBtnAlpha = textOpacity;
             }
+
+            // Nếu Card này KHÔNG được chọn -> Thì nút cũng phải ẩn (Alpha = 0)
+            if (!selected) {
+                targetBtnAlpha = 0.0f;
+            }
+
+            // 2. Apply vào nút
+            // Button sẽ tự lo việc damp/lerp bên trong nó dựa trên opacityFactor
+            btnViewMore->setOpacity(targetBtnAlpha);
+            btnViewMore->setPosition({midX - 50.f, currentPos.y + 180.f});
+
+            // 3. [QUAN TRỌNG] Luôn UPDATE nút
+            // Bỏ cái if(contentAlpha > 10.f) bao quanh đi.
+            // Ta cần nút update liên tục để chạy lò xo scale và màu sắc cho hết hành trình.
+            btnViewMore->update(window, dt);
         }
     }
 
@@ -251,4 +290,79 @@ namespace GUI
             if(contentAlpha > 10.f) btnViewMore->draw(window);
         }
     }
+
+    const sf::Text& MenuCard::getTitleText() const
+    {
+        return textTitle;
+    }
+
+    void MenuCard::setTextVisible(bool visible)
+    {
+        // Chỉnh Alpha của Title
+        sf::Color cTitle = textTitle.getFillColor();
+        cTitle.a = visible ? 255 : 0;
+        textTitle.setFillColor(cTitle);
+
+        // (Tùy chọn) Ẩn luôn số thứ tự (01, 02...) nếu muốn sạch sẽ
+        sf::Color cNum = textNumber.getFillColor();
+        cNum.a = visible ? 255 : 0; // Hoặc để 150 nếu muốn mờ mờ
+        textNumber.setFillColor(cNum);
+    }
+
+    void MenuCard::setGhostMode(bool enabled)
+    {
+        // 1. Nếu trạng thái không đổi thì không làm gì cả (để tránh spam setFillColor liên tục)
+        if (this->ghostMode == enabled) return;
+
+        this->ghostMode = enabled;
+
+        // 2. [FIX QUAN TRỌNG] Xử lý khi TẮT Ghost Mode
+        if (!enabled)
+        {
+            // Khi vừa tắt Ghost (vừa chui vào bảng), ta muốn nó ĐẶC ngay lập tức.
+            // Ta tính toán màu đích mong muốn (giống logic trong update)
+            sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color::White;
+
+            // Gán TRỰC TIẾP, bỏ qua hàm dampColor để không bị fade từ trong suốt lên
+            bgShape.setFillColor(targetColor);
+        }
+
+        // Nếu BẬT Ghost Mode (enabled == true), ta cứ để hàm update() lo việc fade out từ từ
+        // hoặc nếu muốn tàng hình ngay lập tức thì cũng gán luôn ở đây:
+        else
+        {
+            bgShape.setFillColor(sf::Color::Transparent);
+        }
+    }
+
+    bool MenuCard::isSettled() const
+    {
+        // Cho phép sai số nhỏ (epsilon) vì so sánh số thực float
+        float epsilon = 1.0f; // Sai số 1 pixel là chấp nhận được
+
+        bool posDone = (std::abs(currentPos.x - targetPos.x) < epsilon) &&
+                       (std::abs(currentPos.y - targetPos.y) < epsilon);
+
+        bool sizeDone = (std::abs(currentSize.x - targetSize.x) < epsilon) &&
+                        (std::abs(currentSize.y - targetSize.y) < epsilon);
+
+        return posDone && sizeDone;
+    }
+
+    void MenuCard::setTextOpacity(float alpha)
+    {
+        // Giới hạn giá trị từ 0 đến 255
+//        if(alpha < 0.0f) alpha = 0.0f;
+        if(alpha > 255.0f) alpha = 255.0f;
+
+        textOpacity = alpha;
+    }
+
+    void MenuCard::setSelectionStyle(bool fillBackground)
+    {
+        this->fillOnSelect = fillBackground;
+        if(!fillOnSelect) btnViewMore->setTextColor(sf::Color::Black);
+    }
 }
+
+

@@ -167,7 +167,14 @@ namespace GUI
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::Vector2f mPosF = window.mapPixelToCoords(mousePos);
 
-        isHovered = bgShape.getGlobalBounds().contains(mPosF);
+        // [LOGIC MỚI] Nếu nút đang tàng hình (factor < 0.1), ta chặn luôn hover
+        // để tránh việc nút ẩn rồi mà chuột đi qua vẫn bắt dính.
+        if (opacityFactor > 0.05f) {
+            isHovered = bgShape.getGlobalBounds().contains(mPosF);
+        } else {
+            isHovered = false;
+            isPressed = false;
+        }
 
         // 2. Xác định màu mục tiêu
         sf::Color targetBg, targetText;
@@ -188,12 +195,37 @@ namespace GUI
             targetText = textColors.normal;
         }
 
+        targetBg.a = (sf::Uint8)targetBg.a * opacityFactor;
+        targetText.a = (sf::Uint8)targetText.a * opacityFactor;
+
         // 3. Chuyển màu nhanh (Snappy) - minSpeed = 500
         currentBgColor = Utils::Math::Smoothing::dampColor(currentBgColor, targetBg, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed);
         currentTextColor = Utils::Math::Smoothing::dampColor(currentTextColor, targetText, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed);
 
+        // --- 4. [MỚI] ÁP DỤNG HỆ SỐ OPACITY ---
+        // Tính màu cuối cùng để vẽ (Final Render Color)
+//        sf::Color renderBg = currentBgColor;
+//        sf::Color renderText = currentTextColor;
+
+        // Nhân Alpha với hệ số (Multiplier)
+//        renderBg.a = (sf::Uint8)(renderBg.a * opacityFactor);
+//        renderText.a = (sf::Uint8)(renderText.a * opacityFactor);
+
         bgShape.setFillColor(currentBgColor);
         content.setFillColor(currentTextColor);
+
+        if (opacityFactor < 0.95f)
+        {
+            // Thu nhỏ về 80% kích thước rồi biến mất
+            // Điều này tạo cảm giác nút "lùi về sau" khi ẩn đi
+            scaleSpring.target = 0.8f;
+        }
+        // Nếu nút đang hiện rõ (opacityFactor ~ 1.0) và không bị nhấn
+        else if (!isPressed)
+        {
+            // Trả về kích thước gốc
+            scaleSpring.target = 1.0f;
+        }
 
         // 4. Cập nhật Vật Lý Lò Xo
         scaleSpring.update(dt);
@@ -240,6 +272,13 @@ namespace GUI
     {
         window.draw(bgShape); // RoundedRectangleShape kế thừa sf::Drawable
         window.draw(content);
+    }
+
+    void Button::setOpacity(float opacity)
+    {
+        // 1. Clamp giá trị (0 -> 255)
+        float alpha = std::max(0.0f, std::min(opacity, 255.0f));
+        this->opacityFactor = std::max(0.0f, std::min(opacity / 255.0f, 1.0f));
     }
 
 } // namespace GUI

@@ -23,48 +23,49 @@ namespace Utils
             }
 
             // 3. Ease Out Quart (Bậc 4 - CHUẨN MACOS MỚI)
-            // Mềm hơn Quint (bậc 5) nhưng vẫn dứt khoát hơn Cubic.
-            // Kết hợp với duration > 400ms là cực đẹp.
             inline float easeOutQuart(float t)
             {
                 return 1.0f - std::pow(1.0f - t, 4.0f);
             }
 
-            // 2. Ease Out Quint (Nhanh, dứt khoát hơn - MacOS Style) -> KHUYÊN DÙNG
+            // 2. Ease Out Quint (Nhanh, dứt khoát hơn - MacOS Style)
             inline float easeOutQuint(float t)
             {
                 return 1.0f - std::pow(1.0f - t, 5.0f);
             }
 
-            // Ease Out Expo: Cực nhanh lúc đầu, cực chậm lúc sau.
-            // Tạo cảm giác "hạ cánh" rất mềm.
+            // Ease Out Expo
             inline float easeOutExpo(float t)
             {
                 return (t == 1.0f) ? 1.0f : 1.0f - std::pow(2.0f, -10.0f * t);
             }
 
-            // --- BỘ HÀM SINE (MỚI) ---
+            // --- BỘ HÀM BACK (MỚI THÊM) ---
+            inline float easeOutBack(float t)
+            {
+                const float c1 = 1.70158f;
+                const float c3 = c1 + 1.0f;
+                return 1.0f + c3 * std::pow(t - 1.0f, 3.0f) + c1 * std::pow(t - 1.0f, 2.0f);
+            }
 
-            // 2. Ease Out Sine (Nhanh -> Chậm dần, nhưng rất mềm)
+            // --- BỘ HÀM SINE ---
             inline float easeOutSine(float t)
             {
                 return std::sin((t * PI) / 2.0f);
             }
 
-            // 3. Ease In Sine (Chậm -> Nhanh dần, rất mềm)
             inline float easeInSine(float t)
             {
                 return 1.0f - std::cos((t * PI) / 2.0f);
             }
 
-            // 3. Hàm Lerp (Linear Interpolation) - Để tính giá trị giữa điểm đầu và cuối
+            // --- LERP ---
             template <typename T>
             inline T lerp(const T& start, const T& end, float t)
             {
                 return start + (end - start) * t;
             }
 
-            // Lerp riêng cho SFML Color
             inline sf::Color lerpColor(const sf::Color& start, const sf::Color& end, float t)
             {
                 return sf::Color(

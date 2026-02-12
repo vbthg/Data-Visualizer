@@ -39,11 +39,29 @@ namespace GUI
         int getId() const { return id; }
         sf::Color getThemeColor() const { return themeColor; }
 
+        // [MỚI] Lấy đối tượng Text để CategoriesState tạo "diễn viên đóng thế"
+        const sf::Text& getTitleText() const;
+
+        // [MỚI] Ẩn/Hiện text thật trên thẻ (để text đóng thế diễn thay)
+        void setTextVisible(bool visible);
+
+        void setGhostMode(bool enabled);
+
+        // [THÊM DÒNG NÀY] Hàm set độ mờ
+        void setTextOpacity(float alpha);
+
+        bool isSettled() const;
+
+        // false: Nền giữ nguyên/trắng, Chữ đổi màu theme (Dùng cho Categories)
+        void setSelectionStyle(bool fillBackground);
+
     private:
         int id;
         sf::Color themeColor;
         bool selected;
         bool expanded;
+        bool ghostMode = false;
+        bool fillOnSelect = true; // Mặc định là true (như cũ)
 
         // Callbacks (Lưu trữ hàm)
         std::function<void()> actionSelect;
@@ -76,5 +94,8 @@ namespace GUI
         Button* btnViewMore;
         Button* btnBack;
         Button* btnStart;
+
+        // [THÊM DÒNG NÀY] Biến lưu độ mờ hiện tại (mặc định 255)
+        float textOpacity = -1;
     };
 }

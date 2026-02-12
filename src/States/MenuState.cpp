@@ -3,6 +3,8 @@
 #include "ResourceManager.h"
 #include "Squircle.h"
 #include "Smoothing.h"
+#include "Easing.h"
+#include "Theme.h"
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <algorithm>
@@ -53,6 +55,8 @@ void MenuState::initData()
 
 void MenuState::init()
 {
+//    isTransitioning = true;
+
     // 1. Load Data
     initData();
     if (currentCategory < 0 || currentCategory >= (int)allData.size()) currentCategory = 0;
@@ -62,26 +66,140 @@ void MenuState::init()
     sf::Font& fontHeader = res.getFont("assets/fonts/font.ttf");
 
     // --- SETUP HEADER (Theo tên Category) ---
+    // Header Metrics (Chỉ để căn chỉnh vị trí chữ)
+    float headerW = 1200.0f;
+    float headerH = 80.0f;
+    float headerX = (window.getSize().x - headerW) / 2.0f;
+    float headerY = 30.0f;
+
     titleText.setFont(fontHeader);
     titleText.setString(info.name); // <--- Lấy tên từ dữ liệu
     titleText.setCharacterSize(34);
     titleText.setFillColor(Theme::Color::TextPrimary);
+
+    // Đặt Origin: Cạnh trái, Giữa theo chiều dọc (Middle-Left) -> Để dễ canh với Icon
+    sf::FloatRect tb = titleText.getLocalBounds();
+    titleText.setOrigin(tb.left, tb.top + tb.height/2.0f);
+
+    // Đặt vị trí: Cách lề 50px để chừa chỗ cho mũi tên
+    titleText.setPosition(headerX + 50.0f, headerY + 40.0f);
 
     subTitleText.setFont(res.getFont("assets/fonts/font.ttf"));
     subTitleText.setString("Select to visualize");
     subTitleText.setCharacterSize(18);
     subTitleText.setFillColor(Theme::Color::TextSecondary);
 
+
+    // --- B. SETUP BACK ICON (Thêm mới) ---
+    fontIcon = res.getFont("assets/fonts/phosphor.ttf");
+
+    backIcon.setFont(fontIcon);
+    backIcon.setString(L"\ue138"); // Mã Unicode của CaretLeft trong Phosphor
+    backIcon.setCharacterSize(28);
+    backIcon.setFillColor(Theme::Color::TextPrimary);
+
+    // Đặt Origin: Chính giữa Icon (Center)
+    sf::FloatRect ib = backIcon.getLocalBounds();
+    backIcon.setOrigin(ib.left + ib.width/2.0f, ib.top + ib.height/2.0f);
+
+    // Đặt vị trí: Nằm bên trái Text (cách lề 20px)
+    backIcon.setPosition(headerX + 20.0f, headerY + 40.0f);
+
+
+    // --- C. SETUP GHOST BUTTON (Controller) ---
+    // Tính kích thước nút sao cho bao trọn cả Icon và Text
+    float btnWidth = 50.0f + tb.width + 20.0f; // 50px (vùng Icon) + Text + Padding đuôi
+    float btnHeight = 60.0f;
+
+    // Tạo nút rỗng (Text rỗng)
+    btnBack = new GUI::Button(fontHeader, "", {btnWidth, btnHeight});
+
+    // Preset Ghost để trong suốt (nhưng vẫn bắt được chuột)
+    btnBack->applyPreset(GUI::ButtonPreset::Ghost);
+    btnBack->setCornerRadius(12.0f);
+
+    btnBack->setPosition({headerX + btnWidth/2.0f, headerY + 40.0f});
+
+    // Logic Click (Giữ nguyên)
+    btnBack->onClick = [this]() {
+        if (this->expandedCard) this->expandedCard = nullptr;
+        else this->states.pop();
+    };
+
+
+//    btnBack = new GUI::Button(fontIcon, L"\ue902", {48.f, 48.f});
+//    btnBack->applyPreset(GUI::ButtonPreset::Ghost);
+//    btnBack->setCharacterSize(28); // Kích thước Icon
+//
+//    // Logic Click Nút Back
+//    btnBack->onClick = [this]() {
+//        if (this->expandedCard) this->expandedCard = nullptr;
+//        else this->states.pop();
+//    };
+//    btnBack->setPosition({headerX, headerY + 40.0f});
+
+    // 4. INIT STATIC BOARD (Bảng nền cố định)
+
+    float containerW = Theme::Style::AlgoBoardW; // 1200.0f
+    float containerH = Theme::Style::AlgoBoardH; // 580.0f
+
+    // Tính toán vị trí bắt đầu
+    float startX = (window.getSize().x - containerW) / 2.0f;
+    float startY = (window.getSize().y - containerH) / 2.0f + 30.f;
+
+    bgBoard.setSize({containerW, containerH});
+    bgBoard.setCornerRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius); // 48.0f
+    bgBoard.setFillColor(sf::Color::White);
+    bgBoard.setPosition(startX, startY);
+    bgBoard.setCurvature(Theme::Style::SquircleCurvature); // Siêu elip cho mượt
+
     // --- CREATE CARDS (Theo danh sách thuật toán) ---
     // Xóa thẻ cũ (nếu có)
     for(auto c : cards) delete c;
     cards.clear();
+
+    float cardW = containerW / info.algos.size();
+    float currentX = startX;
+
+    // Biến đếm để xác định vị trí đầu/cuối
+    int index = 0;
+    int totalCount = (int)info.algos.size();
 
     // Tạo thẻ động
     for (const auto& algo : info.algos)
     {
         // Truyền ID, Tên, Số, Màu của Category hiện tại
         cards.push_back(new GUI::MenuCard(algo.id, algo.name, algo.number, info.color));
+        auto c = cards.back();
+
+        GUI::CardPos pos = GUI::CardPos::Middle;
+
+        if (totalCount == 1) {
+            // Trường hợp đặc biệt: Chỉ có 1 thẻ duy nhất -> Bo tròn cả 4 góc
+            pos = GUI::CardPos::Single; // (Nếu enum của bạn có Single, không thì dùng First/Last tùy logic)
+            // Hoặc nếu không có Single thì thường logic vẽ sẽ tự xử lý hoặc coi như First
+            // Nhưng thường bảng DSA sẽ có >= 2 thẻ.
+        }
+        else if (index == 0) {
+            pos = GUI::CardPos::First; // Thẻ đầu: Bo trái
+        }
+        else if (index == totalCount - 1) {
+            pos = GUI::CardPos::Last;  // Thẻ cuối: Bo phải
+        }
+
+        c->setCardPosition(pos, Theme::Style::ItemRadius);
+
+        // Set Target 1 lần (Tối ưu như đã bàn)
+        sf::Vector2f startPos = {currentX, startY + Theme::Animation::MenuSlideDistance}; // Vị trí thấp
+        c->setTarget(startPos, {cardW, containerH});         // Size chuẩn
+
+        c->setTextOpacity(0.f);
+
+        // Teleport
+        c->update(100.0f, window);
+
+
+        currentX += cardW;
     }
 
     // --- INIT STATES ---
@@ -91,7 +209,9 @@ void MenuState::init()
 
     currentWindowColor = Theme::Color::Background;
 
-    updateLayout(0.0f);
+//    updateLayout(0.0f);
+
+//    exit(0);
 }
 
 void MenuState::updateLayout(float dt)
@@ -106,8 +226,36 @@ void MenuState::updateLayout(float dt)
     float startX = (winW - containerW) / 2.f;
     float startY = (winH - containerH) / 2.f + 30.f;
 
-    titleText.setPosition(startX, startY - 80.f);
-    subTitleText.setPosition(startX, startY - 40.f);
+//    titleText.setPosition(startX, startY - 80.f);
+//    subTitleText.setPosition(startX, startY - 40.f);
+
+
+    // --- [THÊM] 1. UPDATE CONTROLLER & BINDING ---
+    // Chỉ update nút khi không có card nào đang mở rộng (để tránh xung đột input)
+    if (!expandedCard)
+    {
+        btnBack->update(window, dt);
+
+        // [LOGIC BINDING] Lấy scale từ nút, áp dụng cho Text & Icon
+        float s = btnBack->getScale();
+
+        titleText.setScale(s, s);
+        backIcon.setScale(s, s);
+
+        // [LOGIC HOVER MÀU SẮC] Làm tối nhẹ khi hover (Apple Style)
+        sf::Color targetColor = Theme::Color::TextPrimary;
+        if (btnBack->isHovering()) {
+            targetColor = sf::Color(80, 80, 80); // Màu xám đậm hơn chút
+        }
+
+        // Damp màu cho mượt
+        sf::Color curTitle = titleText.getFillColor();
+        sf::Color curIcon = backIcon.getFillColor();
+
+        titleText.setFillColor(Utils::Math::Smoothing::dampColor(curTitle, targetColor, 0.1f, dt));
+        backIcon.setFillColor(Utils::Math::Smoothing::dampColor(curIcon, targetColor, 0.1f, dt));
+    }
+
 
     // --- 2. BACKGROUND COLOR LOGIC ---
     sf::Color targetWinColor = Theme::Color::Background;
@@ -125,15 +273,18 @@ void MenuState::updateLayout(float dt)
             if(c == expandedCard)
             {
                 // Thẻ Hero chiếm trọn bảng 1200x580
+//                c->setBackgroundVisible(true);
                 c->setTarget({startX, startY}, {containerW, containerH});
                 c->setExpanded(true);
             }
             else
             {
                 // Các thẻ khác trượt ra ngoài
+                c->setGhostMode(true);
                 float offX = (c->getId() < expandedCard->getId()) ? startX - 300.f : startX + containerW + 300.f;
                 c->setTarget({offX, startY}, {containerW / 4.f, containerH});
                 c->setExpanded(false);
+
             }
         }
     }
@@ -148,6 +299,22 @@ void MenuState::updateLayout(float dt)
 
         for(int i = 0; i < (int)cards.size(); ++i)
         {
+//            cards[i]->setGhostMode(false);
+            // --- [LOGIC MỚI] KIỂM TRA VÙNG AN TOÀN (SỬ DỤNG getGlobalBounds) ---
+
+            // 1. Lấy khung bao của thẻ hiện tại
+            sf::FloatRect bounds = cards[i]->getGlobalBounds();
+
+            // 2. Kiểm tra xem thẻ có nằm trọn trong bảng không?
+            // bounds.left  : Tương đương getPosition().x
+            // bounds.width : Tương đương getSize().x
+            bool isFullyInside = (bounds.left >= startX - 2.0f) &&
+                                 (bounds.left + bounds.width <= startX + containerW + 2.0f);
+
+            // 3. Set Ghost Mode
+            cards[i]->setGhostMode(!isFullyInside);
+
+
             cards[i]->setTarget({currentX, startY}, {w, containerH});
             cards[i]->setSelected(i == selectedIndex);
             cards[i]->setExpanded(false);
@@ -162,12 +329,31 @@ void MenuState::updateLayout(float dt)
         }
     }
 
+    // --- CUỐI HÀM: KIỂM TRA XEM CÓ AI ĐANG DI CHUYỂN KHÔNG ---
+    isAnimating = (expandedCard != nullptr);
+    for(auto c : cards)
+    {
+        if (!c->isSettled())
+        {
+            isAnimating = true;
+            break; // Chỉ cần 1 ông đang chạy là tính cả hội đang chạy
+        }
+    }
+
     for(auto c : cards) c->update(dt, window);
 }
 
 void MenuState::handleInput(sf::Event& event)
 {
+    // [THÊM] Nếu đang chuyển cảnh thì không nhận input click
+    if (isTransitioning) return;
+
     if(event.type == sf::Event::Closed) window.close();
+
+
+    if (!expandedCard) {
+        btnBack->handleEvent(event, window);
+    }
 
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
     {
@@ -202,7 +388,8 @@ void MenuState::handleInput(sf::Event& event)
         };
 
         auto onBack = [this]() {
-            this->expandedCard = nullptr;
+            this->expandedCard = nullptr;//        updateInTransition(dt);
+
         };
 
         // Gán Callbacks (Bắt buộc để nút hoạt động)
@@ -217,13 +404,40 @@ void MenuState::handleInput(sf::Event& event)
 
 void MenuState::update(float dt)
 {
-    updateLayout(dt);
+
+    if (isTransitioning)
+    {
+        updateInTransition(dt);
+    }
+    else
+    {
+        updateLayout(dt); // Chỉ chạy layout Accordion khi đã vào xong
+    }
 }
 
 void MenuState::draw()
 {
     window.clear(currentWindowColor);
     window.pushGLStates();
+
+
+    // 1. VẼ BẢNG NỀN (Luôn vẽ)
+    // Đây là cái bảng "nối" từ hiệu ứng Morph của CategoriesState sang
+    window.draw(bgBoard);
+
+    // 2. VẼ HEADER (Title, SubTitle, BackButton)
+    if(!expandedCard)
+    {
+        // Vẽ nút Back trước (lớp nền tàng hình, dùng để debug hitbox nếu cần)
+        btnBack->draw(window);
+
+        // Vẽ Icon và Title đè lên trên
+        window.draw(backIcon);
+        window.draw(titleText);
+
+        window.draw(subTitleText);
+    }
+
 
     // Dùng Hằng số mới cho kích thước bảng vẽ
     float containerW = Theme::Style::AlgoBoardW; // 1200
@@ -232,26 +446,34 @@ void MenuState::draw()
     float startX = (window.getSize().x - containerW) / 2.f;
     float startY = (window.getSize().y - containerH) / 2.f + 30.f;
 
-    if(!expandedCard)
-    {
-        window.draw(titleText);
-        window.draw(subTitleText);
-    }
+//    if(!expandedCard)
+//    {
+//        window.draw(titleText);
+//        window.draw(subTitleText);
+//    }
+//    if(isAnimating)
+//    {
+//        GUI::Squircle bgRect({containerW, containerH}, Theme::Style::AlgoRadius);
+//        bgRect.setCurvature(Theme::Style::SquircleCurvature);
+//        bgRect.setPosition(startX, startY);
+//        bgRect.setFillColor(sf::Color::White);
+//        window.draw(bgRect);
+//    }
 
     // --- VẼ BẢNG NỀN ---
     // Bóng đổ (Dùng AlgoRadius 48.0f)
-    GUI::Squircle shadowRect({containerW, containerH}, Theme::Style::AlgoRadius);
-    shadowRect.setCurvature(Theme::Style::SquircleCurvature);
-    shadowRect.setPosition(startX + 10.f, startY + 10.f);
-    shadowRect.setFillColor(Theme::Color::Shadow);
-    window.draw(shadowRect);
+//    GUI::Squircle shadowRect({containerW, containerH}, Theme::Style::AlgoRadius);
+//    shadowRect.setCurvature(Theme::Style::SquircleCurvature);
+//    shadowRect.setPosition(startX + 10.f, startY + 10.f);
+//    shadowRect.setFillColor(Theme::Color::Shadow);
+//    window.draw(shadowRect);
 
     // Nền trắng
-    GUI::Squircle bgRect({containerW, containerH}, Theme::Style::AlgoRadius);
-    bgRect.setCurvature(Theme::Style::SquircleCurvature);
-    bgRect.setPosition(startX, startY);
-    bgRect.setFillColor(sf::Color::White);
-    window.draw(bgRect);
+//    GUI::Squircle bgRect({containerW, containerH}, Theme::Style::AlgoRadius);
+//    bgRect.setCurvature(Theme::Style::SquircleCurvature);
+//    bgRect.setPosition(startX, startY);
+//    bgRect.setFillColor(sf::Color::White);
+//    window.draw(bgRect);
 
     // --- SCISSOR TEST ---
     sf::Vector2u windowSize = window.getSize();
@@ -271,4 +493,111 @@ void MenuState::draw()
 
     glDisable(GL_SCISSOR_TEST);
     window.popGLStates();
+}
+
+void MenuState::updateInTransition(float dt)
+{
+    transitionTimer += dt;
+
+
+    // --- [THÊM] ANIMATION CHO ICON ---
+    // Logic: Icon trượt từ vị trí (Text.x - 10) về (Text.x - 30)
+    // Delay 0.1s để Text ổn định vị trí trước
+
+    sf::Vector2f textPos = titleText.getPosition();
+    // Vị trí đích của Icon (cách Text 30px về bên trái)
+    float targetIconX = textPos.x - 30.0f;
+    float targetIconY = textPos.y;
+
+    if (transitionTimer > 0.1f)
+    {
+        // Tính tiến độ animation cho Icon (diễn ra trong 0.4s)
+        float tIcon = std::min((transitionTimer - 0.1f) / 0.4f, 1.0f);
+        float easeIcon = Utils::Math::Easing::easeOutCubic(tIcon);
+
+        // Lerp từ (Target + 20px) về Target -> Hiệu ứng trượt sang trái
+        float currentIconX = Utils::Math::Easing::lerp(targetIconX + 20.0f, targetIconX, easeIcon);
+
+        backIcon.setPosition(currentIconX, targetIconY);
+
+        // Fade In (Alpha 0 -> 255)
+        sf::Color ic = backIcon.getFillColor();
+        ic.a = (sf::Uint8)(easeIcon * 255.0f);
+        backIcon.setFillColor(ic);
+    }
+    else
+    {
+        // Lúc đầu ẩn Icon đi
+        sf::Color ic = backIcon.getFillColor();
+        ic.a = 0;
+        backIcon.setFillColor(ic);
+    }
+
+
+
+    // Thông số Layout chuẩn
+    float containerW = Theme::Style::AlgoBoardW;
+    float containerH = Theme::Style::AlgoBoardH;
+    float startX = (window.getSize().x - containerW) / 2.0f;
+    float startY = (window.getSize().y - containerH) / 2.0f + 30.f;
+    float cardW = containerW / cards.size();
+
+    // 1. UPDATE CARDS (Staggered Animation)
+    for (int i = 0; i < (int)cards.size(); ++i)
+    {
+        float delay = i * Theme::Animation::MenuStaggerDelay; // Mỗi thẻ trễ nhau 0.05s
+        float duration = Theme::Animation::MenuSlideDuration;   // Thời gian mỗi thẻ chạy
+
+        // Tính tiến độ t (0.0 -> 1.0)
+        float t = (transitionTimer - delay) / duration;
+        t = std::max(0.0f, std::min(t, 1.0f));
+
+        if (t > 0.0f)
+        {
+            float ease = Utils::Math::Easing::easeOutQuart(t);
+
+            // A. FADE IN (Hiện dần)
+            float alpha = ease * 255.0f;
+//            cards[i]->setOpacity(alpha);
+            cards[i]->setTextOpacity(alpha);
+
+            // B. SLIDE UP (Set lại target về vị trí chuẩn)
+            // Chỉ cần set 1 lần hoặc set liên tục đều được vì MenuCard damp vị trí
+            float finalX = startX + i * cardW;
+
+            // Set Target về Y chuẩn (startY)
+            cards[i]->setTarget({finalX, startY}, {cardW, containerH});
+        }
+        else cards[i]->setTextOpacity(0.0f);
+
+        // Update physics của card
+        cards[i]->update(dt, window);
+    }
+
+    // 2. FADE IN SUBTITLE (Chậm hơn chút)
+    float textT = std::min(transitionTimer / Theme::Animation::MenuSubtitleDuration, 1.0f); // 0.8s
+    float easeText = Utils::Math::Easing::easeOutQuart(textT);
+
+    sf::Color sCol = subTitleText.getFillColor();
+    sCol.a = (sf::Uint8)(easeText * 255);
+    subTitleText.setFillColor(sCol);
+
+    // 3. KẾT THÚC
+    // Tổng thời gian = (Delay thẻ cuối) + Duration
+//    float totalTime = ((cards.size() - 1) * 0.05f) + 0.5f + 0.2f; // +0.2 dư ra cho chắc
+    float totalTime = ((cards.size() - 1) * Theme::Animation::MenuStaggerDelay)
+                      + Theme::Animation::MenuSlideDuration
+                      + 0.1f; // +0.1f buffer an toàn
+
+    if (transitionTimer > totalTime)
+    {
+        isTransitioning = false;
+
+        // Finalize state
+        for(auto c : cards) {
+//            c->setOpacity(255.0f);
+            c->setTextOpacity(255.0f);
+        }
+        subTitleText.setFillColor(Theme::Color::TextSecondary);
+    }
 }

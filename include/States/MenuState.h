@@ -27,7 +27,11 @@ private:
     sf::RenderWindow& window;
     std::stack<State*>& states;
 
+    GUI::Squircle bgBoard;
+
     int currentCategory; // Lưu ID category đang chọn
+
+    bool isAnimating; // Cờ báo hiệu có thẻ đang di chuyển
 
     // Layout
     sf::Text titleText;
@@ -40,9 +44,14 @@ private:
 
     // Nút Back để quay về CategoriesState
     GUI::Button* btnBack;
+    sf::Text backIcon;
+    sf::Font fontIcon;
 
     // Entry Animation
     float entryTimer;
+
+    bool isTransitioning = true; // Mặc định vào là chạy hiệu ứng ngay
+    float transitionTimer = 0.0f;
 
     // Helper layout
     void updateLayout(float dt);
@@ -56,4 +65,7 @@ private:
     // Dữ liệu
     std::vector<CategoryInfo> allData;
     void initData();
+
+    // Hàm update riêng cho hiệu ứng
+    void updateInTransition(float dt);
 };

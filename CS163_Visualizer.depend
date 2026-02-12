@@ -455,7 +455,7 @@
 	<SFML/Graphics.hpp>
 	"Button.h"
 
-1769680792 d:\cs163_visualizer\include\gui\button.h
+1770859356 d:\cs163_visualizer\include\gui\button.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -463,13 +463,14 @@
 	"Spring.h"
 	"RoundedRectangleShape.h"
 	"Theme.h"
+	"Squircle.h"
 
 1769654798 d:\cs163_visualizer\include\utils\math\smoothing.h
 	<cmath>
 	<SFML/Graphics.hpp>
 	<algorithm>
 
-1769680778 source:d:\cs163_visualizer\src\gui\button.cpp
+1770835918 source:d:\cs163_visualizer\src\gui\button.cpp
 	"Button.h"
 	<iostream>
 
@@ -507,7 +508,7 @@
 	"IntroState.h"
 	<iostream>
 
-1769788200 source:d:\cs163_visualizer\src\gui\menucard.cpp
+1770835996 source:d:\cs163_visualizer\src\gui\menucard.cpp
 	"MenuCard.h"
 	"ResourceManager.h"
 	"Smoothing.h"
@@ -516,7 +517,7 @@
 	<cmath>
 	<algorithm>
 
-1769705189 d:\cs163_visualizer\include\gui\menucard.h
+1770227103 d:\cs163_visualizer\include\gui\menucard.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -524,17 +525,19 @@
 	"Squircle.h"
 	"Utils/Graphics/Theme.h"
 
-1769787821 source:d:\cs163_visualizer\src\states\menustate.cpp
+1770871067 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
 	"Squircle.h"
 	"Smoothing.h"
+	"Easing.h"
+	"Theme.h"
 	<SFML/OpenGL.hpp>
 	<iostream>
 	<algorithm>
 
-1769782482 d:\cs163_visualizer\include\states\menustate.h
+1770859570 d:\cs163_visualizer\include\states\menustate.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<stack>
@@ -564,7 +567,7 @@
 	<GLES2/gl2platform.h>
 	<GLES2/gl2ext.h>
 
-1769651395 d:\cs163_visualizer\include\utils\math\easing.h
+1769794750 d:\cs163_visualizer\include\utils\math\easing.h
 	<cmath>
 	<SFML/Graphics.hpp>
 
@@ -576,10 +579,10 @@
 	<cmath>
 	<algorithm>
 
-1769786665 d:\cs163_visualizer\include\utils\graphics\theme.h
+1770871561 d:\cs163_visualizer\include\utils\graphics\theme.h
 	<SFML/Graphics/Color.hpp>
 
-1769791785 d:\cs163_visualizer\include\states\categoriesstate.h
+1770831425 d:\cs163_visualizer\include\states\categoriesstate.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<stack>
@@ -589,13 +592,14 @@
 	"GUI/Squircle.h"
 	"Utils/Graphics/Theme.h"
 
-1769791719 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
+1770876487 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
 	"States/CategoriesState.h"
-	"States/MenuState.h"
 	"GUI/MenuCard.h"
+	"MenuState.h"
+	"Easing.h"
 	"ResourceManager.h"
 	"GUI/Squircle.h"
-	"Smoothing.h"
+	"SFML/Graphics.hpp"
 	<SFML/OpenGL.hpp>
 	<iostream>
 	<cmath>

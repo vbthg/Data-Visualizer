@@ -15,9 +15,9 @@ public:
     virtual ~CategoriesState();
 
     void init();
-    void handleInput(sf::Event& event);
-    void update(float dt);
-    void draw();
+    void handleInput(sf::Event& event) override; // Override từ State class
+    void update(float dt) override;
+    void draw() override;
 
 private:
     sf::RenderWindow& window;
@@ -27,16 +27,36 @@ private:
     sf::Text titleText;
     sf::Text subTitleText;
 
+    GUI::Squircle bgBoard;
+
     // Danh sách 3 thẻ Categories
     std::vector<GUI::MenuCard*> cards;
 
-    // --- STATE DATA ---
-    int selectedIndex;          // Index thẻ đang hover (để làm hiệu ứng accordion)
+    // --- STATE DATA (NORMAL) ---
+    int selectedIndex;          // Index thẻ đang hover
+    sf::Color currentWindowColor;
+
+    // --- TRANSITION DATA (NEW - Dùng cho hiệu ứng chuyển cảnh) ---
+    bool isTransitioning;       // Cờ chặn input khi đang bay
+    float transitionTimer;      // Bộ đếm thời gian
+    float transitionDuration;   // Tổng thời gian hiệu ứng
+
+    GUI::MenuCard* expandedCard; // Con trỏ đến thẻ "Hero" (thẻ được chọn)
+
+    // "Diễn viên đóng thế" cho hiệu ứng chữ bay (Text Morph)
+    sf::Text transitionText;
+    sf::Vector2f transitionStartPos;
+    // [THÊM DÒNG NÀY] Biến lưu đích đến của chữ khi bay
+    sf::Vector2f textTargetPos;
 
     // --- HELPER FUNCTIONS ---
-    void updateLayout(float dt);
+    void updateLayout(float dt);         // Update cho trạng thái tĩnh (Accordion)
+    void updateOutTransition(float dt);  // Update cho trạng thái động (Transition)
 
-    // Màu nền (nếu muốn đổi màu background khi hover)
-    sf::Color currentWindowColor;
+    // Helper cũ (giữ lại nếu bạn vẫn dùng đổi màu nền)
     sf::Color getPaleColor(sf::Color c);
+
+
+    // [THÊM] Biến cờ để đánh dấu đã đẩy state mới hay chưa
+    bool hasPushedState = false;
 };

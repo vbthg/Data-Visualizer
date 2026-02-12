@@ -6,6 +6,7 @@
 #include "Spring.h"          // <--- Thêm Spring
 #include "RoundedRectangleShape.h" // <--- Thay thế ConvexShape
 #include "Theme.h"
+#include "Squircle.h"
 
 namespace GUI
 {
@@ -48,6 +49,7 @@ namespace GUI
         void setTextColor(sf::Color normal, sf::Color hover, sf::Color pressed);
         void setTextColor(sf::Color color); // Set 1 màu cho cả 3
         void setOutline(float thickness, sf::Color color);
+        void setOpacity(float opacity);
 
         void applyPreset(ButtonPreset preset);
 
@@ -59,6 +61,8 @@ namespace GUI
         // Getters
         sf::Vector2f getSize() const { return size; }
         sf::Vector2f getPosition() const { return position; } // Trả về tâm nút
+        float getScale() const { return scaleSpring.position; }
+
         bool isHovering() const { return isHovered; }
 
     private:
@@ -68,7 +72,7 @@ namespace GUI
 
         // Components
         // Thay sf::ConvexShape bằng RoundedRectangleShape xịn xò
-        GUI::RoundedRectangleShape bgShape;
+        GUI::Squircle bgShape;
         sf::Text content;
 
         // Colors
@@ -76,6 +80,8 @@ namespace GUI
         ColorState textColors;
         sf::Color currentBgColor;
         sf::Color currentTextColor;
+
+        float opacityFactor = 1.0f; // 0.0f (Ẩn) -> 1.0f (Hiện nguyên bản)
 
         // States
         bool isHovered;
