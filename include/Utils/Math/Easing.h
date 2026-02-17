@@ -68,11 +68,23 @@ namespace Utils
 
             inline sf::Color lerpColor(const sf::Color& start, const sf::Color& end, float t)
             {
+                auto safeLerpChannel = [](float start, float end, float t) -> sf::Uint8
+                {
+                    float val = start + (end - start) * t;
+                    if (val < 0.0f) return 0;
+                    if (val > 255.0f) return 255; // Quan trọng: Khóa trần ở 255 thay vì bị tràn số
+                    return (sf::Uint8)val;
+                };
+
                 return sf::Color(
-                    (sf::Uint8)(start.r + (end.r - start.r) * t),
-                    (sf::Uint8)(start.g + (end.g - start.g) * t),
-                    (sf::Uint8)(start.b + (end.b - start.b) * t),
-                    (sf::Uint8)(start.a + (end.a - start.a) * t)
+                    safeLerpChannel(start.r, end.r, t),
+                    safeLerpChannel(start.g, end.g, t),
+                    safeLerpChannel(start.b, end.b, t),
+                    safeLerpChannel(start.a, end.a, t)
+//                    (sf::Uint8)(start.r + (end.r - start.r) * t),
+//                    (sf::Uint8)(start.g + (end.g - start.g) * t),
+//                    (sf::Uint8)(start.b + (end.b - start.b) * t),
+//                    (sf::Uint8)max(255.f, (float(start.a) + float(end.a - start.a) * t)
                 );
             }
 

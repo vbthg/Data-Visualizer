@@ -5,72 +5,103 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <cassert>
 
 namespace GUI
 {
     namespace Theme = Utils::Graphics::Theme;
 
-    MenuCard::MenuCard(int id, const std::string& title, const std::string& number, sf::Color themeColor)
-        : id(id), themeColor(themeColor), selected(false), expanded(false)
+    sf::Color applyAlpha(const sf::Color& color, float alphaMult) {
+        return sf::Color(color.r, color.g, color.b, (sf::Uint8)(color.a * alphaMult));
+    }
+
+    MenuCard::MenuCard(const CardConfig& conf)
+        : config(conf), selected(false), expanded(false), cardPos(CardPos::Single), globalAlpha(255.0f)
     {
         auto& res = ResourceManager::getInstance();
+        namespace Theme = Utils::Graphics::Theme;
+
+        // 1. Init Kích thước & Vị trí
+        currentSize = targetSize = config.initialSize;
+        currentPos = targetPos = {0.0f, 0.0f};
+
+        // 2. Setup Background
+        bgShape.setSize(currentSize);
+        bgShape.setCurvature(Theme::Style::SquircleCurvature);
+        bgShape.setOrigin(currentSize.x / 2.f, currentSize.y / 2.f);
+        bgShape.setFillColor(Theme::Color::Background);
+        bgShape.setRadius(0.f);
+
+        // 3. Setup Icon
+        if (config.iconTexture) {
+            config.iconTexture->setSmooth(true);
+            iconSprite.setTexture(*config.iconTexture);
+            sf::FloatRect iconBounds = iconSprite.getLocalBounds();
+            iconSprite.setOrigin(iconBounds.width / 2.f, iconBounds.height / 2.f);
+            iconSprite.setScale(0.f, 0.f);
+        }
+
+        // 4. Setup Texts
         sf::Font& fontBold = res.getFont("assets/fonts/font.ttf");
+
+        textNumber.setFont(fontBold);
+        textNumber.setString(config.number);
+        textNumber.setCharacterSize(30);
+        textNumber.setFillColor(Theme::Color::TextSecondary);
+        sf::FloatRect nb = textNumber.getLocalBounds();
+        textNumber.setOrigin(nb.left + nb.width/2.f, nb.top + nb.height/2.f);
+
+        textTitle.setFont(fontBold);
+        textTitle.setString(config.title);
+        textTitle.setCharacterSize(22);
+        textTitle.setFillColor(Theme::Color::TextPrimary);
+        sf::FloatRect tb = textTitle.getLocalBounds();
+        textTitle.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height/2.f);
+
+        textBigTitle.setFont(fontBold);
+        textBigTitle.setString(config.title);
+        textBigTitle.setCharacterSize(80);
+        textBigTitle.setFillColor(sf::Color::White);
+        sf::FloatRect btb = textBigTitle.getLocalBounds();
+        textBigTitle.setOrigin(btb.left + btb.width/2.f, btb.top + btb.height/2.f);
+        textBigTitle.setScale(0.f, 0.f);
+
+        // 5. Setup Buttons
         sf::Font& fontReg = res.getFont("assets/fonts/font.ttf");
 
-        // Setup Text
-        textNumber.setFont(fontBold); textNumber.setString(number);
-        textNumber.setCharacterSize(30); textNumber.setFillColor(Theme::Color::TextSecondary);
-
-        textTitle.setFont(fontBold); textTitle.setString(title);
-        textTitle.setCharacterSize(22); textTitle.setFillColor(Theme::Color::TextPrimary);
-
-        textBigTitle.setFont(fontBold); textBigTitle.setString(title);
-        textBigTitle.setCharacterSize(80); textBigTitle.setFillColor(sf::Color::White);
-
-        imgPlaceholder.setFillColor(sf::Color(255, 255, 255, 50));
-        imgPlaceholder.setSize({150.f, 300.f});
-
-        // Setup Buttons
         btnViewMore = new Button(fontReg, "View More", {100.f, 36.f});
         btnViewMore->applyPreset(ButtonPreset::Ghost);
         btnViewMore->setCornerRadius(18.f);
-        btnViewMore->setOutline(1.f, sf::Color::White);
-        btnViewMore->setTextColor(sf::Color::White);
+        btnViewMore->setOutline(1.f, sf::Color::Black);
+        btnViewMore->setTextColor(sf::Color::Black);
+        btnViewMore->setOpacity(0.0f);
 
         btnBack = new Button(fontBold, "Back", {80.f, 40.f});
         btnBack->applyPreset(ButtonPreset::Ghost);
-        btnBack->setTextColor(sf::Color::White);
+        btnBack->setTextColor(sf::Color::White); // Nút Back màu trắng trên nền tối khi expand
         btnBack->setOutline(1.f, sf::Color::White);
         btnBack->setCornerRadius(20.f);
+        btnBack->setOpacity(0.0f);
 
         btnStart = new Button(fontBold, "Start Visualization", {220.f, 60.f});
         btnStart->applyPreset(ButtonPreset::Clean);
         btnStart->setCornerRadius(30.f);
+        btnStart->setOpacity(0.0f);
 
-        // Init State
-        textOpacity = -1;
-        animTimer = 1.0f;
-        currentPos = targetPos = startPos = {0, 0};
-        currentSize = targetSize = startSize = {100, 100};
+        // 6. Init Callbacks (Gán nullptr cho an toàn)
+        onSelect = nullptr;
+        onViewMore = nullptr;
+        onStart = nullptr;
+        onBack = nullptr;
 
-        contentAlpha = 0.0f;
-        cornerRadius = Theme::Style::ItemRadius;
-        cardPos = CardPos::Middle;
+        // 7. Setup Physics
+        selectionSpring.stiffness = Theme::Animation::CardStiffness;
+        selectionSpring.damping = Theme::Animation::CardDamping;
+        selectionSpring.snapTo(0.0f);
 
-        currentBigTitlePos = {0, 0};
-        currentImgPos = {0, 0};
-
-        // BẢN CŨ: Mặc định trong suốt
-        bgShape.setCurvature(Theme::Style::SquircleCurvature);
-//        bgShape.setFillColor(sf::Color(255, 255, 255, 0));
-//        bgShape.setFillColor(sf::Color::Black);
-//        bgShape.setFillColor(sf::Color());
-
-        // Init Callbacks
-        actionSelect = nullptr;
-        actionViewMore = nullptr;
-        actionStart = nullptr;
-        actionBack = nullptr;
+        expansionSpring.stiffness = Theme::Animation::CardStiffness;
+        expansionSpring.damping = Theme::Animation::CardDamping;
+        expansionSpring.snapTo(0.0f);
     }
 
     MenuCard::~MenuCard()
@@ -79,261 +110,333 @@ namespace GUI
     }
 
     // --- SETTERS IMPLEMENTATION ---
-    void MenuCard::setOnSelect(std::function<void()> callback) { actionSelect = callback; }
-    void MenuCard::setOnViewMore(std::function<void()> callback) { actionViewMore = callback; }
-    void MenuCard::setOnStart(std::function<void()> callback) { actionStart = callback; }
-    void MenuCard::setOnBack(std::function<void()> callback) { actionBack = callback; }
+//    void MenuCard::setOnSelect(std::function<void()> callback) { actionSelect = callback; }
+//    void MenuCard::setOnViewMore(std::function<void()> callback) { actionViewMore = callback; }
+//    void MenuCard::setOnStart(std::function<void()> callback) { actionStart = callback; }
+//    void MenuCard::setOnBack(std::function<void()> callback) { actionBack = callback; }
 
-    void MenuCard::setCardPosition(CardPos pos, float radius) { cardPos = pos; cornerRadius = radius; }
+    void MenuCard::snapToTarget()
+    {
+        // 1. Gán giá trị ngay lập tức
+        currentPos = targetPos;
+        currentSize = targetSize;
+
+        // 2. Cập nhật Visual (Squircle)
+        bgShape.setPosition(currentPos);
+        bgShape.setSize(currentSize);
+
+        // 3. [QUAN TRỌNG] Tính lại tâm (Origin)
+        // Vì size thay đổi nên tâm cũng dịch chuyển. Nếu không set lại, hình sẽ bị lệch.
+        bgShape.setOrigin(currentSize.x / 2.0f, currentSize.y / 2.0f);
+    }
+
+//    void MenuCard::setCardPosition(CardPos pos, float radius) { cardPos = pos; cornerRadius = radius; }
+
+    void MenuCard::setCardPosition(CardPos pos)
+    {
+        this->cardPos = pos;
+        // Gọi updateLayout ngay để áp dụng góc bo mới (nếu đang ở trạng thái tĩnh)
+        updateLayout(selectionSpring.position, expansionSpring.position);
+    }
 
     void MenuCard::setTarget(const sf::Vector2f& pos, const sf::Vector2f& size)
     {
-        float epsilon = 0.5f;
-        bool posChanged = (std::abs(pos.x - targetPos.x) > epsilon || std::abs(pos.y - targetPos.y) > epsilon);
-        bool sizeChanged = (std::abs(size.x - targetSize.x) > epsilon || std::abs(size.y - targetSize.y) > epsilon);
-
-        if (posChanged || sizeChanged) {
-            startPos = currentPos; startSize = currentSize;
-            targetPos = pos; targetSize = size;
-            animTimer = 0.0f;
-        }
+        targetPos = pos;
+        targetSize = size;
     }
 
-    void MenuCard::setSelected(bool sel) { selected = sel; }
-    void MenuCard::setExpanded(bool exp) { expanded = exp; }
+    void MenuCard::setSelected(bool sel)
+    {
+        if (selected != sel)
+        {
+            selected = sel;
+            // [QUAN TRỌNG] Phải set target cho lò xo thì nó mới chạy!
+            selectionSpring.target = selected ? 1.0f : 0.0f;
+        }
+    }
+    void MenuCard::setExpanded(bool exp)
+    {
+        if (expanded != exp)
+        {
+            expanded = exp;
+            // [QUAN TRỌNG] Set target cho lò xo mở rộng
+            expansionSpring.target = expanded ? 1.0f : 0.0f;
+
+            // Nếu mở rộng thì mặc định là đang chọn luôn
+            if (expanded) setSelected(true);
+        }
+    }
 
     sf::FloatRect MenuCard::getGlobalBounds() const { return bgShape.getGlobalBounds(); }
 
     // --- HANDLE EVENT ---
     void MenuCard::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     {
-        if(expanded)
+//        assert(globalAlpha > 100.f);
+        if (globalAlpha < 50.0f)
         {
-            btnBack->handleEvent(event, window);
-            if(actionBack) btnBack->onClick = actionBack;
-
-            btnStart->handleEvent(event, window);
-            if(actionStart) btnStart->onClick = actionStart;
+//            std::cout << "Card ignored due to low alpha: " << globalAlpha << "\n";
             return;
         }
 
-        if(selected)
-        {
-            btnViewMore->handleEvent(event, window);
-            if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
-            {
-                if(btnViewMore->isHovering() && actionViewMore) actionViewMore();
-            }
+        // 1. Xử lý Start & Back (Khi đã Expand)
+        if (expanded && expansionSpring.position > 0.8f) {
+            // [ĐÃ SỬA] Gán callback trước, sau đó để nút tự xử lý logic click
+            if (onStart) btnStart->onClick = onStart;
+            btnStart->handleEvent(event, window);
+
+            if (onBack) btnBack->onClick = onBack;
+            btnBack->handleEvent(event, window);
+            return;
         }
 
-        if(!expanded && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
-        {
+        // 2. Xử lý View More (Khi chưa Expand)
+        if (selected && !expanded && selectionSpring.position > 0.8f) {
+            // [ĐÃ SỬA] Gán callback trước
+            if (onViewMore) btnViewMore->onClick = onViewMore;
+            btnViewMore->handleEvent(event, window);
+        }
+
+        // 3. Click Card to Select
+        if (!expanded && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
             sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-            if(bgShape.getGlobalBounds().contains(mPos))
+            sf::FloatRect bounds = bgShape.getGlobalBounds();
+
+            // [DEBUG 2] In ra tọa độ chuột và tọa độ thẻ
+//            std::cout << "Click Pos: " << mPos.x << ", " << mPos.y << "\n";
+//            std::cout << "Card Bounds: Left=" << bounds.left << ", Top=" << bounds.top
+//                  << ", W=" << bounds.width << ", H=" << bounds.height << "\n";
+
+            if (bounds.contains(mPos))
             {
-                if(!selected && actionSelect) actionSelect();
+//                std::cout << "-> HIT CARD!\n"; // Nếu thấy dòng này là logic click đúng
+                if (!selected)
+                {
+//                    std::cout << "-> SET SELECTED TRUE\n";
+                    setSelected(true);
+                    if (onSelect) onSelect();
+                }
+            }
+            else
+            {
+//                std::cout << "-> MISS\n"; // Click trượt
             }
         }
     }
 
-    // --- UPDATE (CÓ LOGIC BO GÓC MỚI) ---
+    // ---------------------------------------------------------
+    // UPDATE LAYOUT (Dùng Easing::lerp và Easing::lerpColor)
+    // ---------------------------------------------------------
+    void MenuCard::updateLayout(float selectT, float expandT)
+    {
+        sf::Vector2f center = currentPos;
+        float alphaMult = globalAlpha / 255.0f;
+
+        // --- 1. GÓC BO (CORNER MORPHING) ---
+        // Biến t dùng chung cho Màu sắc
+//        float rawT = std::max(selectT, expandT);
+        float t = std::max(selectT, expandT);
+//        float s
+        float r = Theme::Style::ItemRadius;
+        float baseTL = 0, baseTR = 0, baseBR = 0, baseBL = 0;
+
+        switch (cardPos) {
+            case CardPos::First:  baseTL = r; baseBL = r; break;
+            case CardPos::Last:   baseTR = r; baseBR = r; break;
+            case CardPos::Single: baseTL = r; baseTR = r; baseBR = r; baseBL = r; break;
+            case CardPos::Middle: break;
+        }
+
+        // Dùng Easing::lerp thay vì lambda tự viết
+        bgShape.setCornerRadius(
+            Utils::Math::Easing::lerp(baseTL, r, expandT),
+            Utils::Math::Easing::lerp(baseTR, r, expandT),
+            Utils::Math::Easing::lerp(baseBR, r, expandT),
+            Utils::Math::Easing::lerp(baseBL, r, expandT)
+        );
+
+        // --- 2. MÀU NỀN ---
+        // Dùng Easing::lerpColor chuẩn từ file Easing.h
+//        sf::C
+        sf::Color finalBg = Utils::Math::Easing::lerpColor(Theme::Color::TransparentColor, config.themeColor, t);
+        bgShape.setFillColor(applyAlpha(finalBg, alphaMult));
+
+        // --- 3. ICON ANIMATION ---
+        float iconOffsetY = -40.0f - (80.0f * expandT);
+        float iconScale = std::max(0.0f, selectT) + (0.5f * expandT);
+
+        iconSprite.setScale(iconScale, iconScale);
+        iconSprite.setPosition(center.x, center.y + iconOffsetY);
+        iconSprite.setColor(sf::Color(255, 255, 255, (sf::Uint8)(255 * alphaMult)));
+
+        // --- 4. TEXT NHỎ ---
+//        float smallTextAlpha = std::max(0.0f, selectT) * (1.0f - expandT) * alphaMult;
+        float smallTextAlpha = (1.0f - expandT) * alphaMult;
+        float slideY = 90.0f * selectT;
+
+        textNumber.setPosition(center.x, center.y + slideY - 15.f);
+        textNumber.setFillColor(sf::Color(0, 0, 0, (sf::Uint8)(15 * smallTextAlpha * 255)));
+
+        textTitle.setPosition(center.x, center.y + slideY + 15.f);
+        textTitle.setFillColor(sf::Color(0, 0, 0, (sf::Uint8)(255 * smallTextAlpha)));
+
+        // --- 5. TEXT LỚN (Expand) ---
+        float bigTitleAlpha = std::max(0.0f, expandT) * alphaMult;
+        textBigTitle.setPosition(center.x, center.y + iconOffsetY + 120.f);
+        textBigTitle.setScale(expandT, expandT);
+        textBigTitle.setFillColor(sf::Color(0, 0, 0, (sf::Uint8)(255 * bigTitleAlpha)));
+
+        // --- 6. BUTTONS ---
+        btnViewMore->setPosition({center.x, center.y + slideY + 65.f});
+        float viewMoreAlpha = std::max(0.0f, selectT - expandT) * globalAlpha;
+        btnViewMore->setOpacity(viewMoreAlpha);
+
+        btnStart->setPosition({center.x, center.y + 180.f});
+        float expandedBtnAlpha = std::max(0.0f, expandT) * globalAlpha;
+        btnStart->setOpacity(expandedBtnAlpha);
+
+        float halfW = currentSize.x / 2.0f;
+        float halfH = currentSize.y / 2.0f;
+        btnBack->setPosition({center.x - halfW + 60.f, center.y - halfH + 50.f});
+        btnBack->setOpacity(expandedBtnAlpha);
+    }
+
+
+    // ---------------------------------------------------------
+    // UPDATE LOOP (Dùng Smoothing::damp)
+    // ---------------------------------------------------------
     void MenuCard::update(float dt, sf::RenderWindow& window)
     {
-        // 1. Animation Di chuyển & Kích thước
-        animTimer += dt;
-        float t = std::min(animTimer / Theme::Animation::CardAnimDuration, 1.0f);
-        float easeT = Utils::Math::Easing::easeOutCubic(t);
+        // 1. Movement Physics
+        // Dùng Smoothing::damp từ thư viện của bạn
+        float moveSpeed = 0.001f;
 
-        currentPos.x = Utils::Math::Easing::lerp(startPos.x, targetPos.x, easeT);
-        currentPos.y = Utils::Math::Easing::lerp(startPos.y, targetPos.y, easeT);
-        currentSize.x = Utils::Math::Easing::lerp(startSize.x, targetSize.x, easeT);
-        currentSize.y = Utils::Math::Easing::lerp(startSize.y, targetSize.y, easeT);
+        currentPos.x = Utils::Math::Smoothing::damp(currentPos.x, targetPos.x, moveSpeed, dt);
+        currentPos.y = Utils::Math::Smoothing::damp(currentPos.y, targetPos.y, moveSpeed, dt);
+
+        currentSize.x = Utils::Math::Smoothing::damp(currentSize.x, targetSize.x, moveSpeed, dt);
+        currentSize.y = Utils::Math::Smoothing::damp(currentSize.y, targetSize.y, moveSpeed, dt);
 
         bgShape.setPosition(currentPos);
         bgShape.setSize(currentSize);
+        bgShape.setOrigin(currentSize.x / 2.f, currentSize.y / 2.f);
 
-        // 2. LOGIC BO GÓC THÔNG MINH (Smart Corner Radius Interpolation)
-        // Xác định bán kính cơ bản (khi chưa mở rộng) cho 4 góc
-        float baseR = cornerRadius;
-        float rTL = 0, rTR = 0, rBR = 0, rBL = 0;
+        // 2. Effects Physics
+        selectionSpring.update(dt);
+        expansionSpring.update(dt);
 
-        switch(cardPos) {
-            case CardPos::First:  rTL = baseR; rBL = baseR; break; // Bo trái
-            case CardPos::Last:   rTR = baseR; rBR = baseR; break; // Bo phải
-            case CardPos::Single: rTL = rTR = rBR = rBL = baseR; break; // Bo hết
-            case CardPos::Middle: break; // Vuông
-        }
+        // 3. Update Layout
+        updateLayout(selectionSpring.position, expansionSpring.position);
 
-        if (expanded)
-        {
-            // Đích đến: Bo tròn toàn bộ theo chuẩn của Bảng (CardRadius)
-            float targetR = Theme::Style::CardRadius;
-
-            // Tính toán tiến độ bo góc (Radius Progress)
-            // * 2.0f: Tăng tốc gấp đôi so với di chuyển -> Bo xong khi mới đi được 50% quãng đường
-            // Clamp ở 1.0f để không bị vượt quá
-            float r_t = std::min(t * 2.0f, 1.0f);
-            float r_ease = Utils::Math::Easing::easeOutCubic(r_t);
-
-            // Nội suy từng góc: Từ giá trị ban đầu -> Giá trị đích
-            // Nếu rTL ban đầu đã bằng targetR (ví dụ thẻ First), lerp sẽ trả về giữ nguyên -> Đúng yêu cầu.
-            float curTL = Utils::Math::Easing::lerp(rTL, targetR, r_ease);
-            float curTR = Utils::Math::Easing::lerp(rTR, targetR, r_ease);
-            float curBR = Utils::Math::Easing::lerp(rBR, targetR, r_ease);
-            float curBL = Utils::Math::Easing::lerp(rBL, targetR, r_ease);
-
-            bgShape.setCornerRadius(curTL, curTR, curBR, curBL);
-        }
-        else
-        {
-            // Trạng thái bình thường: Giữ nguyên hình dáng ban đầu
-            bgShape.setCornerRadius(rTL, rTR, rBR, rBL);
-        }
-
-        // 3. Logic Màu & Alpha (Giữ nguyên)
-
-        if(ghostMode) bgShape.setFillColor(sf::Color(255, 255, 255, 0));
-        else
-        {
-            sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color(255, 255, 255, 0);
-//            bgShape.setFillColor(targetColor);
-            bgShape.setFillColor(Utils::Math::Smoothing::dampColor(bgShape.getFillColor(), targetColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
-        }
-
-        float desiredAlpha = (selected || expanded) ? 255.0f : 0.0f;
-        contentAlpha = Utils::Math::Smoothing::damp(contentAlpha, desiredAlpha, 0.3f, dt, 500.0f);
-
-        float midX = currentPos.x + currentSize.x / 2.0f;
-
-        if(expanded) {
-            sf::Vector2f targetBigTitlePos = {currentPos.x + 80.f, currentPos.y + 100.f};
-            sf::Vector2f targetImgPos = {midX - imgPlaceholder.getSize().x/2, currentPos.y + 250.f};
-
-            currentBigTitlePos.x = Utils::Math::Smoothing::damp(currentBigTitlePos.x, targetBigTitlePos.x, 0.08f, dt);
-            currentBigTitlePos.y = Utils::Math::Smoothing::damp(currentBigTitlePos.y, targetBigTitlePos.y, 0.08f, dt);
-            currentImgPos.x = Utils::Math::Smoothing::damp(currentImgPos.x, targetImgPos.x, 0.1f, dt);
-            currentImgPos.y = Utils::Math::Smoothing::damp(currentImgPos.y, targetImgPos.y, 0.1f, dt);
-
-            textBigTitle.setPosition(currentBigTitlePos);
-            imgPlaceholder.setPosition(currentImgPos);
-
-            btnBack->setPosition({currentPos.x + 50.f, currentPos.y + 50.f});
-            btnBack->update(window, dt);
-            btnStart->setPosition({midX - 110.f, currentPos.y + 600.f});
-            btnStart->update(window, dt);
-        } else {
-            currentBigTitlePos = {currentPos.x + 200.f, currentPos.y + 100.f};
-            currentImgPos = {midX, currentPos.y + 300.f};
-
-            // Tính tỉ lệ alpha (0.0 -> 1.0)
-//            float alphaFactor = currentOpacity / 255.0f;
-
-            sf::Color numColor = (selected) ? sf::Color(255, 255, 255, 150) : themeColor;
-            if(!fillOnSelect) numColor = sf::Color::Black;
-            if(textOpacity > -1) numColor.a = textOpacity;
-
-            textNumber.setFillColor(Utils::Math::Smoothing::dampColor(textNumber.getFillColor(), numColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
-
-            sf::FloatRect nb = textNumber.getLocalBounds();
-            textNumber.setOrigin(nb.left + nb.width/2.f, nb.top + nb.height/2.f);
-            textNumber.setPosition(midX, currentPos.y + 40.f + nb.height/2.f);
-
-            sf::Color titleColor = (selected) ? sf::Color::White : Theme::Color::TextPrimary;
-            if(!fillOnSelect) titleColor = sf::Color::Black;
-            if(textOpacity > -1) titleColor.a = textOpacity;
-
-            textTitle.setFillColor(Utils::Math::Smoothing::dampColor(textTitle.getFillColor(), titleColor, Theme::Animation::ColorSmoothing, dt, Theme::Animation::ColorSnapSpeed));
-
-            sf::FloatRect tb = textTitle.getLocalBounds();
-            textTitle.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height/2.f);
-            textTitle.setPosition(midX, currentPos.y + 90.f + tb.height/2.f);
-
-            // [SỬA ĐOẠN NÀY] LOGIC NÚT VIEW MORE
-            // -----------------------------------------------------
-
-            // 1. Tính toán Opacity đích cho nút
-            float targetBtnAlpha = 255.0f;
-
-            // Nếu CategoriesState đang yêu cầu fade (textOpacity != -1) -> Gán theo nó
-            if (textOpacity > -1) {
-                targetBtnAlpha = textOpacity;
-            }
-
-            // Nếu Card này KHÔNG được chọn -> Thì nút cũng phải ẩn (Alpha = 0)
-            if (!selected) {
-                targetBtnAlpha = 0.0f;
-            }
-
-            // 2. Apply vào nút
-            // Button sẽ tự lo việc damp/lerp bên trong nó dựa trên opacityFactor
-            btnViewMore->setOpacity(targetBtnAlpha);
-            btnViewMore->setPosition({midX - 50.f, currentPos.y + 180.f});
-
-            // 3. [QUAN TRỌNG] Luôn UPDATE nút
-            // Bỏ cái if(contentAlpha > 10.f) bao quanh đi.
-            // Ta cần nút update liên tục để chạy lò xo scale và màu sắc cho hết hành trình.
+        // 4. Update Buttons
+        if (selectionSpring.position > 0.01f && expansionSpring.position < 0.99f) {
             btnViewMore->update(window, dt);
         }
+        if (expansionSpring.position > 0.01f) {
+            btnStart->update(window, dt);
+            btnBack->update(window, dt);
+        }
+
+        // [DEBUG] KIỂM TRA GIÁ TRỊ LÒ XO
+        // Chỉ in ra log của Card đầu tiên (ID=0) để đỡ bị spam console
+//        if (config.id == 0)
+//        {
+//            // Kiểm tra lỗi NaN (Not a Number - Lỗi nổ vật lý)
+//            if (std::isnan(selectionSpring.position) || std::isnan(expansionSpring.position))
+//            {
+//                std::cout << "[CRITICAL ERROR] Spring bị NaN! Kiểm tra lại dt hoặc stiffness/damping.\n";
+//            }
+//
+//            // Chỉ in khi lò xo đang di chuyển (chưa đến đích)
+//            bool isMoving = (std::abs(selectionSpring.target - selectionSpring.position) > 0.001f) ||
+//                            (std::abs(expansionSpring.target - expansionSpring.position) > 0.001f);
+//
+//            if (isMoving)
+//            {
+//                std::cout << "Card 0 | "
+//                          << "Select: " << selectionSpring.position << " -> " << selectionSpring.target
+//                          << " | Expand: " << expansionSpring.position << " -> " << expansionSpring.target
+//                          << "\n";
+//            }
+//        }
     }
 
+    // --- DRAW & EVENT (Giữ nguyên logic) ---
     void MenuCard::draw(sf::RenderWindow& window)
     {
+        sf::Vector2f viewMorePos = btnViewMore -> getPosition();
+//        std::cout <<  viewMorePos.x << " " << viewMorePos.y << "\n";
+
+//        std::cout << currentPos.x << " " << currentPos.y <<
+
+        if (globalAlpha < 1.0f) return;
+
         window.draw(bgShape);
-        if(expanded) {
-            window.draw(textBigTitle);
-            window.draw(imgPlaceholder);
-            btnBack->draw(window);
-            btnStart->draw(window);
-        } else {
+
+        if (expansionSpring.position < 0.99f) {
             window.draw(textNumber);
             window.draw(textTitle);
-            if(contentAlpha > 10.f) btnViewMore->draw(window);
+        }
+
+        if (expansionSpring.position > 0.01f) {
+            window.draw(textBigTitle);
+        }
+
+        window.draw(iconSprite);
+
+        if (selectionSpring.position > 0.05f && expansionSpring.position < 0.95f) {
+            btnViewMore->draw(window);
+        }
+        if (expansionSpring.position > 0.05f) {
+            btnStart->draw(window);
+            btnBack->draw(window);
+
         }
     }
 
-    const sf::Text& MenuCard::getTitleText() const
-    {
-        return textTitle;
-    }
+//    const sf::Text& MenuCard::getTitleText() const
+//    {
+//        return textTitle;
+//    }
+//
+//    void MenuCard::setTextVisible(bool visible)
+//    {
+//        // Chỉnh Alpha của Title
+//        sf::Color cTitle = textTitle.getFillColor();
+//        cTitle.a = visible ? 255 : 0;
+//        textTitle.setFillColor(cTitle);
+//
+//        // (Tùy chọn) Ẩn luôn số thứ tự (01, 02...) nếu muốn sạch sẽ
+//        sf::Color cNum = textNumber.getFillColor();
+//        cNum.a = visible ? 255 : 0; // Hoặc để 150 nếu muốn mờ mờ
+//        textNumber.setFillColor(cNum);
+//    }
 
-    void MenuCard::setTextVisible(bool visible)
-    {
-        // Chỉnh Alpha của Title
-        sf::Color cTitle = textTitle.getFillColor();
-        cTitle.a = visible ? 255 : 0;
-        textTitle.setFillColor(cTitle);
-
-        // (Tùy chọn) Ẩn luôn số thứ tự (01, 02...) nếu muốn sạch sẽ
-        sf::Color cNum = textNumber.getFillColor();
-        cNum.a = visible ? 255 : 0; // Hoặc để 150 nếu muốn mờ mờ
-        textNumber.setFillColor(cNum);
-    }
-
-    void MenuCard::setGhostMode(bool enabled)
-    {
-        // 1. Nếu trạng thái không đổi thì không làm gì cả (để tránh spam setFillColor liên tục)
-        if (this->ghostMode == enabled) return;
-
-        this->ghostMode = enabled;
-
-        // 2. [FIX QUAN TRỌNG] Xử lý khi TẮT Ghost Mode
-        if (!enabled)
-        {
-            // Khi vừa tắt Ghost (vừa chui vào bảng), ta muốn nó ĐẶC ngay lập tức.
-            // Ta tính toán màu đích mong muốn (giống logic trong update)
-            sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color::White;
-
-            // Gán TRỰC TIẾP, bỏ qua hàm dampColor để không bị fade từ trong suốt lên
-            bgShape.setFillColor(targetColor);
-        }
-
-        // Nếu BẬT Ghost Mode (enabled == true), ta cứ để hàm update() lo việc fade out từ từ
-        // hoặc nếu muốn tàng hình ngay lập tức thì cũng gán luôn ở đây:
-        else
-        {
-            bgShape.setFillColor(sf::Color::Transparent);
-        }
-    }
+//    void MenuCard::setGhostMode(bool enabled)
+//    {
+//        // 1. Nếu trạng thái không đổi thì không làm gì cả (để tránh spam setFillColor liên tục)
+//        if (this->ghostMode == enabled) return;
+//
+//        this->ghostMode = enabled;
+//
+//        // 2. [FIX QUAN TRỌNG] Xử lý khi TẮT Ghost Mode
+//        if (!enabled)
+//        {
+//            // Khi vừa tắt Ghost (vừa chui vào bảng), ta muốn nó ĐẶC ngay lập tức.
+//            // Ta tính toán màu đích mong muốn (giống logic trong update)
+//            sf::Color targetColor = (selected || expanded) ? themeColor : sf::Color::White;
+//
+//            // Gán TRỰC TIẾP, bỏ qua hàm dampColor để không bị fade từ trong suốt lên
+//            bgShape.setFillColor(targetColor);
+//        }
+//
+//        // Nếu BẬT Ghost Mode (enabled == true), ta cứ để hàm update() lo việc fade out từ từ
+//        // hoặc nếu muốn tàng hình ngay lập tức thì cũng gán luôn ở đây:
+//        else
+//        {
+//            bgShape.setFillColor(sf::Color::Transparent);
+//        }
+//    }
 
     bool MenuCard::isSettled() const
     {
@@ -349,20 +452,26 @@ namespace GUI
         return posDone && sizeDone;
     }
 
-    void MenuCard::setTextOpacity(float alpha)
+    void MenuCard::setOpacity(float alpha)
     {
-        // Giới hạn giá trị từ 0 đến 255
-//        if(alpha < 0.0f) alpha = 0.0f;
-        if(alpha > 255.0f) alpha = 255.0f;
-
-        textOpacity = alpha;
+        // Giới hạn giá trị từ 0 đến 255 để tránh lỗi hiển thị màu
+        globalAlpha = std::max(0.0f, std::min(alpha, 255.0f));
     }
 
-    void MenuCard::setSelectionStyle(bool fillBackground)
-    {
-        this->fillOnSelect = fillBackground;
-        if(!fillOnSelect) btnViewMore->setTextColor(sf::Color::Black);
-    }
+//    void MenuCard::setTextOpacity(float alpha)
+//    {
+//        // Giới hạn giá trị từ 0 đến 255
+////        if(alpha < 0.0f) alpha = 0.0f;
+//        if(alpha > 255.0f) alpha = 255.0f;
+//
+//        textOpacity = alpha;
+//    }
+
+//    void MenuCard::setSelectionStyle(bool fillBackground)
+//    {
+//        this->fillOnSelect = fillBackground;
+//        if(!fillOnSelect) btnViewMore->setTextColor(sf::Color::Black);
+//    }
 }
 
 

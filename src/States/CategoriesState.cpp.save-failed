@@ -157,12 +157,10 @@ void CategoriesState::init()
         cards.push_back(card);
     };
 
-    sf::Color themeColor = sf::Color(255, 255, 255, 0);
-
     // Tạo các thẻ với cùng một màu nền (loại bỏ màu xanh, cam, tím)
-    createCard(0, "Linear Structures", "01", "linear_structures_icon", themeColor);
-    createCard(1, "Tree Structures",   "02", "tree_structures_icon", themeColor);
-    createCard(2, "Advanced Algo",     "03", "advanced_algo_icon", themeColor);
+    createCard(0, "Linear Structures", "01", "linear_structures_icon", sf::Color::Black);
+    createCard(1, "Tree Structures",   "02", "tree_structures_icon", sf::Color::White);
+    createCard(2, "Advanced Algo",     "03", "advanced_algo_icon", sf::Color::White);
 
     selectedIndex = -1;
     isTransitioning = false;

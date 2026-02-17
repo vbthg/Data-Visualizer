@@ -65,11 +65,15 @@ namespace Utils
                 // 1. Bảng Categories (960x460)
                 constexpr float CatBoardW = 960.0f;
                 constexpr float CatBoardH = 460.0f;
+                constexpr float CatCardW = 320.0f;
+                constexpr float CatCardH = 460.0f;
                 constexpr float CatRadius = 48.0f;
 
                 // 2. Bảng Data Structures (1200x580)
                 constexpr float AlgoBoardW = 1200.0f;
                 constexpr float AlgoBoardH = 580.0f;
+                constexpr float AlgoCardW = 300.0f;
+                constexpr float AlgoCardH = 580.0f;
                 constexpr float AlgoRadius = 48.0f;
 
                 // Item con (Thẻ con bên trong bảng)
@@ -96,7 +100,9 @@ namespace Utils
                 const sf::Color Shadow = sf::Color(0, 0, 0, 30); // Bóng 30% (Chuẩn cũ)
 
                 // -- Minimalist Style (Mới) --
+//                const sf::Color CardSurface = sf::Color::White;
                 const sf::Color CardSurface = sf::Color::White;
+                const sf::Color TransparentColor = sf::Color(255, 255, 255, 0);
                 const sf::Color CardSurfaceHover = sf::Color(252, 252, 254);
 
                 // Màu chữ

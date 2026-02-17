@@ -8,6 +8,7 @@
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <algorithm>
+#include <random>    // Để dùng std::random_device, std::mt19937
 
 namespace Theme = Utils::Graphics::Theme;
 
@@ -153,6 +154,30 @@ void MenuState::init()
     bgBoard.setPosition(startX, startY);
     bgBoard.setCurvature(Theme::Style::SquircleCurvature); // Siêu elip cho mượt
 
+
+
+
+    // --- 1. CHUẨN BỊ BẢNG MÀU (PALETTE) ---
+    // Danh sách 8 màu Pastel dịu mắt, đảm bảo khác nhau
+    std::vector<sf::Color> palette = {
+        sf::Color(255, 107, 107), // Đỏ san hô (Coral Red)
+        sf::Color(72, 219, 251),  // Xanh dương sáng (Light Blue)
+        sf::Color(255, 159, 67),  // Cam (Orange)
+        sf::Color(29, 209, 161),  // Xanh ngọc (Teal)
+        sf::Color(95, 39, 205),   // Tím đậm (Deep Purple)
+        sf::Color(254, 202, 87),  // Vàng (Yellow)
+        sf::Color(255, 107, 129), // Hồng (Pink)
+        sf::Color(84, 160, 255)   // Xanh biển (Blue)
+    };
+
+    // --- 2. XÁO TRỘN MÀU (SHUFFLE) ---
+    // Dùng random device để mỗi lần mở lên là một thứ tự khác nhau
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(palette.begin(), palette.end(), g);
+
+
+
     // --- CREATE CARDS (Theo danh sách thuật toán) ---
     // Xóa thẻ cũ (nếu có)
     for(auto c : cards) delete c;
@@ -168,38 +193,62 @@ void MenuState::init()
     // Tạo thẻ động
     for (const auto& algo : info.algos)
     {
-        // Truyền ID, Tên, Số, Màu của Category hiện tại
-        cards.push_back(new GUI::MenuCard(algo.id, algo.name, algo.number, info.color));
+        // [SỬA 1] Cấu hình Config thay vì truyền tham số lẻ tẻ
+        GUI::CardConfig cfg;
+        cfg.id = algo.id;
+        cfg.title = algo.name;
+        cfg.number = algo.number;
+        // Tạm thời chưa có icon cho từng thuật toán, ta dùng icon mặc định hoặc thêm logic icon
+        // Ví dụ: lấy icon từ Category hoặc Placeholder
+        // cfg.iconTexture = &res.getTexture("assets/icons/default_algo.png");
+        // Nếu chưa có texture, bạn có thể null check trong MenuCard hoặc trỏ tạm vào 1 texture nào đó
+        // Giả sử ta lấy texture đầu tiên của category làm mẫu
+        if (currentCategory == 0) cfg.iconTexture = &res.getTexture("assets/icons/linear.png");
+        else if (currentCategory == 1) cfg.iconTexture = &res.getTexture("assets/icons/tree.png");
+        else cfg.iconTexture = &res.getTexture("assets/icons/graph.png");
+
+        cfg.themeColor = palette[index % palette.size()];
+        // Kích thước khởi tạo của thẻ Algo
+        cfg.initialSize = {Theme::Style::AlgoCardW, Theme::Style::AlgoCardH};
+
+
+        // [SỬA 2] New MenuCard với config
+        cards.push_back(new GUI::MenuCard(cfg));
         auto c = cards.back();
 
+
+        // [SỬA 3] Logic setCardPosition (Chỉ truyền Enum, không truyền radius)
         GUI::CardPos pos = GUI::CardPos::Middle;
+        if (totalCount == 1) pos = GUI::CardPos::Single;
+        else if (index == 0) pos = GUI::CardPos::First;
+        else if (index == totalCount - 1) pos = GUI::CardPos::Last;
 
-        if (totalCount == 1) {
-            // Trường hợp đặc biệt: Chỉ có 1 thẻ duy nhất -> Bo tròn cả 4 góc
-            pos = GUI::CardPos::Single; // (Nếu enum của bạn có Single, không thì dùng First/Last tùy logic)
-            // Hoặc nếu không có Single thì thường logic vẽ sẽ tự xử lý hoặc coi như First
-            // Nhưng thường bảng DSA sẽ có >= 2 thẻ.
-        }
-        else if (index == 0) {
-            pos = GUI::CardPos::First; // Thẻ đầu: Bo trái
-        }
-        else if (index == totalCount - 1) {
-            pos = GUI::CardPos::Last;  // Thẻ cuối: Bo phải
-        }
+        c->setCardPosition(pos); // Bỏ tham số radius đi
 
-        c->setCardPosition(pos, Theme::Style::ItemRadius);
 
-        // Set Target 1 lần (Tối ưu như đã bàn)
-        sf::Vector2f startPos = {currentX, startY + Theme::Animation::MenuSlideDistance}; // Vị trí thấp
-        c->setTarget(startPos, {cardW, containerH});         // Size chuẩn
+        // [SỬA 4] Set Target ban đầu (Hiệu ứng trượt lên)
+        // Vị trí thấp hơn bình thường để trượt lên
+        float startY_Offset = startY + 100.0f;
 
-        c->setTextOpacity(0.f);
+        // Lưu ý: setTarget nhận vị trí TÂM (Center), không phải Top-Left
+        // startX + index*cardW là Top-Left của cột
+        // Tâm X = TopLeftX + Width/2
+        float centerX = currentX + cardW/2.0f;
+        float centerY = startY_Offset + containerH/2.0f;
+
+        c->setTarget({centerX, centerY}, {cardW, containerH});
+
+        // [SỬA 5] Dùng setOpacity thay vì setTextOpacity
+        c->setOpacity(0.0f);
 
         // Teleport
-        c->update(100.0f, window);
-
+        c->snapToTarget(); // Dùng hàm mới snapToTarget
 
         currentX += cardW;
+        index++; // Đừng quên tăng index
+
+
+
     }
 
     // --- INIT STATES ---
@@ -274,15 +323,19 @@ void MenuState::updateLayout(float dt)
             {
                 // Thẻ Hero chiếm trọn bảng 1200x580
 //                c->setBackgroundVisible(true);
-                c->setTarget({startX, startY}, {containerW, containerH});
+                // Target là TÂM của bảng
+                float centerX = startX + containerW / 2.0f;
+                float centerY = startY + containerH / 2.0f;
+                c->setTarget({centerX, centerY}, {containerW, containerH});
                 c->setExpanded(true);
+                c->setOpacity(255.0f); // Đảm bảo rõ nét
             }
             else
             {
                 // Các thẻ khác trượt ra ngoài
-                c->setGhostMode(true);
-                float offX = (c->getId() < expandedCard->getId()) ? startX - 300.f : startX + containerW + 300.f;
-                c->setTarget({offX, startY}, {containerW / 4.f, containerH});
+//                c->setGhostMode(true);
+                float offX = (c->getId() < expandedCard->getId()) ? startX + (containerW / 8.f) - 300.f : startX + containerW + 300.f;
+                c->setTarget({offX, startY + containerH / 2.f}, {containerW / 4.f, containerH});
                 c->setExpanded(false);
 
             }
@@ -299,23 +352,11 @@ void MenuState::updateLayout(float dt)
 
         for(int i = 0; i < (int)cards.size(); ++i)
         {
-//            cards[i]->setGhostMode(false);
-            // --- [LOGIC MỚI] KIỂM TRA VÙNG AN TOÀN (SỬ DỤNG getGlobalBounds) ---
+            // Tính Tâm
+            float centerX = currentX + w / 2.0f;
+            float centerY = startY + containerH / 2.0f;
 
-            // 1. Lấy khung bao của thẻ hiện tại
-            sf::FloatRect bounds = cards[i]->getGlobalBounds();
-
-            // 2. Kiểm tra xem thẻ có nằm trọn trong bảng không?
-            // bounds.left  : Tương đương getPosition().x
-            // bounds.width : Tương đương getSize().x
-            bool isFullyInside = (bounds.left >= startX - 2.0f) &&
-                                 (bounds.left + bounds.width <= startX + containerW + 2.0f);
-
-            // 3. Set Ghost Mode
-            cards[i]->setGhostMode(!isFullyInside);
-
-
-            cards[i]->setTarget({currentX, startY}, {w, containerH});
+            cards[i]->setTarget({centerX, centerY}, {w, containerH});
             cards[i]->setSelected(i == selectedIndex);
             cards[i]->setExpanded(false);
 
@@ -323,7 +364,7 @@ void MenuState::updateLayout(float dt)
             if(i == 0) pos = GUI::CardPos::First;
             else if(i == (int)cards.size() - 1) pos = GUI::CardPos::Last;
 
-            cards[i]->setCardPosition(pos, cornerRadius);
+            cards[i]->setCardPosition(pos);
 
             currentX += w;
         }
@@ -393,10 +434,11 @@ void MenuState::handleInput(sf::Event& event)
         };
 
         // Gán Callbacks (Bắt buộc để nút hoạt động)
-        cards[i]->setOnSelect(onSelect);
-        cards[i]->setOnViewMore(onViewMore);
-        cards[i]->setOnStart(onStart);
-        cards[i]->setOnBack(onBack);
+        // Gán Callbacks (Sửa từ hàm set... thành gán biến)
+        cards[i]->onSelect = onSelect;
+        cards[i]->onViewMore = onViewMore;
+        cards[i]->onStart = onStart;
+        cards[i]->onBack = onBack;
 
         cards[i]->handleEvent(event, window);
     }
@@ -559,16 +601,17 @@ void MenuState::updateInTransition(float dt)
             // A. FADE IN (Hiện dần)
             float alpha = ease * 255.0f;
 //            cards[i]->setOpacity(alpha);
-            cards[i]->setTextOpacity(alpha);
+            cards[i]->setOpacity(alpha);
 
             // B. SLIDE UP (Set lại target về vị trí chuẩn)
             // Chỉ cần set 1 lần hoặc set liên tục đều được vì MenuCard damp vị trí
-            float finalX = startX + i * cardW;
+            float finalCenterX = startX + i * cardW + cardW/2.0f;
+            float finalCenterY = startY + containerH/2.0f;
 
             // Set Target về Y chuẩn (startY)
-            cards[i]->setTarget({finalX, startY}, {cardW, containerH});
+            cards[i]->setTarget({finalCenterX, finalCenterY}, {cardW, containerH});
         }
-        else cards[i]->setTextOpacity(0.0f);
+        else cards[i]->setOpacity(0.0f);
 
         // Update physics của card
         cards[i]->update(dt, window);
@@ -596,7 +639,7 @@ void MenuState::updateInTransition(float dt)
         // Finalize state
         for(auto c : cards) {
 //            c->setOpacity(255.0f);
-            c->setTextOpacity(255.0f);
+            c->setOpacity(255.0f);
         }
         subTitleText.setFillColor(Theme::Color::TextSecondary);
     }

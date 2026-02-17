@@ -2,100 +2,97 @@
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <string>
+
 #include "Button.h"
 #include "Squircle.h"
+#include "Spring.h"
 #include "Utils/Graphics/Theme.h"
 
 namespace GUI
 {
+    // [1] Struct cấu hình
+    struct CardConfig {
+        int id;
+        std::string title;
+        std::string number;
+        sf::Texture* iconTexture; // Quan trọng: Dùng Texture pointer
+        sf::Color themeColor;
+
+        // [MỚI] Kích thước khởi tạo (MenuState sẽ truyền vào)
+        sf::Vector2f initialSize;
+    };
+
     enum class CardPos { First, Middle, Last, Single };
 
     class MenuCard
     {
     public:
-        MenuCard(int id, const std::string& title, const std::string& number, sf::Color themeColor);
+        MenuCard(const CardConfig& config); // Constructor nhận Config
         ~MenuCard();
-
-        // --- SETTERS: Gán hành động (Callbacks) ---
-        void setOnSelect(std::function<void()> callback);
-        void setOnViewMore(std::function<void()> callback);
-        void setOnStart(std::function<void()> callback);
-        void setOnBack(std::function<void()> callback);
-
-        // Layout & State
-        void setCardPosition(CardPos pos, float radius);
-        void setTarget(const sf::Vector2f& pos, const sf::Vector2f& size);
-        void setSelected(bool sel);
-        void setExpanded(bool exp);
-
-        // --- HANDLE EVENT: Giờ chỉ cần Event và Window ---
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
 
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);
+        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
 
-        // Getters
-        sf::FloatRect getGlobalBounds() const;
-        int getId() const { return id; }
-        sf::Color getThemeColor() const { return themeColor; }
-
-        // [MỚI] Lấy đối tượng Text để CategoriesState tạo "diễn viên đóng thế"
-        const sf::Text& getTitleText() const;
-
-        // [MỚI] Ẩn/Hiện text thật trên thẻ (để text đóng thế diễn thay)
-        void setTextVisible(bool visible);
-
-        void setGhostMode(bool enabled);
-
-        // [THÊM DÒNG NÀY] Hàm set độ mờ
-        void setTextOpacity(float alpha);
-
+        // --- Logic Di chuyển & Trạng thái ---
+        void setTarget(const sf::Vector2f& pos, const sf::Vector2f& size);
+        void snapToTarget();
         bool isSettled() const;
 
-        // false: Nền giữ nguyên/trắng, Chữ đổi màu theme (Dùng cho Categories)
-        void setSelectionStyle(bool fillBackground);
+        void setCardPosition(CardPos pos);
+        void setSelected(bool selected);
+        bool isSelected() const { return selected; }
+
+        void setExpanded(bool expanded);
+        bool isExpanded() const { return expanded; }
+
+        void setOpacity(float alpha);
+
+        // Getters
+        sf::Vector2f getSize() const { return currentSize; }
+        sf::Vector2f getPosition() const { return currentPos; }
+        sf::FloatRect getGlobalBounds() const;
+        const sf::Text& getTitleText() const { return textTitle; }
+        int getId() const { return config.id; }
+        sf::Color getThemeColor() const { return config.themeColor; }
+//        const sf::Text& getTitleText() const;
+
+        // Callbacks
+        std::function<void()> onSelect;
+        std::function<void()> onViewMore;
+        std::function<void()> onStart;
+        std::function<void()> onBack;
 
     private:
-        int id;
-        sf::Color themeColor;
+        void updateLayout(float selectT, float expandT);
+
+    private:
+        // [2] QUAN TRỌNG: Phải khai báo biến config ở đây thì .cpp mới dùng được
+        CardConfig config;
+
         bool selected;
         bool expanded;
-        bool ghostMode = false;
-        bool fillOnSelect = true; // Mặc định là true (như cũ)
-
-        // Callbacks (Lưu trữ hàm)
-        std::function<void()> actionSelect;
-        std::function<void()> actionViewMore;
-        std::function<void()> actionStart;
-        std::function<void()> actionBack;
-
-        // Animation Vars
-        float animTimer;
-        sf::Vector2f startPos, currentPos, targetPos;
-        sf::Vector2f startSize, currentSize, targetSize;
-
-        // Visuals
-        float contentAlpha;
-        float cornerRadius;
         CardPos cardPos;
 
-        Squircle bgShape;
-
-        // Content
+        // Visual Components
+        GUI::Squircle bgShape;
         sf::Text textNumber;
         sf::Text textTitle;
+        sf::Sprite iconSprite;
+
+        // Expanded Components
         sf::Text textBigTitle;
-        sf::RectangleShape imgPlaceholder;
-
-        sf::Vector2f currentBigTitlePos;
-        sf::Vector2f currentImgPos;
-
-        // Buttons
         Button* btnViewMore;
-        Button* btnBack;
         Button* btnStart;
+        Button* btnBack;
 
-        // [THÊM DÒNG NÀY] Biến lưu độ mờ hiện tại (mặc định 255)
-        float textOpacity = -1;
+        // Physics
+        Utils::Physics::Spring selectionSpring;
+        Utils::Physics::Spring expansionSpring;
+
+        sf::Vector2f currentPos, targetPos;
+        sf::Vector2f currentSize, targetSize;
+
+        float globalAlpha;
     };
 }

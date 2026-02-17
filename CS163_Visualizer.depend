@@ -8,7 +8,7 @@
 	<cmath>
 	<algorithm>
 
-1769571597 source:d:\cs163_visualizer\cs163_visualizer.cpp
+1771177731 source:d:\cs163_visualizer\cs163_visualizer.cpp
 	"Application.h"
 
 1761058563 c:\users\lenovo\documents\libraries\sfml-2.6.1\include\sfml\graphics.hpp
@@ -508,7 +508,7 @@
 	"IntroState.h"
 	<iostream>
 
-1770835996 source:d:\cs163_visualizer\src\gui\menucard.cpp
+1771264600 source:d:\cs163_visualizer\src\gui\menucard.cpp
 	"MenuCard.h"
 	"ResourceManager.h"
 	"Smoothing.h"
@@ -516,16 +516,18 @@
 	<iostream>
 	<cmath>
 	<algorithm>
+	<cassert>
 
-1770227103 d:\cs163_visualizer\include\gui\menucard.h
+1771177276 d:\cs163_visualizer\include\gui\menucard.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
 	"Button.h"
 	"Squircle.h"
+	"Spring.h"
 	"Utils/Graphics/Theme.h"
 
-1770871067 source:d:\cs163_visualizer\src\states\menustate.cpp
+1771265703 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -536,6 +538,7 @@
 	<SFML/OpenGL.hpp>
 	<iostream>
 	<algorithm>
+	<random>
 
 1770859570 d:\cs163_visualizer\include\states\menustate.h
 	<SFML/Graphics.hpp>
@@ -567,7 +570,7 @@
 	<GLES2/gl2platform.h>
 	<GLES2/gl2ext.h>
 
-1769794750 d:\cs163_visualizer\include\utils\math\easing.h
+1771264964 d:\cs163_visualizer\include\utils\math\easing.h
 	<cmath>
 	<SFML/Graphics.hpp>
 
@@ -579,7 +582,7 @@
 	<cmath>
 	<algorithm>
 
-1770871561 d:\cs163_visualizer\include\utils\graphics\theme.h
+1771260499 d:\cs163_visualizer\include\utils\graphics\theme.h
 	<SFML/Graphics/Color.hpp>
 
 1770831425 d:\cs163_visualizer\include\states\categoriesstate.h
@@ -592,7 +595,7 @@
 	"GUI/Squircle.h"
 	"Utils/Graphics/Theme.h"
 
-1770876487 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
+1771262692 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
 	"States/CategoriesState.h"
 	"GUI/MenuCard.h"
 	"MenuState.h"
