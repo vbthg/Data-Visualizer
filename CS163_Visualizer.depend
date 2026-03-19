@@ -455,7 +455,7 @@
 	<SFML/Graphics.hpp>
 	"Button.h"
 
-1770859356 d:\cs163_visualizer\include\gui\button.h
+1773911971 d:\cs163_visualizer\include\gui\button.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -464,14 +464,16 @@
 	"RoundedRectangleShape.h"
 	"Theme.h"
 	"Squircle.h"
+	"DockItem.h"
 
-1769654798 d:\cs163_visualizer\include\utils\math\smoothing.h
+1771657732 d:\cs163_visualizer\include\utils\math\smoothing.h
 	<cmath>
 	<SFML/Graphics.hpp>
 	<algorithm>
 
-1770835918 source:d:\cs163_visualizer\src\gui\button.cpp
+1773913742 source:d:\cs163_visualizer\src\gui\button.cpp
 	"Button.h"
+	"Easing.h"
 	<iostream>
 
 1769586676 d:\cs163_visualizer\include\application.h
@@ -480,7 +482,7 @@
 	"State.h"
 	"TitleBar.h"
 
-1769571479 d:\cs163_visualizer\include\state.h
+1772676276 d:\cs163_visualizer\include\state.h
 	<SFML/Graphics.hpp>
 
 1769586836 source:d:\cs163_visualizer\src\resourcemanager.cpp
@@ -503,12 +505,12 @@
 	"ResourceManager.h"
 	"Button.h"
 
-1769587055 source:d:\cs163_visualizer\src\application.cpp
+1773503411 source:d:\cs163_visualizer\src\application.cpp
 	"Application.h"
 	"IntroState.h"
 	<iostream>
 
-1771264600 source:d:\cs163_visualizer\src\gui\menucard.cpp
+1773854424 source:d:\cs163_visualizer\src\gui\menucard.cpp
 	"MenuCard.h"
 	"ResourceManager.h"
 	"Smoothing.h"
@@ -518,7 +520,7 @@
 	<algorithm>
 	<cassert>
 
-1771177276 d:\cs163_visualizer\include\gui\menucard.h
+1773854442 d:\cs163_visualizer\include\gui\menucard.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -527,7 +529,7 @@
 	"Spring.h"
 	"Utils/Graphics/Theme.h"
 
-1771265703 source:d:\cs163_visualizer\src\states\menustate.cpp
+1773466933 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -539,8 +541,13 @@
 	<iostream>
 	<algorithm>
 	<random>
+	<VisualizerState.h>
+	<DataStructure.h>
+	<SinglyLinkedList.h>
+	<Heap.h>
+	<cassert>
 
-1770859570 d:\cs163_visualizer\include\states\menustate.h
+1771638077 d:\cs163_visualizer\include\states\menustate.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<stack>
@@ -550,10 +557,10 @@
 	"Squircle.h"
 	"Theme.h"
 
-1769617048 d:\cs163_visualizer\include\gui\roundedrectangleshape.h
+1773914052 d:\cs163_visualizer\include\gui\roundedrectangleshape.h
 	<SFML/Graphics.hpp>
 	<cmath>
-	<vector>
+	<algorithm>
 
 1761058563 c:\users\lenovo\documents\libraries\sfml-2.6.1\include\sfml\opengl.hpp
 	<SFML/Config.hpp>
@@ -570,22 +577,24 @@
 	<GLES2/gl2platform.h>
 	<GLES2/gl2ext.h>
 
-1771264964 d:\cs163_visualizer\include\utils\math\easing.h
+1773882402 d:\cs163_visualizer\include\utils\math\easing.h
 	<cmath>
+	<algorithm>
 	<SFML/Graphics.hpp>
 
-1769654958 d:\cs163_visualizer\include\utils\math\spring.h
+1773913856 d:\cs163_visualizer\include\utils\math\spring.h
 	"Smoothing.h"
 
-1769678956 d:\cs163_visualizer\include\gui\squircle.h
+1773914044 d:\cs163_visualizer\include\gui\squircle.h
 	<SFML/Graphics.hpp>
 	<cmath>
 	<algorithm>
 
-1771260499 d:\cs163_visualizer\include\utils\graphics\theme.h
+1773878694 d:\cs163_visualizer\include\utils\graphics\theme.h
 	<SFML/Graphics/Color.hpp>
+	<SFML/Config.hpp>
 
-1770831425 d:\cs163_visualizer\include\states\categoriesstate.h
+1771611661 d:\cs163_visualizer\include\states\categoriesstate.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<stack>
@@ -595,7 +604,7 @@
 	"GUI/Squircle.h"
 	"Utils/Graphics/Theme.h"
 
-1771262692 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
+1772678570 source:d:\cs163_visualizer\src\states\categoriesstate.cpp
 	"States/CategoriesState.h"
 	"GUI/MenuCard.h"
 	"MenuState.h"
@@ -606,4 +615,220 @@
 	<SFML/OpenGL.hpp>
 	<iostream>
 	<cmath>
+
+1773462052 source:d:\cs163_visualizer\src\datastructures\singlylinkedlist.cpp
+	"SinglyLinkedList.h"
+	"ResourceManager.h"
+	<iostream>
+
+1773854820 d:\cs163_visualizer\include\datastructures\singlylinkedlist.h
+	"DataStructure.h"
+	"Squircle.h"
+	"Theme.h"
+	"Spring.h"
+	<vector>
+
+1773837106 d:\cs163_visualizer\include\datastructures\datastructure.h
+	<SFML/Graphics.hpp>
+	<vector>
+	<string>
+	"Command.h"
+
+1771343166 d:\cs163_visualizer\include\datastructures\command.h
+	<string>
+	<functional>
+
+1773857876 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
+	"VisualizerState.h"
+	"ResourceManager.h"
+	"Theme.h"
+	"SpeedController.h"
+	"ViewHandler.h"
+	"drawGlassPane.h"
+	<iostream>
+
+1773854887 d:\cs163_visualizer\include\states\visualizerstate.h
+	"State.h"
+	"DataStructure.h"
+	"FloatingDock.h"
+	"InputPopover.h"
+	"DynamicIsland.h"
+	"PseudoCodeBox.h"
+	"Slider.h"
+	<stack>
+
+1773855905 d:\cs163_visualizer\include\gui\floatingdock.h
+	<SFML/Graphics.hpp>
+	<vector>
+	<functional>
+	"Command.h"
+	"DockItem.h"
+	"Button.h"
+	"Separator.h"
+	"Squircle.h"
+	"Spring.h"
+
+1773881951 source:d:\cs163_visualizer\src\gui\floatingdock.cpp
+	"FloatingDock.h"
+	"ResourceManager.h"
+	"Theme.h"
+	"Smoothing.h"
+	"drawGlassPane.h"
+	<iostream>
+
+1771492282 source:d:\cs163_visualizer\src\gui\inputfield.cpp
+	"InputField.h"
+	"Theme.h"
+	<cctype>
+
+1771492275 d:\cs163_visualizer\include\gui\inputfield.h
+	<SFML/Graphics.hpp>
+	<string>
+	"Squircle.h"
+	"Spring.h"
+
+1773854362 source:d:\cs163_visualizer\src\gui\inputpopover.cpp
+	"InputPopover.h"
+	"Theme.h"
+	<iostream>
+
+1773854362 d:\cs163_visualizer\include\gui\inputpopover.h
+	<SFML/Graphics.hpp>
+	<string>
+	"Squircle.h"
+	"Button.h"
+	"InputField.h"
+	"Spring.h"
+	"Command.h"
+
+1773478400 source:d:\cs163_visualizer\src\gui\dynamicisland.cpp
+	"DynamicIsland.h"
+	"Theme.h"
+	<algorithm>
+
+1773478390 d:\cs163_visualizer\include\gui\dynamicisland.h
+	<SFML/Graphics.hpp>
+	<string>
+	"RoundedRectangleShape.h"
+	"Spring.h"
+
+1771595448 source:d:\cs163_visualizer\src\gui\pseudocodebox.cpp
+	"PseudoCodeBox.h"
+	<iostream>
+	<algorithm>
+
+1771595246 d:\cs163_visualizer\include\gui\pseudocodebox.h
+	<SFML/Graphics.hpp>
+	<SFML/OpenGL.hpp>
+	<vector>
+	<string>
+	<utility>
+	"RoundedRectangleShape.h"
+	"Spring.h"
+
+1773854414 source:d:\cs163_visualizer\src\gui\edgeui.cpp
+	"EdgeUI.h"
+	"Easing.h"
+	<cmath>
+	<algorithm>
+
+1773854392 d:\cs163_visualizer\include\gui\edgeui.h
+	<SFML/Graphics.hpp>
+	"NodeUI.h"
+	"Spring.h"
+
+1773853996 d:\cs163_visualizer\include\gui\nodeui.h
+	<SFML/Graphics.hpp>
+	<string>
+	"Spring.h"
+	"Easing.h"
+
+1773836560 source:d:\cs163_visualizer\src\gui\nodeui.cpp
+	"NodeUI.h"
+
+1773679910 source:d:\cs163_visualizer\src\utils\graphics\animationmanager.cpp
+	"AnimationManager.h"
+	"DynamicIsland.h"
+
+1773478025 d:\cs163_visualizer\include\utils\graphics\animationmanager.h
+	<vector>
+	<functional>
+	<string>
+
+1773853978 source:d:\cs163_visualizer\src\datastructures\heap.cpp
+	"Heap.h"
+	"ResourceManager.h"
+	"DynamicIsland.h"
+	"AnimationUtils.h"
+	"TreeLayoutUtils.h"
+	<cmath>
+	<queue>
+	<algorithm>
+
+1773853952 d:\cs163_visualizer\include\datastructures\heap.h
+	"DataStructure.h"
+	"GUI/NodeUI.h"
+	"GUI/EdgeUI.h"
+	"AnimationManager.h"
+
+1773481969 d:\cs163_visualizer\include\utils\animation\animationutils.h
+	"AnimationManager.h"
+	"../GUI/NodeUI.h"
+	<cmath>
+	<functional>
+	<algorithm>
+
+1773495450 d:\cs163_visualizer\include\utils\graphics\treelayoututils.h
+	<vector>
+	<cmath>
+	<algorithm>
+	<SFML/Graphics.hpp>
+	"NodeUI.h"
+
+1773736356 d:\cs163_visualizer\include\gui\slider.h
+	<SFML/Graphics.hpp>
+	<functional>
+	<string>
+	<cmath>
+	<algorithm>
+	"RoundedRectangleShape.h"
+	"Spring.h"
+	"ResourceManager.h"
+
+1773736438 source:d:\cs163_visualizer\src\gui\slider.cpp
+	"Slider.h"
+
+1773854095 d:\cs163_visualizer\include\gui\dockitem.h
+	<SFML/Graphics.hpp>
+
+1773854103 d:\cs163_visualizer\include\gui\separator.h
+	<SFML/Graphics.hpp>
+	"DockItem.h"
+
+1773854119 source:d:\cs163_visualizer\src\gui\separator.cpp
+	"Separator.h"
+	"Theme.h"
+
+1773856271 d:\cs163_visualizer\include\utils\graphics\drawglasspane.h
+	<vector>
+	<cmath>
+	<algorithm>
+	<SFML/Graphics.hpp>
+	"Squircle.h"
+
+1773912985 source:d:\cs163_visualizer\src\gui\speedcontroller.cpp
+	"SpeedController.h"
+	<iostream>
+
+1773854458 d:\cs163_visualizer\include\gui\speedcontroller.h
+	<SFML/Graphics.hpp>
+	<vector>
+	<string>
+	"DockItem.h"
+	"Button.h"
+	"Slider.h"
+	"Spring.h"
+
+1773837668 d:\cs163_visualizer\include\utils\graphics\viewhandler.h
+	<SFML/Graphics.hpp>
 

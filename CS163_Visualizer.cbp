@@ -49,6 +49,8 @@
 			<Add directory="include/Utils/System" />
 			<Add directory="include/GUI" />
 			<Add directory="include" />
+			<Add directory="include/DataStructures" />
+			<Add directory="include/Utils/Animation" />
 		</Compiler>
 		<Linker>
 			<Add library="opengl32" />
@@ -56,9 +58,23 @@
 		</Linker>
 		<Unit filename="CS163_visualizer.cpp" />
 		<Unit filename="include/Application.h" />
+		<Unit filename="include/DataStructures/Command.h" />
+		<Unit filename="include/DataStructures/DataStructure.h" />
+		<Unit filename="include/DataStructures/Heap.h" />
 		<Unit filename="include/GUI/Button.h" />
+		<Unit filename="include/GUI/DockItem.h" />
+		<Unit filename="include/GUI/DynamicIsland.h" />
+		<Unit filename="include/GUI/EdgeUI.h" />
+		<Unit filename="include/GUI/FloatingDock.h" />
+		<Unit filename="include/GUI/InputField.h" />
+		<Unit filename="include/GUI/InputPopover.h" />
 		<Unit filename="include/GUI/MenuCard.h" />
+		<Unit filename="include/GUI/NodeUI.h" />
+		<Unit filename="include/GUI/PseudoCodeBox.h" />
 		<Unit filename="include/GUI/RoundedRectangleShape.h" />
+		<Unit filename="include/GUI/Separator.h" />
+		<Unit filename="include/GUI/Slider.h" />
+		<Unit filename="include/GUI/SpeedController.h" />
 		<Unit filename="include/GUI/Squircle.h" />
 		<Unit filename="include/GUI/TitleBar.h" />
 		<Unit filename="include/ResourceManager.h" />
@@ -66,22 +82,41 @@
 		<Unit filename="include/States/CategoriesState.h" />
 		<Unit filename="include/States/IntroState.h" />
 		<Unit filename="include/States/MenuState.h" />
+		<Unit filename="include/States/VisualizerState.h" />
+		<Unit filename="include/Utils/Animation/AnimationUtils.h" />
 		<Unit filename="include/Utils/Graphics/Align.h" />
+		<Unit filename="include/Utils/Graphics/AnimationManager.h" />
 		<Unit filename="include/Utils/Graphics/Layout.h" />
 		<Unit filename="include/Utils/Graphics/Theme.h" />
+		<Unit filename="include/Utils/Graphics/TreeLayoutUtils.h" />
+		<Unit filename="include/Utils/Graphics/ViewHandler.h" />
 		<Unit filename="include/Utils/Graphics/WindowControl.h" />
+		<Unit filename="include/Utils/Graphics/drawGlassPane.h" />
 		<Unit filename="include/Utils/Math/Easing.h" />
 		<Unit filename="include/Utils/Math/Smoothing.h" />
 		<Unit filename="include/Utils/Math/Spring.h" />
 		<Unit filename="include/Utils/System/WindowConfig.h" />
 		<Unit filename="src/Application.cpp" />
+		<Unit filename="src/DataStructures/Heap.cpp" />
 		<Unit filename="src/GUI/Button.cpp" />
+		<Unit filename="src/GUI/DynamicIsland.cpp" />
+		<Unit filename="src/GUI/EdgeUI.cpp" />
+		<Unit filename="src/GUI/FloatingDock.cpp" />
+		<Unit filename="src/GUI/InputField.cpp" />
+		<Unit filename="src/GUI/InputPopover.cpp" />
 		<Unit filename="src/GUI/MenuCard.cpp" />
+		<Unit filename="src/GUI/NodeUI.cpp" />
+		<Unit filename="src/GUI/PseudoCodeBox.cpp" />
+		<Unit filename="src/GUI/Separator.cpp" />
+		<Unit filename="src/GUI/Slider.cpp" />
+		<Unit filename="src/GUI/SpeedController.cpp" />
 		<Unit filename="src/GUI/TitleBar.cpp" />
 		<Unit filename="src/ResourceManager.cpp" />
 		<Unit filename="src/States/CategoriesState.cpp" />
 		<Unit filename="src/States/IntroState.cpp" />
 		<Unit filename="src/States/MenuState.cpp" />
+		<Unit filename="src/States/VisualizerState.cpp" />
+		<Unit filename="src/Utils/Graphics/AnimationManager.cpp" />
 		<Unit filename="src/Utils/Graphics/Layout.cpp" />
 		<Unit filename="src/Utils/Graphics/WindowControl.cpp" />
 		<Extensions>

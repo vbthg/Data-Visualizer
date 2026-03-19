@@ -59,4 +59,7 @@ private:
 
     // [THÊM] Biến cờ để đánh dấu đã đẩy state mới hay chưa
     bool hasPushedState = false;
+
+
+    sf::Sprite shadowSprite;
 };

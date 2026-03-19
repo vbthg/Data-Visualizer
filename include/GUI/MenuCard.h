@@ -32,7 +32,7 @@ namespace GUI
 
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+        void handleEvent(const sf::Event& event, sf::RenderWindow& window);
 
         // --- Logic Di chuyển & Trạng thái ---
         void setTarget(const sf::Vector2f& pos, const sf::Vector2f& size);
@@ -66,7 +66,6 @@ namespace GUI
     private:
         void updateLayout(float selectT, float expandT);
 
-    private:
         // [2] QUAN TRỌNG: Phải khai báo biến config ở đây thì .cpp mới dùng được
         CardConfig config;
 

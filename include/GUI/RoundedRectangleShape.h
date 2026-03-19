@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <cmath>
-#include <vector>
+#include <algorithm>
 
 namespace GUI {
 
@@ -14,19 +14,31 @@ public:
         update();
     }
 
-    // Set kích thước
+    // --- KÍCH THƯỚC (SIZE) ---
     void setSize(const sf::Vector2f& size) {
         mySize = size;
         update();
     }
     const sf::Vector2f& getSize() const { return mySize; }
 
-    // Set màu
+    // --- MÀU SẮC (FILL COLOR) ---
     void setFillColor(const sf::Color& color) {
         myShape.setFillColor(color);
     }
     const sf::Color& getFillColor() const { return myShape.getFillColor(); }
 
+    // --- ĐƯỜNG VIỀN (OUTLINE) ---
+    void setOutlineThickness(float thickness) {
+        myShape.setOutlineThickness(thickness);
+    }
+    float getOutlineThickness() const { return myShape.getOutlineThickness(); }
+
+    void setOutlineColor(const sf::Color& color) {
+        myShape.setOutlineColor(color);
+    }
+    const sf::Color& getOutlineColor() const { return myShape.getOutlineColor(); }
+
+    // --- BO GÓC (RADIUS) ---
     // Set bo từng góc: TopLeft, TopRight, BottomRight, BottomLeft
     void setCornerRadius(float tl, float tr, float br, float bl) {
         radii[0] = tl;
@@ -36,6 +48,12 @@ public:
         update();
     }
 
+    // Set bo đều 4 góc (Bổ sung để đồng nhất API với Squircle)
+    void setRadius(float radius) {
+        setCornerRadius(radius, radius, radius, radius);
+    }
+
+    // --- TIỆN ÍCH KHÁC ---
     // Lấy bounds để check click
     sf::FloatRect getGlobalBounds() const {
         return getTransform().transformRect(myShape.getGlobalBounds());
@@ -51,21 +69,48 @@ private:
         target.draw(myShape, states);
     }
 
+    // Trong Squircle.h, thêm vào phần public:
+
+    void setTexture(const sf::Texture* texture, bool resetRect = false)
+    {
+        myShape.setTexture(texture, resetRect);
+    }
+
+    void setTextureRect(const sf::IntRect& rect)
+    {
+        myShape.setTextureRect(rect);
+    }
+
+    const sf::Texture* getTexture() const
+    {
+        return myShape.getTexture();
+    }
+
+    const sf::IntRect& getTextureRect() const
+    {
+        return myShape.getTextureRect();
+    }
+
     void update() {
-        // Nếu size quá nhỏ, không vẽ hoặc vẽ rect thường
+        // Nếu size quá nhỏ, không vẽ
         if (mySize.x <= 0 || mySize.y <= 0) return;
 
         // Tính toán các điểm cho ConvexShape
         // Số điểm cho mỗi góc bo (càng cao càng mượt)
-        const int quality = 30;
+        const int quality = 10;
         const float PI = 3.14159265f;
 
         myShape.setPointCount(quality * 4);
         int idx = 0;
 
+        // Helper để giới hạn bán kính không quá 1 nửa cạnh ngắn nhất (Chống méo hình)
+        auto getValidR = [&](float r) {
+            return std::min(r, std::min(mySize.x, mySize.y) / 2.0f);
+        };
+
         // 1. Top Right (Góc phần tư 1: 270 -> 360 độ / -90 -> 0)
         // Tâm: (W - r, r)
-        float r = radii[1];
+        float r = getValidR(radii[1]);
         sf::Vector2f center(mySize.x - r, r);
         for (int i = 0; i < quality; ++i) {
             float angle = -PI / 2.0f + (PI / 2.0f) * ((float)i / (quality - 1));
@@ -74,7 +119,7 @@ private:
 
         // 2. Bottom Right (0 -> 90)
         // Tâm: (W - r, H - r)
-        r = radii[2];
+        r = getValidR(radii[2]);
         center = sf::Vector2f(mySize.x - r, mySize.y - r);
         for (int i = 0; i < quality; ++i) {
             float angle = 0.0f + (PI / 2.0f) * ((float)i / (quality - 1));
@@ -83,7 +128,7 @@ private:
 
         // 3. Bottom Left (90 -> 180)
         // Tâm: (r, H - r)
-        r = radii[3];
+        r = getValidR(radii[3]);
         center = sf::Vector2f(r, mySize.y - r);
         for (int i = 0; i < quality; ++i) {
             float angle = PI / 2.0f + (PI / 2.0f) * ((float)i / (quality - 1));
@@ -92,7 +137,7 @@ private:
 
         // 4. Top Left (180 -> 270)
         // Tâm: (r, r)
-        r = radii[0];
+        r = getValidR(radii[0]);
         center = sf::Vector2f(r, r);
         for (int i = 0; i < quality; ++i) {
             float angle = PI + (PI / 2.0f) * ((float)i / (quality - 1));

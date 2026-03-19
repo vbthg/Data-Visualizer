@@ -53,6 +53,12 @@ void CategoriesState::init()
 
 
 
+    shadowSprite.setTexture(res.getTexture("assets/textures/shadow_categories.png"));
+    shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
+    shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+
+
+
     // Lambda tạo card
     // Note: col (màu) ở đây sẽ được set thành màu xám nhạt đồng nhất
     auto createCard = [&](int id, std::string name, std::string num, std::string iconPath, sf::Color themeColor)
@@ -75,53 +81,53 @@ void CategoriesState::init()
         {
             if (this->isTransitioning) return;
 
-            // 1. SETUP PROXY TEXT (CHỮ ĐÓNG THẾ)
-            // Lấy text thật từ thẻ
-            const sf::Text& srcText = card->getTitleText();
+//            // 1. SETUP PROXY TEXT (CHỮ ĐÓNG THẾ)
+//            // Lấy text thật từ thẻ
+//            const sf::Text& srcText = card->getTitleText();
 
-            // Copy toàn bộ thuộc tính sang transitionText
-            this->transitionText = srcText;
+//            // Copy toàn bộ thuộc tính sang transitionText
+//            this->transitionText = srcText;
 
-            // Lấy vị trí thế giới (World Position) của chữ thật
-            // Vì MenuCard::updateLayout đã setPosition tuyệt đối cho textTitle, nên ta lấy trực tiếp được
-            this->transitionStartPos = srcText.getPosition();
+//            // Lấy vị trí thế giới (World Position) của chữ thật
+//            // Vì MenuCard::updateLayout đã setPosition tuyệt đối cho textTitle, nên ta lấy trực tiếp được
+//            this->transitionStartPos = srcText.getPosition();
 
-            // Đặt chữ đóng thế vào đúng vị trí chữ thật
-            this->transitionText.setPosition(this->transitionStartPos);
+//            // Đặt chữ đóng thế vào đúng vị trí chữ thật
+//            this->transitionText.setPosition(this->transitionStartPos);
 
-            // Đảm bảo chữ đóng thế hiện rõ 100% (Alpha 255)
-            sf::Color c = this->transitionText.getFillColor();
-            c.a = 255;
-            this->transitionText.setFillColor(c);
-
-
-            // 2. TÍNH TOÁN ĐÍCH ĐẾN (Target Position)
-            // Chữ sẽ bay đến tiêu đề của bảng Algorithms (MenuState)
-            // Vị trí này nằm ở trên cùng của bảng Algo (1200x580)
-            float targetBoardY = (window.getSize().y - Theme::Style::AlgoBoardH) / 2.0f;
-
-            // Đích đến: Giữa màn hình (X), Trên đầu bảng Algo một chút (Y)
-            this->textTargetPos.x = window.getSize().x / 2.0f;
-            this->textTargetPos.y = targetBoardY + 40.0f; // Padding top 40px
-
-            // Đặt Origin chữ đóng thế vào giữa để căn chỉnh chuẩn
-            sf::FloatRect b = this->transitionText.getLocalBounds();
-            this->transitionText.setOrigin(b.left + b.width/2.0f, b.top + b.height/2.0f);
+//            // Đảm bảo chữ đóng thế hiện rõ 100% (Alpha 255)
+//            sf::Color c = this->transitionText.getFillColor();
+//            c.a = 255;
+//            this->transitionText.setFillColor(c);
 
 
+//            // 2. TÍNH TOÁN ĐÍCH ĐẾN (Target Position)
+//            // Chữ sẽ bay đến tiêu đề của bảng Algorithms (MenuState)
+//            // Vị trí này nằm ở trên cùng của bảng Algo (1200x580)
+//            float targetBoardY = (window.getSize().y - Theme::Style::AlgoBoardH) / 2.0f;
+//
+//            // Đích đến: Giữa màn hình (X), Trên đầu bảng Algo một chút (Y)
+//            this->textTargetPos.x = window.getSize().x / 2.0f;
+//            this->textTargetPos.y = targetBoardY + 40.0f; // Padding top 40px
+//
+//            // Đặt Origin chữ đóng thế vào giữa để căn chỉnh chuẩn
+//            sf::FloatRect b = this->transitionText.getLocalBounds();
+//            this->transitionText.setOrigin(b.left + b.width/2.0f, b.top + b.height/2.0f);
 
-            // --- 1. SETUP CHỮ ĐÓNG THẾ (PROXY TEXT) ---
-            this->transitionText = card->getTitleText();
-            this->transitionStartPos = card->getTitleText().getPosition();
-            this->transitionText.setPosition(this->transitionStartPos);
 
-            // Đích đến của chữ: Bay lên trên bảng mới 60px
-            float targetW = Theme::Style::AlgoBoardW; // 1200
-            float targetH = Theme::Style::AlgoBoardH; // 580
-            float targetX = (window.getSize().x - targetW) / 2.0f;
-            float targetY = (window.getSize().y - targetH) / 2.0f + 30.f;
 
-            this->textTargetPos = { targetX, targetY - 60.0f };
+//            // --- 1. SETUP CHỮ ĐÓNG THẾ (PROXY TEXT) ---
+//            this->transitionText = card->getTitleText();
+//            this->transitionStartPos = card->getTitleText().getPosition();
+//            this->transitionText.setPosition(this->transitionStartPos);
+//
+//            // Đích đến của chữ: Bay lên trên bảng mới 60px
+//            float targetW = Theme::Style::AlgoBoardW; // 1200
+//            float targetH = Theme::Style::AlgoBoardH; // 580
+//            float targetX = (window.getSize().x - targetW) / 2.0f;
+//            float targetY = (window.getSize().y - targetH) / 2.0f + 30.f;
+//
+//            this->textTargetPos = { targetX, targetY - 60.0f };
 
 
             // 3. ẨN CARD THẬT & KÍCH HOẠT HIỆU ỨNG
@@ -141,7 +147,7 @@ void CategoriesState::init()
             this->expandedCard = card;
             this->isTransitioning = true;
             this->transitionTimer = 0.0f;
-            this->transitionDuration = Theme::Animation::HeroDuration;
+            this->transitionDuration = Theme::Animation::CategoriesOutDuration;
 
             bgBoard.setCornerRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius);
         };
@@ -264,7 +270,10 @@ void CategoriesState::draw()
 {
     window.clear(Theme::Color::Background);
 
+    if(!isTransitioning || 1) window.draw(shadowSprite);
+
     // 1. Vẽ Bảng Nền (Luôn vẽ, vì nó đang morph to ra)
+//        bgBoard.setFillColor(sf::Color::Magenta); ///********************************
     window.draw(bgBoard);
 
     // 2. Vẽ Title tĩnh của màn hình Categories (Nằm dưới card)
@@ -286,9 +295,9 @@ void CategoriesState::updateOutTransition(float dt)
     transitionTimer += dt;
 
     // Tính toán tiến độ (0.0 -> 1.0)
-    float t = std::min(transitionTimer / Theme::Animation::HeroDuration, 1.0f);
+    float t = std::min(transitionTimer / Theme::Animation::CategoriesOutDuration, 1.0f);
     // Dùng Easing Quart cho chuyển động mượt, đầm
-    float ease = Utils::Math::Easing::easeOutQuart(t);
+    float ease = Utils::Math::Easing::easeOutCubic(t);
 
     // --- 1. MORPH BẢNG NỀN (Code tay phần này) ---
     float startW = Theme::Style::CatBoardW;
@@ -303,19 +312,27 @@ void CategoriesState::updateOutTransition(float dt)
     // Cập nhật Squircle
     bgBoard.setSize({curW, curH});
 
+    float ratioW = curW / Theme::Style::CatBoardW, ratioH = curH / Theme::Style::CatBoardH;
+
+    shadowSprite.setColor(sf::Color::Red);
+
+    shadowSprite.setScale(sf::Vector2f(ratioW, ratioH));
+    shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
+    shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 30.f);
+
     // Luôn căn giữa màn hình (hoặc lerp vị trí nếu tâm 2 bảng khác nhau)
     bgBoard.setOrigin(curW / 2.0f, curH / 2.0f);
     bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 30.f);
 
-    // --- 2. UPDATE CHỮ ĐÓNG THẾ (Bay lên) ---
-    sf::Vector2f curPos;
-    curPos.x = Utils::Math::Easing::lerp(transitionStartPos.x, textTargetPos.x, ease);
-    curPos.y = Utils::Math::Easing::lerp(transitionStartPos.y, textTargetPos.y, ease);
+//    // --- 2. UPDATE CHỮ ĐÓNG THẾ (Bay lên) ---
+//    sf::Vector2f curPos;
+//    curPos.x = Utils::Math::Easing::lerp(transitionStartPos.x, textTargetPos.x, ease);
+//    curPos.y = Utils::Math::Easing::lerp(transitionStartPos.y, textTargetPos.y, ease);
 
-    float curScale = Utils::Math::Easing::lerp(1.0f, 1.5f, ease);
+//    float curScale = Utils::Math::Easing::lerp(1.0f, 1.5f, ease);
 
-    transitionText.setPosition(curPos);
-    transitionText.setScale(curScale, curScale);
+//    transitionText.setPosition(curPos);
+//    transitionText.setScale(curScale, curScale);
 
     // --- [MỚI] 3. FADE OUT TITLE & SUBTITLE ---
     // Tính alpha giảm dần từ 255 -> 0
@@ -365,7 +382,11 @@ void CategoriesState::updateOutTransition(float dt)
             // 1. Reset Bảng Nền
             bgBoard.setSize({Theme::Style::CatBoardW, Theme::Style::CatBoardH});
             bgBoard.setOrigin(Theme::Style::CatBoardW / 2.0f, Theme::Style::CatBoardH / 2.0f);
-            bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 30.f);
+            bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+
+            shadowSprite.setScale(1.f, 1.f);
+            shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
+            shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
 
             // 2. Reset Text Title
             sf::Color tCol = titleText.getFillColor(); tCol.a = 255; titleText.setFillColor(tCol);

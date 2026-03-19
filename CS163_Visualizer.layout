@@ -2,19 +2,29 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
+	<File name="src\GUI\Slider.cpp" open="1" top="0" tabpos="56" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="310" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Math\Spring.h" open="1" top="0" tabpos="26" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="877" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\DockItem.h" open="1" top="0" tabpos="59" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="550" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\Separator.h" open="1" top="0" tabpos="60" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="665" topLine="0" />
+		</Cursor>
+	</File>
 	<File name="src\GUI\Button.cpp" open="1" top="0" tabpos="15" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2635" topLine="72" />
-		</Cursor>
-	</File>
-	<File name="include\States\CategoriesState.h" open="1" top="0" tabpos="29" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2013" topLine="24" />
-		</Cursor>
-	</File>
-	<File name="include\Utils\Graphics\Theme.h" open="1" top="1" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4172" topLine="79" />
+			<Cursor1 position="8971" topLine="279" />
 		</Cursor>
 	</File>
 	<File name="include\ResourceManager.h" open="1" top="0" tabpos="19" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -24,22 +34,17 @@
 	</File>
 	<File name="src\States\CategoriesState.cpp" open="1" top="0" tabpos="30" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="50" />
+			<Cursor1 position="13933" topLine="340" />
 		</Cursor>
 	</File>
-	<File name="src\ResourceManager.cpp" open="1" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\Utils\Animation\AnimationUtils.h" open="1" top="0" tabpos="53" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="641" topLine="18" />
+			<Cursor1 position="841" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="include\GUI\MenuCard.h" open="1" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+	<File name="include\GUI\Squircle.h" open="1" top="1" tabpos="27" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1715" topLine="25" />
-		</Cursor>
-	</File>
-	<File name="include\GUI\Button.h" open="1" top="0" tabpos="28" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2076" topLine="25" />
+			<Cursor1 position="1968" topLine="51" />
 		</Cursor>
 	</File>
 	<File name="src\Utils\Graphics\Layout.cpp" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -47,19 +52,19 @@
 			<Cursor1 position="0" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="include\Application.h" open="1" top="0" tabpos="17" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\Utils\Graphics\AnimationManager.h" open="1" top="0" tabpos="49" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="92" topLine="0" />
+			<Cursor1 position="813" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="src\Utils\Graphics\WindowControl.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\GUI\NodeUI.h" open="1" top="0" tabpos="47" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1137" topLine="21" />
+			<Cursor1 position="2741" topLine="35" />
 		</Cursor>
 	</File>
-	<File name="src\GUI\MenuCard.cpp" open="1" top="0" tabpos="22" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+	<File name="src\GUI\Separator.cpp" open="1" top="0" tabpos="61" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="10163" topLine="237" />
+			<Cursor1 position="1120" topLine="12" />
 		</Cursor>
 	</File>
 	<File name="include\Utils\System\WindowConfig.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -67,49 +72,9 @@
 			<Cursor1 position="272" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="src\Application.cpp" open="1" top="0" tabpos="18" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\GUI\PseudoCodeBox.h" open="1" top="0" tabpos="43" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1887" topLine="57" />
-		</Cursor>
-	</File>
-	<File name="include\GUI\Squircle.h" open="1" top="0" tabpos="27" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4569" topLine="117" />
-		</Cursor>
-	</File>
-	<File name="include\Utils\Graphics\Layout.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="263" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include\Utils\Math\Easing.h" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="55" />
-		</Cursor>
-	</File>
-	<File name="include\State.h" open="1" top="0" tabpos="16" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="393" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include\States\MenuState.h" open="1" top="0" tabpos="23" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1305" topLine="30" />
-		</Cursor>
-	</File>
-	<File name="include\GUI\TitleBar.h" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1053" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include\Utils\Math\Smoothing.h" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="27" />
-		</Cursor>
-	</File>
-	<File name="include\GUI\RoundedRectangleShape.h" open="1" top="0" tabpos="25" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="452" topLine="0" />
+			<Cursor1 position="2098" topLine="33" />
 		</Cursor>
 	</File>
 	<File name="include\Utils\Graphics\WindowControl.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -117,9 +82,144 @@
 			<Cursor1 position="315" topLine="0" />
 		</Cursor>
 	</File>
+	<File name="include\GUI\InputField.h" open="1" top="0" tabpos="37" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1699" topLine="26" />
+		</Cursor>
+	</File>
+	<File name="src\States\VisualizerState.cpp" open="1" top="0" tabpos="32" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5290" topLine="110" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Math\Smoothing.h" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1571" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\DataStructures\Command.h" open="1" top="0" tabpos="33" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="795" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\Utils\Graphics\WindowControl.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1137" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Graphics\drawGlassPane.h" open="1" top="0" tabpos="58" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1774" topLine="7" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\Slider.h" open="1" top="0" tabpos="55" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="754" topLine="8" />
+		</Cursor>
+	</File>
 	<File name="src\States\IntroState.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="11205" topLine="327" />
+			<Cursor1 position="11262" topLine="349" />
+		</Cursor>
+	</File>
+	<File name="include\States\VisualizerState.h" open="1" top="0" tabpos="31" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1074" topLine="12" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\Button.h" open="1" top="0" tabpos="28" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1338" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="include\States\CategoriesState.h" open="1" top="0" tabpos="29" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="537" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\RoundedRectangleShape.h" open="1" top="0" tabpos="25" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3865" topLine="84" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\FloatingDock.cpp" open="1" top="0" tabpos="36" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="258" topLine="144" />
+		</Cursor>
+	</File>
+	<File name="include\DataStructures\DataStructure.h" open="1" top="0" tabpos="34" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="745" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Graphics\TreeLayoutUtils.h" open="1" top="0" tabpos="54" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="1" />
+		</Cursor>
+	</File>
+	<File name="src\Utils\Graphics\AnimationManager.cpp" open="1" top="0" tabpos="50" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="282" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\DynamicIsland.cpp" open="1" top="0" tabpos="42" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="94" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\FloatingDock.h" open="1" top="0" tabpos="35" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="387" topLine="27" />
+		</Cursor>
+	</File>
+	<File name="include\Application.h" open="1" top="0" tabpos="17" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="318" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\SpeedController.cpp" open="1" top="0" tabpos="63" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5531" topLine="129" />
+		</Cursor>
+	</File>
+	<File name="include\State.h" open="1" top="0" tabpos="16" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="397" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\States\MenuState.cpp" open="1" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="766" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Graphics\Layout.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="263" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\TitleBar.h" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1053" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\PseudoCodeBox.cpp" open="1" top="0" tabpos="44" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="10296" topLine="225" />
+		</Cursor>
+	</File>
+	<File name="src\DataStructures\Heap.cpp" open="1" top="0" tabpos="52" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="23762" topLine="677" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\SpeedController.h" open="1" top="0" tabpos="62" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1282" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\MenuCard.cpp" open="1" top="0" tabpos="22" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6632" topLine="145" />
 		</Cursor>
 	</File>
 	<File name="include\Utils\Graphics\Align.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -127,29 +227,94 @@
 			<Cursor1 position="197" topLine="0" />
 		</Cursor>
 	</File>
+	<File name="include\GUI\DynamicIsland.h" open="1" top="0" tabpos="41" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1805" topLine="34" />
+		</Cursor>
+	</File>
+	<File name="src\ResourceManager.cpp" open="1" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="9" />
+		</Cursor>
+	</File>
+	<File name="src\Application.cpp" open="1" top="0" tabpos="18" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="806" topLine="80" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\MenuCard.h" open="1" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="919" topLine="23" />
+		</Cursor>
+	</File>
+	<File name="include\States\MenuState.h" open="1" top="0" tabpos="23" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="713" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\EdgeUI.h" open="1" top="0" tabpos="45" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2517" topLine="36" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Graphics\Theme.h" open="1" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4949" topLine="98" />
+		</Cursor>
+	</File>
+	<File name="CS163_visualizer.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="192" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\InputPopover.cpp" open="1" top="0" tabpos="40" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8719" topLine="238" />
+		</Cursor>
+	</File>
+	<File name="include\Utils\Math\Easing.h" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="52" topLine="0" />
+		</Cursor>
+	</File>
 	<File name="src\GUI\TitleBar.cpp" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="357" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="CS163_visualizer.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include\Utils\Graphics\ViewHandler.h" open="1" top="0" tabpos="57" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="124" topLine="0" />
+			<Cursor1 position="865" topLine="1" />
 		</Cursor>
 	</File>
-	<File name="src\States\MenuState.cpp" open="1" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="-1" zoom_2="0">
+	<File name="include\DataStructures\Heap.h" open="1" top="0" tabpos="51" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="6125" topLine="140" />
+			<Cursor1 position="1398" topLine="16" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\InputField.cpp" open="1" top="0" tabpos="38" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="260" topLine="24" />
+		</Cursor>
+	</File>
+	<File name="include\GUI\InputPopover.h" open="1" top="0" tabpos="39" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="747" topLine="9" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\NodeUI.cpp" open="1" top="0" tabpos="48" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5118" topLine="108" />
+		</Cursor>
+	</File>
+	<File name="src\GUI\EdgeUI.cpp" open="1" top="0" tabpos="46" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11157" topLine="260" />
 		</Cursor>
 	</File>
 	<File name="include\States\IntroState.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2235" topLine="61" />
-		</Cursor>
-	</File>
-	<File name="include\Utils\Math\Spring.h" open="1" top="0" tabpos="26" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="115" topLine="0" />
+			<Cursor1 position="1171" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

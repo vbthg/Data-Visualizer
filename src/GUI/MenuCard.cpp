@@ -72,7 +72,7 @@ namespace GUI
         btnViewMore = new Button(fontReg, "View More", {100.f, 36.f});
         btnViewMore->applyPreset(ButtonPreset::Ghost);
         btnViewMore->setCornerRadius(18.f);
-        btnViewMore->setOutline(1.f, sf::Color::Black);
+        btnViewMore->setOutline(1.f, Theme::Color::ButtonOutlineColor);
         btnViewMore->setTextColor(sf::Color::Black);
         btnViewMore->setOpacity(0.0f);
 
@@ -170,7 +170,7 @@ namespace GUI
     sf::FloatRect MenuCard::getGlobalBounds() const { return bgShape.getGlobalBounds(); }
 
     // --- HANDLE EVENT ---
-    void MenuCard::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    void MenuCard::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
 //        assert(globalAlpha > 100.f);
         if (globalAlpha < 50.0f)

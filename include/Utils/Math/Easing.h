@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <algorithm>
 #include <SFML/Graphics.hpp>
 
 const float PI = std::acos(-1);

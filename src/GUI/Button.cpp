@@ -1,4 +1,5 @@
 #include "Button.h"
+#include "Easing.h"
 #include <iostream>
 
 namespace GUI
@@ -41,7 +42,7 @@ namespace GUI
 
     // --- SETTERS ---
 
-    void Button::setPosition(sf::Vector2f pos)
+    void Button::setPosition(const sf::Vector2f pos)
     {
         position = pos;
         // Vì Origin của bgShape đã ở tâm, nên setPosition sẽ đặt TÂM nút vào vị trí pos
@@ -64,12 +65,19 @@ namespace GUI
     {
         // Gọi thẳng hàm của RoundedRectangleShape
         bgShape.setCornerRadius(radius, radius, radius, radius);
+        m_baseRadius = radius;
     }
 
     void Button::setText(const sf::String& text)
     {
         content.setString(text);
         centerText();
+    }
+
+    void Button::triggerTextPop()
+    {
+        // Búng lò xo lên 1.3x (Target mặc định của Spring trong struct của bạn đã là 1.0)
+        textScaleSpring.position = 1.3f;
     }
 
     void Button::setCharacterSize(unsigned int s)
@@ -91,8 +99,8 @@ namespace GUI
         // Tuy nhiên, RoundedRectangleShape của bạn hiện tại chưa public ConvexShape.
         // -> BẠN NÊN THÊM hàm setOutline vào RoundedRectangleShape.h
         // Tạm thời comment nếu chưa update RoundedRect
-        // bgShape.setOutlineThickness(thickness);
-        // bgShape.setOutlineColor(color);
+         bgShape.setOutlineThickness(thickness);
+         bgShape.setOutlineColor(color);
     }
 
     // --- COLOR CONFIG ---
@@ -113,6 +121,17 @@ namespace GUI
         textColors = {color, color, color};
         currentTextColor = color;
         content.setFillColor(currentTextColor);
+    }
+
+    void Button::setScaleTarget(float targetScale)
+    {
+        // Đặt mục tiêu cho lò xo bung ra (hoặc xẹp lại)
+        scaleSpring.target = targetScale;
+    }
+
+    void Button::setMaxScale(float maxScale)
+    {
+        m_maxScale = maxScale;
     }
 
     void Button::applyPreset(ButtonPreset preset)
@@ -163,6 +182,8 @@ namespace GUI
 
     void Button::update(sf::RenderWindow& window, float dt)
     {
+//        float physicsDt = std::min(dt, 0.0166f);
+
         // 1. Mouse Hit Test (Dùng hàm getGlobalBounds của RoundedRect)
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::Vector2f mPosF = window.mapPixelToCoords(mousePos);
@@ -221,27 +242,55 @@ namespace GUI
             scaleSpring.target = 0.8f;
         }
         // Nếu nút đang hiện rõ (opacityFactor ~ 1.0) và không bị nhấn
-        else if (!isPressed)
-        {
-            // Trả về kích thước gốc
-            scaleSpring.target = 1.0f;
-        }
+//        else if (!isPressed)
+//        {
+//            // Trả về kích thước gốc
+//            scaleSpring.target = 1.0f;
+//        }
 
         // 4. Cập nhật Vật Lý Lò Xo
         scaleSpring.update(dt);
-        float s = scaleSpring.position;
+        textScaleSpring.update(dt);
+
+        float btnScale = scaleSpring.position;
+        float txtScale = textScaleSpring.position;
+
+        if (m_maxScale > 1.0f && scaleSpring.position != scaleSpring.target) // Chỉ tính toán biến thiên góc bo nếu nút có cấu hình phình to
+        {
+            // Hard-code mức tăng cực kỳ an toàn và đẹp mắt: Cộng thêm 10px so với gốc
+            float expandedRadius = m_baseRadius + 10.0f;
+
+            // Tính tiến trình t (Mẫu số m_maxScale - 1.0f giờ đã là hằng số an toàn)
+            float t = std::clamp((btnScale - 1.0f) / (m_maxScale - 1.0f), 0.0f, 1.0f);
+
+            // Nội suy Radius
+            float currentRadius = Utils::Math::Easing::lerp(m_baseRadius, expandedRadius, t);
+
+            bgShape.setRadius(currentRadius);
+        }
 
         // Apply Scale (RoundedRectangleShape đã hỗ trợ setScale)
-        bgShape.setScale(s, s);
-        content.setScale(s, s);
+        bgShape.setScale(btnScale, btnScale);
+        content.setScale(btnScale * txtScale, btnScale * txtScale);
+
+
+        // Chỉ in log nếu cái nút này có chữ chứa số "1x"
+        if (content.getString() == "1x" || content.getString() == "1.0x")
+        {
+            std::cout << "Spring Scale: " << btnScale
+                      << " | Shape Width: " << bgShape.getGlobalBounds().width << "\n";
+        }
+
+        // Scale chữ từ tâm (SFML Text cần setOrigin ở giữa để scale không bị lệch)
+//        content.setScale(textScaleSpring.position, textScaleSpring.position);
     }
 
-    void Button::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    void Button::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
         // 1. Hover Logic (Micro Interaction: Không scale, chỉ đảm bảo target=1.0)
         if (bgShape.getGlobalBounds().contains(window.mapPixelToCoords(sf::Mouse::getPosition(window))))
         {
-            if (!isPressed) scaleSpring.target = 1.0f;
+//            if (!isPressed) scaleSpring.target = 1.0f;
         }
 
         // 2. Click Logic

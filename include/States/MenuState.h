@@ -28,6 +28,7 @@ private:
     std::stack<State*>& states;
 
     GUI::Squircle bgBoard;
+    sf::Sprite shadowSprite;
 
     int currentCategory; // Lưu ID category đang chọn
 

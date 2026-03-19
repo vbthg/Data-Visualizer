@@ -9,6 +9,11 @@
 #include <iostream>
 #include <algorithm>
 #include <random>    // Để dùng std::random_device, std::mt19937
+#include <VisualizerState.h>
+#include <DataStructure.h>
+#include <SinglyLinkedList.h>
+#include <Heap.h>
+#include <cassert>
 
 namespace Theme = Utils::Graphics::Theme;
 
@@ -56,7 +61,8 @@ void MenuState::initData()
 
 void MenuState::init()
 {
-//    isTransitioning = true;
+    isTransitioning = true;
+    transitionTimer = 0;
 
     // 1. Load Data
     initData();
@@ -146,13 +152,19 @@ void MenuState::init()
 
     // Tính toán vị trí bắt đầu
     float startX = (window.getSize().x - containerW) / 2.0f;
-    float startY = (window.getSize().y - containerH) / 2.0f + 30.f;
+    float startY = (window.getSize().y - containerH) / 2.0f + 30.f; ///*****************
 
     bgBoard.setSize({containerW, containerH});
     bgBoard.setCornerRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius); // 48.0f
     bgBoard.setFillColor(sf::Color::White);
     bgBoard.setPosition(startX, startY);
     bgBoard.setCurvature(Theme::Style::SquircleCurvature); // Siêu elip cho mượt
+
+
+    shadowSprite.setTexture(res.getTexture("assets/textures/shadow_algo.png"));
+    shadowSprite.setOrigin(34.f, 30.f);
+    shadowSprite.setPosition(startX, startY);
+//    shadowSprite.setColor(sf::Color(255,255,255,0));
 
 
 
@@ -313,6 +325,8 @@ void MenuState::updateLayout(float dt)
     }
     currentWindowColor = Utils::Math::Smoothing::dampColor(currentWindowColor, targetWinColor, Theme::Animation::BgSmoothing, dt, Theme::Animation::BgMinSpeed);
 
+//    std::cout << (int)currentWindowColor.r << " " << (int)currentWindowColor.g << " " << (int)currentWindowColor.b << " " << (int)currentWindowColor.a << "\n";
+
     // --- 3. CARD LOGIC (HERO ANIMATION) ---
     if(expandedCard != nullptr)
     {
@@ -426,6 +440,8 @@ void MenuState::handleInput(sf::Event& event)
             int algoID = this->cards[i]->getId();
             std::cout << "START ALGO ID: " << algoID << std::endl;
             // TODO: Chuyển Scene sang VisualizeState tại đây
+
+            states.push(new VisualizerState(window, states, new DS::Heap()));  ///**************************
         };
 
         auto onBack = [this]() {
@@ -462,9 +478,13 @@ void MenuState::draw()
     window.clear(currentWindowColor);
     window.pushGLStates();
 
+//    assert(isTransitioning == false);
+
 
     // 1. VẼ BẢNG NỀN (Luôn vẽ)
     // Đây là cái bảng "nối" từ hiệu ứng Morph của CategoriesState sang
+    window.draw(shadowSprite);
+//    bgBoard.setFillColor(sf::Color::Cyan);
     window.draw(bgBoard);
 
     // 2. VẼ HEADER (Title, SubTitle, BackButton)
@@ -551,10 +571,10 @@ void MenuState::updateInTransition(float dt)
     float targetIconX = textPos.x - 30.0f;
     float targetIconY = textPos.y;
 
-    if (transitionTimer > 0.1f)
+    if (transitionTimer > 0.01f)
     {
         // Tính tiến độ animation cho Icon (diễn ra trong 0.4s)
-        float tIcon = std::min((transitionTimer - 0.1f) / 0.4f, 1.0f);
+        float tIcon = std::min((transitionTimer - 0.01f) / 0.4f, 1.0f);
         float easeIcon = Utils::Math::Easing::easeOutCubic(tIcon);
 
         // Lerp từ (Target + 20px) về Target -> Hiệu ứng trượt sang trái
@@ -617,6 +637,16 @@ void MenuState::updateInTransition(float dt)
         cards[i]->update(dt, window);
     }
 
+//    float shadowT = std::min(transitionTimer / Theme::Animation::ShadowDuration, 1.0f);
+//    float easeShadow = Utils::Math::Easing::easeInCubic(shadowT);
+
+//    sf::Uint8 a = (sf::Uint8)(easeShadow * 255.0f);
+//    shadowSprite.setColor(sf::Color(255, 255, 255, a));
+
+//    std::cout << (int)a << "\n";
+
+//    window.draw(shadowSprite);
+
     // 2. FADE IN SUBTITLE (Chậm hơn chút)
     float textT = std::min(transitionTimer / Theme::Animation::MenuSubtitleDuration, 1.0f); // 0.8s
     float easeText = Utils::Math::Easing::easeOutQuart(textT);
@@ -635,6 +665,7 @@ void MenuState::updateInTransition(float dt)
     if (transitionTimer > totalTime)
     {
         isTransitioning = false;
+//        std::cout << transitionTimer << "\n";
 
         // Finalize state
         for(auto c : cards) {

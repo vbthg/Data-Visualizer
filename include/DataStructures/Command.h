@@ -1,0 +1,40 @@
+#pragma once
+#include <string>
+#include <functional>
+
+namespace DS // Namespace DataStructures (Optional, cho gọn)
+{
+    // 1. Gói dữ liệu Input: Chứa tất cả những gì UI có thể gửi xuống
+    struct InputArgs
+    {
+        int iVal1 = 0;          // Tham số 1 (Value / Index / Source)
+        int iVal2 = 0;          // Tham số 2 (Index / Destination / Value 2)
+        std::string sVal = "";  // Tham số chuỗi (File path / String input)
+
+        // Constructors tiện lợi
+        InputArgs() {}
+        InputArgs(int v1) : iVal1(v1) {}
+        InputArgs(int v1, int v2) : iVal1(v1), iVal2(v2) {}
+        InputArgs(std::string s) : sVal(s) {}
+    };
+
+    // 2. Các loại Input mà UI hỗ trợ hiển thị
+    enum class InputType
+    {
+        None,           // Không hiện gì, bấm là chạy (VD: Clear, Random)
+        Integer,        // Hiện 1 ô nhập số (VD: Insert 5)
+        TwoIntegers,    // Hiện 2 ô nhập số (VD: Insert(index, value))
+        String          // Hiện 1 ô nhập chữ (VD: Load File)
+    };
+
+    // 3. Command Struct: Định nghĩa một nút bấm
+    struct Command
+    {
+        std::string name;           // Tên hiển thị trên nút
+        InputType inputType;        // Loại Input UI cần vẽ
+        std::function<void(InputArgs)> action; // Hàm callback logic
+
+        Command(std::string n, InputType type, std::function<void(InputArgs)> act)
+            : name(n), inputType(type), action(act) {}
+    };
+}

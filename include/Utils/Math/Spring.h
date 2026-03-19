@@ -18,8 +18,10 @@ namespace Utils
 
             void update(float dt)
             {
+                // Tạo một biến local mới chỉ dùng cho công thức lò xo
+                float physicsDt = std::min(dt, 0.0166f);
                 // Gọi hàm thô từ namespace Smoothing
-                Utils::Math::Smoothing::spring(position, target, velocity, stiffness, damping, dt);
+                Utils::Math::Smoothing::spring(position, target, velocity, stiffness, damping, physicsDt);
             }
 
             void snapTo(float val)

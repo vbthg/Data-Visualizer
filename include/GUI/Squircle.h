@@ -40,6 +40,17 @@ namespace GUI
             return myShape.getFillColor();
         }
 
+        // Thêm 2 hàm này để hỗ trợ viền
+        void setOutlineThickness(float thickness)
+        {
+            myShape.setOutlineThickness(thickness);
+        }
+
+        void setOutlineColor(const sf::Color& color)
+        {
+            myShape.setOutlineColor(color);
+        }
+
         // Set bo từng góc: TopLeft, TopRight, BottomRight, BottomLeft
         void setCornerRadius(float tl, float tr, float br, float bl)
         {
@@ -67,6 +78,26 @@ namespace GUI
         sf::FloatRect getGlobalBounds() const
         {
             return getTransform().transformRect(myShape.getGlobalBounds());
+        }
+
+        void setTexture(const sf::Texture* texture, bool resetRect = false)
+        {
+            myShape.setTexture(texture, resetRect);
+        }
+
+        void setTextureRect(const sf::IntRect& rect)
+        {
+            myShape.setTextureRect(rect);
+        }
+
+        const sf::Texture* getTexture() const
+        {
+            return myShape.getTexture();
+        }
+
+        const sf::IntRect& getTextureRect() const
+        {
+            return myShape.getTextureRect();
         }
 
     private:
@@ -99,7 +130,7 @@ namespace GUI
             if (mySize.x <= 0 || mySize.y <= 0) return;
 
             // Số điểm cho mỗi góc bo (càng cao càng mượt)
-            const int quality = 40;
+            const int quality = 10;
             const float PI = 3.14159265f;
 
             myShape.setPointCount(quality * 4);
