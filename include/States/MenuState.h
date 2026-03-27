@@ -9,7 +9,16 @@
 #include "Theme.h" // <--- Include Theme
 
 // Struct dữ liệu (định nghĩa ngay tại đây hoặc trong 1 file common)
-struct AlgoInfo { int id; std::string name; std::string number; };
+struct AlgoInfo
+{
+    int id;
+    std::string name;
+    std::string number;
+    std::string description; // [THÊM]
+    std::string shortDescription;
+    std::string iconPath;    // [THÊM] Đường dẫn đến icon riêng
+};
+
 struct CategoryInfo { std::string name; sf::Color color; std::vector<AlgoInfo> algos; };
 
 class MenuState : public State

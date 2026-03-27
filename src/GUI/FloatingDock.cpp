@@ -2,7 +2,7 @@
 #include "ResourceManager.h"
 #include "Theme.h"
 #include "Smoothing.h"
-#include "drawGlassPane.h"
+//#include "drawGlassPane.h"
 #include <iostream>
 
 namespace GUI
@@ -17,6 +17,8 @@ namespace GUI
         background.setRadius(Theme::Style::DockRadius);
         background.setOutlineThickness(0.5f);
         background.setOutlineColor(sf::Color(255, 255, 255, 40)); // Viền kính trắng mờ
+        background.setFillColor(sf::Color::White, 0.1f);
+        background.setShadow(Theme::Color::DockShadow, 55.f, {0.f, 20.f});
         // Không setFillColor nữa vì ta sẽ dùng Glass Pane
 
         highlighter.setRadius(Theme::Style::DockHighlightRadius);
@@ -88,9 +90,10 @@ namespace GUI
         updateLayout();
     }
 
-    void FloatingDock::setBlurTexture(const sf::Texture& texture)
+    void FloatingDock::setBlurTexture(const sf::Texture& texture, const sf::Vector2f size)
     {
-        m_blurTexture = &texture;
+//        m_blurTexture = &texture;
+        background.setBakedGlass(&texture, size);
     }
 
     void FloatingDock::updateLayout()
@@ -189,11 +192,15 @@ namespace GUI
         ySpring.update(dt);
         position.y = ySpring.position;
 
+
+        updateLayout();
+
+
         // QUAN TRỌNG: Cập nhật lò xo bề ngang!
         // Nếu SpeedController nở ra, m_items sẽ báo getWidth() to hơn,
         // updateLayout() thay đổi target, và dòng này sẽ làm bề ngang Dock nở ra mượt mà.
-        widthSpring.update(dt);
-        float currentDockWidth = widthSpring.position;
+//        widthSpring.update(dt);
+        float currentDockWidth = widthSpring.target;
 
         // 2. Cập nhật nền Squircle
         background.setSize({currentDockWidth, dockHeight});
@@ -230,17 +237,7 @@ namespace GUI
         window.draw(shadowSprite);
 
         // Dùng m_blurTexture nếu đã được set
-        if (m_blurTexture)
-        {
-            Utils::Graphics::drawGlassPane(window, background,
-                                          *m_blurTexture,
-                                          sf::Color(255, 255, 255, 20));
-        }
-        else
-        {
-            // Fallback an toàn nếu lỡ quên set
-            window.draw(background);
-        }
+        window.draw(background);
 
         if(currentHighlightAlpha > 1.0f)
         {

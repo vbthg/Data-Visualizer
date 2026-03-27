@@ -2,10 +2,12 @@
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <string>
+#include <sstream>
 
 #include "Button.h"
 #include "Squircle.h"
 #include "Spring.h"
+#include "wrapText.h"
 #include "Utils/Graphics/Theme.h"
 
 namespace GUI
@@ -15,8 +17,15 @@ namespace GUI
         int id;
         std::string title;
         std::string number;
+        std::string description; // Thêm dòng này
+        std::string shortDescription; // [MỚI] Dùng cho Un-expanded
+
         sf::Texture* iconTexture; // Quan trọng: Dùng Texture pointer
         sf::Color themeColor;
+
+        sf::Color colorTitleUnselected; // [MỚI] Màu Title khi chưa chọn
+        sf::Color colorTitleSelected;   // [MỚI] Màu Title khi được chọn
+        sf::Color colorNumber; // Thêm dòng này
 
         // [MỚI] Kích thước khởi tạo (MenuState sẽ truyền vào)
         sf::Vector2f initialSize;
@@ -76,11 +85,15 @@ namespace GUI
         // Visual Components
         GUI::Squircle bgShape;
         sf::Text textNumber;
+        sf::Text textShortDesc; // [MỚI] Thêm text này
         sf::Text textTitle;
         sf::Sprite iconSprite;
+        float textureWidth;
 
         // Expanded Components
         sf::Text textBigTitle;
+//        sf::Text textBigTitle;
+        sf::Text textDescription; // Thêm dòng này
         Button* btnViewMore;
         Button* btnStart;
         Button* btnBack;

@@ -6,7 +6,9 @@
 #include "InputPopover.h"
 #include "DynamicIsland.h"
 #include "PseudoCodeBox.h"
+#include "StructurePanel.h"
 #include "Slider.h"
+#include "Spring.h"
 #include <stack>
 
 // Giả sử bạn sẽ tạo hoặc đã có class này để vẽ hình bo góc
@@ -26,13 +28,9 @@ private:
 
     // --- NEW: LAYERED BACKGROUNDS (Kính mờ) ---
     sf::Texture m_bgOriginal;  // Ảnh gốc
-    sf::Texture m_bgBlurLevel1; // Mờ 10px cho CTDL
-    sf::Texture m_bgBlurLevel2; // Mờ 25px cho Dock/Island
-    sf::Texture m_bgBlurLevel3; // Mờ 50px cho CodeBox
-
-    // --- NEW: CLIPPING COMPONENTS ---
-    sf::RenderTexture m_structuresRenderTexture; // Vẽ CTDL vào đây trước khi clip
-    GUI::Squircle * m_structuresFrame;        // Khung chứa CTDL (Sẽ đổi thành Squircle*)
+//    sf::Texture m_bgBlurLevel1; // Mờ 10px cho CTDL
+//    sf::Texture m_bgBlurLevel2; // Mờ 25px cho Dock/Island
+//    sf::Texture m_bgBlurLevel3; // Mờ 50px cho CodeBox
 
     // --- DATA ---
     DataStructure* currentDS;
@@ -43,6 +41,7 @@ private:
     GUI::DynamicIsland* notch;
     GUI::PseudoCodeBox* pseudoBox;
     GUI::Slider* testSlider;
+    GUI::StructurePanel* structurePanel;
 
     void onResize(unsigned int width, unsigned int height);
 
@@ -54,4 +53,6 @@ public:
     void handleInput(sf::Event& event) override;
     void update(float dt) override;
     void draw() override;
+    void onEnter() override;
+    void onExit() override;
 };

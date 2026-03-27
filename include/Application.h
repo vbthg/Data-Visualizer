@@ -26,4 +26,6 @@ private:
     std::stack<State*> states;
 
     void handleGlobalInput(sf::Event& event);
+    void NotchInit();
+    void NotchCleanup();
 };

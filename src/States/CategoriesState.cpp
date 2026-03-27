@@ -1,9 +1,11 @@
 #include "States/CategoriesState.h"
 #include "GUI/MenuCard.h"
 #include "MenuState.h"
+#include "ViewHandler.h"
 #include "Easing.h"
 #include "ResourceManager.h"
 #include "GUI/Squircle.h"
+#include "WindowConfig.h"
 #include "SFML/Graphics.hpp"
 #include <SFML/OpenGL.hpp>
 #include <iostream>
@@ -44,33 +46,38 @@ void CategoriesState::init()
 //    float winW = (float)window.getSize().x;
 //    float winH = (float)window.getSize().y;
 
-    bgBoard.setCornerRadius(Theme::Style::CatRadius, Theme::Style::CatRadius, Theme::Style::CatRadius, Theme::Style::CatRadius);
+    bgBoard.setRadius(Theme::Style::CatRadius, Theme::Style::CatRadius, Theme::Style::CatRadius, Theme::Style::CatRadius);
     bgBoard.setSize({Theme::Style::CatBoardW, Theme::Style::CatBoardH});
 
     // Luôn căn giữa màn hình (hoặc lerp vị trí nếu tâm 2 bảng khác nhau)
     bgBoard.setOrigin(Theme::Style::CatBoardW / 2.0f, Theme::Style::CatBoardH / 2.0f);
-    bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+    bgBoard.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 15.f);
 
 
 
     shadowSprite.setTexture(res.getTexture("assets/textures/shadow_categories.png"));
     shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
-    shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+    shadowSprite.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 15.f);
 
 
 
     // Lambda tạo card
     // Note: col (màu) ở đây sẽ được set thành màu xám nhạt đồng nhất
-    auto createCard = [&](int id, std::string name, std::string num, std::string iconPath, sf::Color themeColor)
+    auto createCard = [&](int id, std::string name, std::string num, std::string shortDesc, std::string iconPath, sf::Color themeColor)
     {
         // Cấu hình Config
         GUI::CardConfig cfg;
         cfg.id = id;
         cfg.title = name;
         cfg.number = num;
+        cfg.shortDescription = shortDesc;
         cfg.iconTexture = &res.getTexture(iconPath);
         cfg.themeColor = themeColor;
         cfg.initialSize = {Theme::Style::CatCardW, Theme::Style::CatCardH};
+        // Nền trắng nên Title luôn phải là màu Tối, kể cả khi Selected hay Unselected
+        cfg.colorTitleUnselected = sf::Color(29, 29, 31); // Xám than
+        cfg.colorTitleSelected = sf::Color(29, 29, 31);   // Vẫn là Xám than (Hoặc màu đen)
+        cfg.colorNumber = sf::Color(142, 142, 147);
 
 //        sf::Color minimalistColor = sf::Color::Black;
         auto* card = new GUI::MenuCard(cfg);
@@ -149,7 +156,7 @@ void CategoriesState::init()
             this->transitionTimer = 0.0f;
             this->transitionDuration = Theme::Animation::CategoriesOutDuration;
 
-            bgBoard.setCornerRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius);
+            bgBoard.setRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius);
         };
 
         // Gán logic mới vào nút View More
@@ -166,9 +173,9 @@ void CategoriesState::init()
     sf::Color themeColor = sf::Color(255, 255, 255, 0);
 
     // Tạo các thẻ với cùng một màu nền (loại bỏ màu xanh, cam, tím)
-    createCard(0, "Linear Structures", "01", "linear_structures_icon", themeColor);
-    createCard(1, "Tree Structures",   "02", "tree_structures_icon", themeColor);
-    createCard(2, "Advanced Algo",     "03", "advanced_algo_icon", themeColor);
+    createCard(0, "Linear Structures", "01", "Sequential flow.", "assets/textures/linear_structures_icon.png", themeColor);
+    createCard(1, "Hierarchical Structures",   "02", "Branched logic.", "assets/textures/hierarchical_structures_icon.png", themeColor);
+    createCard(2, "Graphs Structures",     "03", "Connected nodes.", "assets/textures/graphs_structures_icon.png", themeColor);
 
     selectedIndex = -1;
     isTransitioning = false;
@@ -180,8 +187,8 @@ void CategoriesState::init()
 
 void CategoriesState::updateLayout(float dt)
 {
-    float winW = (float)window.getSize().x;
-    float winH = (float)window.getSize().y;
+    float winW = Utils::System::DESIGN_WIDTH;
+    float winH = Utils::System::DESIGN_HEIGHT;
 
     float containerW = Theme::Style::CatBoardW;
     float containerH = Theme::Style::CatBoardH;
@@ -234,6 +241,12 @@ void CategoriesState::handleInput(sf::Event& event)
 {
     if(event.type == sf::Event::Closed) window.close();
 
+    // THÊM ĐOẠN NÀY ĐỂ TẠO VIỀN ĐEN KHI CO GIÃN
+    if (event.type == sf::Event::Resized)
+    {
+        Utils::System::applyLetterboxView(window, event.size.width, event.size.height);
+    }
+
 //    // Logic Hover cơ bản
 //    sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 //    selectedIndex = -1;
@@ -249,6 +262,30 @@ void CategoriesState::handleInput(sf::Event& event)
     // [QUAN TRỌNG] Chặn input khi đang chuyển cảnh
     // Để chuột không vô tình hover vào thẻ làm nút View More hiện lại
     if (isTransitioning) return;
+
+//    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+//    {
+//        // xử lý
+//        sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+//        if(!bgBoard.getGlobalBounds().contains(mouse))
+//        {
+//            expandedCard = nullptr;
+//            selectedIndex = -1;
+//        }
+//    }
+
+    if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+    {
+        sf::Vector2i pixelPos(event.mouseButton.x, event.mouseButton.y);
+
+        if(!Utils::ViewHandler::isMouseInFrame(pixelPos, window, bgBoard.getGlobalBounds()))
+        {
+            expandedCard = nullptr;
+            selectedIndex = -1;
+        }
+    }
+
+
 
     // Truyền event vào từng card
     for(auto c : cards) c->handleEvent(event, window);
@@ -318,11 +355,11 @@ void CategoriesState::updateOutTransition(float dt)
 
     shadowSprite.setScale(sf::Vector2f(ratioW, ratioH));
     shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
-    shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 30.f);
+    shadowSprite.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 30.f);
 
     // Luôn căn giữa màn hình (hoặc lerp vị trí nếu tâm 2 bảng khác nhau)
     bgBoard.setOrigin(curW / 2.0f, curH / 2.0f);
-    bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 30.f);
+    bgBoard.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 30.f);
 
 //    // --- 2. UPDATE CHỮ ĐÓNG THẾ (Bay lên) ---
 //    sf::Vector2f curPos;
@@ -382,11 +419,11 @@ void CategoriesState::updateOutTransition(float dt)
             // 1. Reset Bảng Nền
             bgBoard.setSize({Theme::Style::CatBoardW, Theme::Style::CatBoardH});
             bgBoard.setOrigin(Theme::Style::CatBoardW / 2.0f, Theme::Style::CatBoardH / 2.0f);
-            bgBoard.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+            bgBoard.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 15.f);
 
             shadowSprite.setScale(1.f, 1.f);
             shadowSprite.setOrigin(Theme::Style::CatBoardW / 2.0f + 34.f, Theme::Style::CatBoardH / 2.0f + 30.f);
-            shadowSprite.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f + 15.f);
+            shadowSprite.setPosition(Utils::System::DESIGN_WIDTH / 2.0f, Utils::System::DESIGN_HEIGHT / 2.0f + 15.f);
 
             // 2. Reset Text Title
             sf::Color tCol = titleText.getFillColor(); tCol.a = 255; titleText.setFillColor(tCol);

@@ -3,49 +3,47 @@
 #include <cmath>
 #include <algorithm>
 #include <SFML/Graphics.hpp>
-#include "NodeUI.h"
 
 namespace Utils
 {
     class TreeLayoutUtils
     {
     public:
-        // Áp dụng cho cấu trúc mảng (Heap)
-        static void updateHeapLayout(const std::vector<GUI::NodeUI*>& nodes, sf::Vector2f rootPos, float minLeafSpacing = 60.0f, float levelHeight = 80.0f)
+        // Trả về danh sách tọa độ cho toàn bộ Heap
+        static std::vector<sf::Vector2f> calculateHeapPositions(int totalNodes, sf::Vector2f rootPos)
         {
-            if (nodes.empty())
-            {
-                return;
-            }
+            if(totalNodes <= 0) return {};
 
-            int total = nodes.size();
-            int maxDepth = (int)std::log2(total);
+            std::vector<sf::Vector2f> positions(totalNodes);
+            int maxDepth = (int)std::log2(totalNodes);
 
-            // Gán mục tiêu cho lò xo của Root
-            nodes[0]->setTargetPosition(rootPos.x, rootPos.y);
+            float baseLeafSpacing = 70.0f;
+            float baseLevelHeight = 100.0f;
 
-            for (int i = 0; i < total; ++i)
+            // Hệ số co dãn chiều ngang để không bị quá rộng khi cây sâu
+            float compression = (maxDepth > 3) ? std::pow(0.8f, maxDepth - 3) : 1.0f;
+
+            positions[0] = rootPos;
+
+            for(int i = 0; i < totalNodes; ++i)
             {
                 int left = 2 * i + 1;
                 int right = 2 * i + 2;
-                int currentDepth = (int)std::log2(i + 1);
+                int d = (int)std::log2(i + 1);
 
-                // Tính khoảng cách văng ra hai bên
-                float offsetX = minLeafSpacing * std::pow(2.0f, std::max(0, maxDepth - currentDepth - 1));
+                float offsetX = (baseLeafSpacing * compression) * std::pow(2.0f, std::max(0, maxDepth - d - 1));
+                float currentLevelHeight = baseLevelHeight * (1.0f + d * 0.05f);
 
-                // Lấy tọa độ đích (target) của Node cha để cộng dồn
-                sf::Vector2f parentPos = nodes[i]->getTargetPosition();
-
-                if (left < total)
+                if(left < totalNodes)
                 {
-                    nodes[left]->setTargetPosition(parentPos.x - offsetX, parentPos.y + levelHeight);
+                    positions[left] = sf::Vector2f(positions[i].x - offsetX, positions[i].y + currentLevelHeight);
                 }
-
-                if (right < total)
+                if(right < totalNodes)
                 {
-                    nodes[right]->setTargetPosition(parentPos.x + offsetX, parentPos.y + levelHeight);
+                    positions[right] = sf::Vector2f(positions[i].x + offsetX, positions[i].y + currentLevelHeight);
                 }
             }
+            return positions;
         }
     };
 }

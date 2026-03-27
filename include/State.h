@@ -17,4 +17,7 @@ public:
 
     // Vẽ
     virtual void draw() = 0;
+
+    virtual void onEnter() { };
+    virtual void onExit() { };
 };

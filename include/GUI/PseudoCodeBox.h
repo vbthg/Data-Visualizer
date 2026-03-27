@@ -38,6 +38,8 @@ namespace GUI
 
         void toggleState();
 
+        bool isOpen() { return m_isExpanded; }
+
     private:
         const sf::Font& m_font;
         float m_windowWidth;

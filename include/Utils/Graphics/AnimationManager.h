@@ -29,6 +29,7 @@ namespace Utils
         float m_timeScale;
         GUI::DynamicIsland* m_island;
 
+
     public:
         AnimationManager();
 
@@ -42,6 +43,8 @@ namespace Utils
         void play();
         void pause();
         void stepForward();
+        void finishAll();
+
 
         void update(float dt);
         bool isDone() const;

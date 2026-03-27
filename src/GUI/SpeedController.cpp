@@ -1,4 +1,5 @@
 #include "SpeedController.h"
+#include "ViewHandler.h"
 #include <iostream>
 
 namespace GUI
@@ -7,17 +8,17 @@ namespace GUI
 
     SpeedController::SpeedController(const sf::Font& font)
         : m_mainButton(font, "1x", {50.f, 50.f}), // Kích thước nút mặc định
-          m_slider(120.f)                         // Chiều dài track của slider
+          m_slider(Theme::Style::SpeedSliderWidth)                         // Chiều dài track của slider
     {
         m_isExpanded = false;
         m_isPressing = false;
         m_pressTimer = 0.0f;
 
-        m_mainButton.setMaxScale(1.3f);
+        m_mainButton.setMaxScale(1.1f);
 
         // Khởi tạo các mốc tốc độ nhanh
-        m_quickSpeeds = {0.25f, 0.5f, 1.0f, 1.5f, 2.0f};
-        m_currentSpeedIdx = 2; // Mặc định là 1.0x
+        m_quickSpeeds = {0.25f, 1.0f, 2.0f};
+        m_currentSpeedIdx = 1; // Mặc định là 1.0x
 
         // Thiết lập kích thước
         m_collapsedWidth = m_mainButton.getSize().x;
@@ -61,6 +62,7 @@ namespace GUI
         m_isExpanded = false;
         m_widthSpring.target = m_collapsedWidth;
         m_slider.setOpacity(0.0f);
+        m_mainButton.setScaleTarget(1.f);
     }
 
     void SpeedController::handleEvent(const sf::Event& event, sf::RenderWindow& window)
@@ -73,15 +75,17 @@ namespace GUI
             // Logic Click Outside để đóng
             if(event.type == sf::Event::MouseButtonPressed)
             {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+//                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::Vector2i mousePos = {event.mouseButton.x, event.mouseButton.y};
+//                sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
 
                 // Trượt một vùng hcn ảo bao quanh SpeedController
                 sf::FloatRect bounds(m_position.x - m_widthSpring.position / 2.0f,
                                      m_position.y - 25.0f,
                                      m_widthSpring.position, 50.0f);
 
-                if(!bounds.contains(worldPos))
+//                if(!bounds.contains(worldPos))
+                if(Utils::ViewHandler::isMouseInFrame(mousePos, window, bounds))
                 {
                     collapse();
                 }
@@ -100,7 +104,7 @@ namespace GUI
                 m_pressTimer = 0.0f;
 
                 // ÉP LÒ XO BUNG MẠNH RA 1.2x
-                m_mainButton.setScaleTarget(1.3f);
+//                m_mainButton.setScaleTarget(1.1f);
             }
         }
         else if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right)
@@ -118,7 +122,7 @@ namespace GUI
             {
                 m_isPressing = false;
                 // NHẢ LÒ XO VỀ LẠI 1.0x
-                m_mainButton.setScaleTarget(1.0f);
+//                m_mainButton.setScaleTarget(1.0f);
 
                 // Nếu thả chuột ra nhanh (dưới 0.5s) và đang không mở rộng -> Đổi tốc độ
                 if(m_pressTimer < Theme::Animation::HoldDelay && !m_isExpanded && m_mainButton.isHovering())
@@ -135,12 +139,18 @@ namespace GUI
         if(m_isPressing && !m_isExpanded)
         {
             m_pressTimer += dt;
+
+            if(m_pressTimer >= 0.3f && m_pressTimer < Theme::Animation::HoldDelay)
+            {
+                m_mainButton.setScaleTarget(1.22f);
+            }
+
             if(m_pressTimer >= Theme::Animation::HoldDelay)
             {
                 m_isExpanded = true;
                 m_isPressing = false;
                 m_widthSpring.target = m_expandedWidth;
-                m_mainButton.setScaleTarget(1.0f);
+                m_mainButton.setScaleTarget(1.22f);
 //                m_pressTimer = 0;
             }
         }
@@ -155,9 +165,15 @@ namespace GUI
         if(progress < 0.0f) progress = 0.0f;
         if(progress > 1.0f) progress = 1.0f;
 
+        float sliderOpacityProgress = 0.0f;
+        if(progress > 0.3f)
+        {
+            sliderOpacityProgress = (progress - 0.3f) / 0.7f;
+        }
+
         // 4. Liên kết Opacity của Slider với tiến trình nở ra
         // Khi progress = 1.0 (mở hết cỡ), Slider rõ 100% (255)
-        m_slider.setOpacity(progress * 255.0f);
+        m_slider.setOpacity(sliderOpacityProgress * 255.0f);
 
         // 5. Cập nhật vị trí các thành phần con
         // Để Button nằm im một chỗ khi nở, ta neo nó vào cạnh trái của khung Controller

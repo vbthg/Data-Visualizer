@@ -5,7 +5,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "RoundedRectangleShape.h"
+#include "Squircle.h"
 #include "Spring.h"
 #include "ResourceManager.h"
 
@@ -14,8 +14,9 @@ namespace GUI
     class Slider
     {
     public:
+
         // trackWidth: Chiều dài của thanh trượt (không tính icon)
-        Slider(float trackWidth = 150.f);
+        Slider(float trackWidth = 220.f);
 
         // 2. Thêm các hàm quản lý Transform thủ công
         void setPosition(sf::Vector2f pos);
@@ -60,21 +61,18 @@ namespace GUI
         bool isHovered;
 
         float trackWidth;
-        const float trackHeight = 6.0f; // Track rất hẹp chuẩn iOS
-        const float thumbBaseRadius = 10.0f; // Bán kính cục lăn tròn
+        const float trackHeight = 20.0f; // Track rất hẹp chuẩn iOS
 
         float opacityFactor = 1.0f;
 
         // --- Thành phần đồ họa (Visuals) ---
-        GUI::RoundedRectangleShape bgTrack;     // Thanh nền (Màu xám nhạt)
-        GUI::RoundedRectangleShape activeTrack; // Thanh đã fill (Màu xanh Apple)
-        sf::CircleShape thumb;                  // Con lăn (Màu trắng)
+        GUI::Squircle bgTrack;     // Thanh nền (Màu xám nhạt)
+        GUI::Squircle activeTrack; // Thanh đã fill (Màu xanh Apple)
 
         sf::Sprite leftIcon;
         sf::Sprite rightIcon;
 
         // --- Hệ thống Animation (Lò xo) ---
         Utils::Physics::Spring thumbSpring; // Lò xo mượt hóa vị trí X của con lăn
-        Utils::Physics::Spring scaleSpring; // Lò xo xử lý hiệu ứng Scale-up khi Hover/Kéo
     };
 }

@@ -2,9 +2,11 @@
 #include "MenuCard.h"
 #include "ResourceManager.h"
 #include "Squircle.h"
+#include "WindowConfig.h"
 #include "Smoothing.h"
 #include "Easing.h"
 #include "Theme.h"
+#include "ViewHandler.h"
 #include <SFML/OpenGL.hpp>
 #include <iostream>
 #include <algorithm>
@@ -45,17 +47,126 @@ void MenuState::initData()
 
     // ID 0: Linear
     CategoryInfo cat1; cat1.name = "Linear Structures"; cat1.color = sf::Color(72, 219, 251);
-    cat1.algos = {{0, "Singly Linked List", "01"}, {1, "Doubly Linked List", "02"}, {2, "Stack & Queue", "03"}, {3, "Circular List", "04"}};
+    cat1.algos = {
+        {
+            0,
+            "Singly Linked List",
+            "01",
+            "A streamlined, forward-only data chain. Engineered for lightweight, linear traversal with absolute simplicity.",
+            "Forward flow.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            1,
+            "Doubly Linked List",
+            "02",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            2,
+            "Stack & Queue",
+            "03",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            3,
+            "Circular List",
+            "04",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        }
+    };
+
     allData.push_back(cat1);
 
     // ID 1: Tree
     CategoryInfo cat2; cat2.name = "Tree Structures"; cat2.color = sf::Color(255, 159, 67);
-    cat2.algos = {{4, "Binary Search Tree", "05"}, {5, "AVL Tree", "06"}, {6, "Binary Heap", "07"}, {7, "2-3-4 Tree", "08"}};
+    cat2.algos = {
+        {
+            4,
+            "Binary Heap",
+            "05",
+            "A tree-based priority system. Instantly surfaces the most critical element with zero friction. Fast, optimized, and uncompromising.",
+            "Priority-first logic.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            5,
+            "AVL Tree",
+            "06",
+            "A perfectly balanced binary search tree. Automatically rotates after every action to maintain optimal query speeds at all times.",
+            "Self-balancing precision.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            6,
+            "Red-Black Tree",
+            "07",
+            "A harmony of color rules and branching logic. Guarantees rock-solid performance and stability in the most demanding environments.",
+            "Color-coded efficiency.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            7,
+            "2-3-4 Tree",
+            "08",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        }
+    };
     allData.push_back(cat2);
 
     // ID 2: Advanced
-    CategoryInfo cat3; cat3.name = "Advanced Algo"; cat3.color = sf::Color(95, 39, 205);
-    cat3.algos = {{8, "Hash Table", "09"}, {9, "Graph (BFS/DFS)", "10"}, {10, "MST (Prim)", "11"}, {11, "Dijkstra", "12"}};
+    CategoryInfo cat3; cat3.name = "Graphs Structures"; cat3.color = sf::Color(95, 39, 205);
+    cat3.algos = {
+        {
+            8,
+            "Minimum Spanning Tree",
+            "09",
+            "Powered by Kruskal's algorithm. Connects the entire network with zero gaps, zero cycles, and the absolute minimum resource cost.",
+            "Optimal connectivity.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            9,
+            "Graph (BFS/DFS)",
+            "10",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            10,
+            "Shortest Path",
+            "11",
+            "Powered by Dijkstra's algorithm. Scans every branch to pinpoint the exact shortest route. Unrivaled speed for precise navigation.",
+            "The fastest route.",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+
+        {
+            11,
+            "Dijkstra",
+            "12",
+            "abc",
+            "short desc",
+            "assets/textures/singly_linked_list_icon.png"
+        }
+    };
     allData.push_back(cat3);
 }
 
@@ -76,7 +187,7 @@ void MenuState::init()
     // Header Metrics (Chỉ để căn chỉnh vị trí chữ)
     float headerW = 1200.0f;
     float headerH = 80.0f;
-    float headerX = (window.getSize().x - headerW) / 2.0f;
+    float headerX = (Utils::System::DESIGN_WIDTH - headerW) / 2.0f;
     float headerY = 30.0f;
 
     titleText.setFont(fontHeader);
@@ -151,14 +262,14 @@ void MenuState::init()
     float containerH = Theme::Style::AlgoBoardH; // 580.0f
 
     // Tính toán vị trí bắt đầu
-    float startX = (window.getSize().x - containerW) / 2.0f;
-    float startY = (window.getSize().y - containerH) / 2.0f + 30.f; ///*****************
+    float startX = (Utils::System::DESIGN_WIDTH - containerW) / 2.0f;
+    float startY = (Utils::System::DESIGN_HEIGHT - containerH) / 2.0f + 30.f; ///*****************
 
     bgBoard.setSize({containerW, containerH});
-    bgBoard.setCornerRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius); // 48.0f
+    bgBoard.setRadius(Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius, Theme::Style::AlgoRadius); // 48.0f
     bgBoard.setFillColor(sf::Color::White);
     bgBoard.setPosition(startX, startY);
-    bgBoard.setCurvature(Theme::Style::SquircleCurvature); // Siêu elip cho mượt
+//    bgBoard.setCurvature(Theme::Style::SquircleCurvature); // Siêu elip cho mượt
 
 
     shadowSprite.setTexture(res.getTexture("assets/textures/shadow_algo.png"));
@@ -172,14 +283,14 @@ void MenuState::init()
     // --- 1. CHUẨN BỊ BẢNG MÀU (PALETTE) ---
     // Danh sách 8 màu Pastel dịu mắt, đảm bảo khác nhau
     std::vector<sf::Color> palette = {
-        sf::Color(255, 107, 107), // Đỏ san hô (Coral Red)
-        sf::Color(72, 219, 251),  // Xanh dương sáng (Light Blue)
-        sf::Color(255, 159, 67),  // Cam (Orange)
-        sf::Color(29, 209, 161),  // Xanh ngọc (Teal)
-        sf::Color(95, 39, 205),   // Tím đậm (Deep Purple)
-        sf::Color(254, 202, 87),  // Vàng (Yellow)
-        sf::Color(255, 107, 129), // Hồng (Pink)
-        sf::Color(84, 160, 255)   // Xanh biển (Blue)
+        sf::Color(255, 69, 58),   // Red (Đỏ san hô đậm)
+        sf::Color(255, 159, 10),  // Orange (Cam Apple)
+        sf::Color(48, 209, 88),   // Green (Xanh lá tươi)
+        sf::Color(10, 132, 255),  // Blue (Xanh dương đặc trưng iOS)
+        sf::Color(94, 92, 230),   // Indigo (Tím thẫm)
+        sf::Color(191, 90, 242),  // Purple (Tím mộng mơ)
+        sf::Color(255, 55, 95),   // Pink (Hồng neon dịu)
+        sf::Color(0, 199, 190)    // Teal (Xanh ngọc bích)
     };
 
     // --- 2. XÁO TRỘN MÀU (SHUFFLE) ---
@@ -202,24 +313,60 @@ void MenuState::init()
     int index = 0;
     int totalCount = (int)info.algos.size();
 
+    const std::string filepath[3][4] = {
+        {
+            "assets/textures/heap_icon.png",
+            "assets/textures/singly_linked_list_icon.png",
+            "assets/textures/AVL_tree_icon.png",
+            "assets/textures/B-tree_icon.png"
+        },
+        {
+            "assets/textures/mst_icon.png",
+            "assets/textures/shortest_path_icon.png",
+            "assets/textures/singly_linked_list_icon.png",
+            "assets/textures/singly_linked_list_icon.png"
+        },
+        {
+            "assets/textures/singly_linked_list_icon.png",
+            "assets/textures/singly_linked_list_icon.png",
+            "assets/textures/singly_linked_list_icon.png",
+            "assets/textures/singly_linked_list_icon.png"
+        }
+    };
+
+    int curId = -1;
+
     // Tạo thẻ động
     for (const auto& algo : info.algos)
     {
+        ++curId;
         // [SỬA 1] Cấu hình Config thay vì truyền tham số lẻ tẻ
         GUI::CardConfig cfg;
         cfg.id = algo.id;
         cfg.title = algo.name;
         cfg.number = algo.number;
+
+        cfg.description = algo.description; // Truyền data từ Model sang View
+        cfg.shortDescription = algo.shortDescription;
+        cfg.iconTexture = &res.getTexture(algo.iconPath); // Load icon tương ứng
+
+        // Nền đậm nên Title Unselected là Đen/Xám, Selected là Trắng
+        cfg.colorTitleUnselected = sf::Color(29, 29, 31);
+        cfg.colorTitleSelected = sf::Color(255, 255, 255);
+
         // Tạm thời chưa có icon cho từng thuật toán, ta dùng icon mặc định hoặc thêm logic icon
         // Ví dụ: lấy icon từ Category hoặc Placeholder
         // cfg.iconTexture = &res.getTexture("assets/icons/default_algo.png");
         // Nếu chưa có texture, bạn có thể null check trong MenuCard hoặc trỏ tạm vào 1 texture nào đó
         // Giả sử ta lấy texture đầu tiên của category làm mẫu
-        if (currentCategory == 0) cfg.iconTexture = &res.getTexture("assets/icons/linear.png");
-        else if (currentCategory == 1) cfg.iconTexture = &res.getTexture("assets/icons/tree.png");
-        else cfg.iconTexture = &res.getTexture("assets/icons/graph.png");
+//        if (currentCategory == 0) cfg.iconTexture = &res.getTexture("assets/icons/linear.png");
+//        else if (currentCategory == 1) cfg.iconTexture = &res.getTexture("assets/icons/tree.png");
+//        else cfg.iconTexture = &res.getTexture("assets/icons/graph.png");
+//        cfg.iconTexture = &res.getTexture(filepath[currentCategory][curId]);
 
         cfg.themeColor = palette[index % palette.size()];
+        cfg.colorNumber = cfg.themeColor;
+
         // Kích thước khởi tạo của thẻ Algo
         cfg.initialSize = {Theme::Style::AlgoCardW, Theme::Style::AlgoCardH};
 
@@ -277,8 +424,8 @@ void MenuState::init()
 
 void MenuState::updateLayout(float dt)
 {
-    float winW = (float)window.getSize().x;
-    float winH = (float)window.getSize().y;
+    float winW = Utils::System::DESIGN_WIDTH;
+    float winH = Utils::System::DESIGN_HEIGHT;
 
     // --- 1. DÙNG HẰNG SỐ MỚI TỪ THEME ---
     float containerW = Theme::Style::AlgoBoardW; // 1200.0f
@@ -403,12 +550,44 @@ void MenuState::handleInput(sf::Event& event)
     // [THÊM] Nếu đang chuyển cảnh thì không nhận input click
     if (isTransitioning) return;
 
+
+    // THÊM ĐOẠN NÀY ĐỂ TẠO VIỀN ĐEN KHI CO GIÃN
+    if (event.type == sf::Event::Resized)
+    {
+        Utils::System::applyLetterboxView(window, event.size.width, event.size.height);
+    }
+
     if(event.type == sf::Event::Closed) window.close();
+
 
 
     if (!expandedCard) {
         btnBack->handleEvent(event, window);
     }
+
+//    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+//    {
+//        // xử lý
+//        sf::Vector2f mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+//        if(!bgBoard.getGlobalBounds().contains(mouse))
+//        {
+//            expandedCard = nullptr;
+//            selectedIndex = -1;
+//        }
+//    }
+
+    if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+    {
+        sf::Vector2i pixelPos(event.mouseButton.x, event.mouseButton.y);
+
+        if(!Utils::ViewHandler::isMouseInFrame(pixelPos, window, bgBoard.getGlobalBounds()))
+        {
+            expandedCard = nullptr;
+            selectedIndex = -1;
+        }
+    }
+
+
 
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
     {
@@ -505,8 +684,8 @@ void MenuState::draw()
     float containerW = Theme::Style::AlgoBoardW; // 1200
     float containerH = Theme::Style::AlgoBoardH; // 580
 
-    float startX = (window.getSize().x - containerW) / 2.f;
-    float startY = (window.getSize().y - containerH) / 2.f + 30.f;
+    float startX = (Utils::System::DESIGN_WIDTH - containerW) / 2.f;
+    float startY = (Utils::System::DESIGN_HEIGHT - containerH) / 2.f + 30.f;
 
 //    if(!expandedCard)
 //    {
@@ -538,10 +717,12 @@ void MenuState::draw()
 //    window.draw(bgRect);
 
     // --- SCISSOR TEST ---
-    sf::Vector2u windowSize = window.getSize();
+    sf::Vector2u windowSize = sf::Vector2u(window.getSize().x, window.getSize().y);
     sf::Vector2i scissorPos = window.mapCoordsToPixel({startX, startY + containerH});
     sf::Vector2i scissorSize = window.mapCoordsToPixel({startX + containerW, startY}) - scissorPos;
-    int scissorY = windowSize.y - scissorPos.y;
+
+    // Dùng window.getSize().y (kích thước thật) để lật trục Y cho OpenGL
+    int scissorY = window.getSize().y - scissorPos.y;
 
     glEnable(GL_SCISSOR_TEST);
     glScissor(scissorPos.x, scissorY, std::abs(scissorSize.x), std::abs(scissorSize.y));
@@ -600,8 +781,8 @@ void MenuState::updateInTransition(float dt)
     // Thông số Layout chuẩn
     float containerW = Theme::Style::AlgoBoardW;
     float containerH = Theme::Style::AlgoBoardH;
-    float startX = (window.getSize().x - containerW) / 2.0f;
-    float startY = (window.getSize().y - containerH) / 2.0f + 30.f;
+    float startX = (Utils::System::DESIGN_WIDTH - containerW) / 2.0f;
+    float startY = (Utils::System::DESIGN_HEIGHT - containerH) / 2.0f + 30.f;
     float cardW = containerW / cards.size();
 
     // 1. UPDATE CARDS (Staggered Animation)

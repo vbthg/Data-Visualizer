@@ -1,5 +1,9 @@
 #include "Application.h"
+#include "WindowConfig.h"
 #include "IntroState.h"
+#include "NotchManager.h"
+#include "FileTray.h"
+#include "FileDropManager.h"
 #include <iostream>
 
 Application::Application()
@@ -31,8 +35,24 @@ Application::~Application()
     delete titleBar;
 }
 
+void Application::NotchInit()
+{
+    // Chỉ khởi tạo cảm biến OLE của Windows ở đây
+    FileDropManager::init(window.getSystemHandle());
+
+    // Khởi tạo kích thước cho Notch
+    GUI::NotchManager::getInstance().init();
+}
+
+void Application::NotchCleanup()
+{
+    FileDropManager::shutdown();
+}
+
 void Application::run()
 {
+    NotchInit();
+
     sf::Clock clock;
 
     while(window.isOpen())
@@ -65,6 +85,7 @@ void Application::run()
             currentState->handleInput(event);
         }
 
+
         // 2. UPDATE
         titleBar->update(dt);
         currentState->update(dt);
@@ -80,6 +101,8 @@ void Application::run()
 
         window.display();
     }
+
+    NotchCleanup();
 }
 
 void Application::handleGlobalInput(sf::Event& event)
@@ -93,8 +116,7 @@ void Application::handleGlobalInput(sf::Event& event)
     // Fix méo hình khi resize
     if(event.type == sf::Event::Resized)
     {
-        sf::FloatRect visibleArea(0, 0, (float)event.size.width, (float)event.size.height);
-        window.setView(sf::View(visibleArea));
+        Utils::System::applyLetterboxView(window, event.size.width, event.size.height);
     }
 }
 

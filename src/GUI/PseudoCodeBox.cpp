@@ -1,4 +1,5 @@
 #include "PseudoCodeBox.h"
+#include "ViewHandler.h"
 #include <iostream>
 #include <algorithm>
 
@@ -99,10 +100,11 @@ namespace GUI
     {
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
-            sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
+            sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
 
             // Nếu click trúng viên thuốc hoặc bảng thì bật/tắt
-            if (m_background.getGlobalBounds().contains(mousePos))
+//            if (m_background.getGlobalBounds().contains(mousePos))
+            if (Utils::ViewHandler::isMouseInFrame(mousePos, window, m_background.getGlobalBounds()))
             {
                 toggleState();
             }

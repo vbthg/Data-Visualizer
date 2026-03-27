@@ -1,4 +1,5 @@
 #include "InputField.h"
+#include "ViewHandler.h"
 #include "Theme.h"
 #include <cctype> // Để dùng std::isdigit
 
@@ -130,12 +131,14 @@ namespace GUI
         // 1. Xử lý Click chuột để Focus
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
-            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+//            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+            sf::Vector2i mPos = {event.mouseButton.x, event.mouseButton.y};
 
             // Do Shape origin ở giữa, tính bounds bằng Transform
-            sf::FloatRect hitbox(position.x - size.x/2.0f, position.y - size.y/2.0f, size.x, size.y);
+            sf::FloatRect hitbox(position.x - size.x / 2.0f, position.y - size.y / 2.0f, size.x, size.y);
 
-            setFocus(hitbox.contains(mPos));
+//            setFocus(hitbox.contains(mPos));
+            setFocus(Utils::ViewHandler::isMouseInFrame(mPos, window, hitbox));
         }
 
         // 2. Xử lý Gõ phím

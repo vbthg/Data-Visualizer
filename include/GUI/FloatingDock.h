@@ -22,7 +22,7 @@ namespace GUI
         GUI::Squircle background;
         sf::Sprite shadowSprite;
 
-        const sf::Texture* m_blurTexture = nullptr; // Thêm dòng này
+//        const sf::Texture* m_blurTexture = nullptr; // Thêm dòng này
 
         // Highlighter
         GUI::Squircle highlighter;
@@ -50,7 +50,7 @@ namespace GUI
 
         // Hàm tương thích ngược với cấu trúc cũ
         void setCommands(const std::vector<DS::Command>& cmds, const sf::Font& iconFont);
-        void setBlurTexture(const sf::Texture& texture); // Thêm dòng này
+        void setBlurTexture(const sf::Texture& texture, sf::Vector2f size); // Thêm dòng này
 
         void updateLayout();
         void setPosition(float x, float y);

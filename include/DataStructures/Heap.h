@@ -2,53 +2,62 @@
 #include "DataStructure.h"
 #include "GUI/NodeUI.h"
 #include "GUI/EdgeUI.h"
-#include "AnimationManager.h"
+#include "TimelineManager.h" // Thay thế AnimationManager
+#include "Snapshot.h"
+#include <map>
+#include <vector>
+#include <string>
 
 namespace DS
 {
+    // Cấu trúc lõi: Mỗi giá trị đi kèm 1 ID định danh vĩnh viễn
+    struct HeapElement
+    {
+        int value;
+        int id;
+    };
 
-class Heap : public DataStructure
-{
-private:
-    std::vector<int> m_data;                   // Dữ liệu logic cốt lõi
-    std::vector<GUI::NodeUI*> m_nodes;         // Các Node vật lý hiển thị trên màn hình
-    std::vector<GUI::EdgeUI*> m_edges;         // Các Cạnh nối đàn hồi (Bezier)
+    class Heap : public DataStructure
+    {
+    private:
+        std::vector<HeapElement> m_data; // Dữ liệu logic (Bây giờ chứa cả ID)
+        int m_idCounter = 0;             // Bộ đếm sinh ID độc nhất
+        int m_currentMacroStep = 0;
 
-    Utils::AnimationManager m_animManager;     // Quản lý các hoạt ảnh sinh ra từ thao tác
-    sf::Font* m_font;
+        // Hệ thống Mapping ID -> UI Thực thể (Quản lý rác tự động)
+        std::map<int, GUI::NodeUI*> m_nodeMap;
+        std::map<std::pair<int, int>, GUI::EdgeUI*> m_edgeMap;
 
-    // --- CÁC HÀM HỖ TRỢ THUẬT TOÁN & HOẠT ẢNH ---
-    void heapifyUp(int index);
-    void heapifyDown(int index);
+        Utils::Core::TimelineManager m_timeline;
+        sf::Font* m_font;
+        GUI::DynamicIsland* m_island; // Để truyền logMessage trực tiếp nếu cần
 
-    // Tính toán tọa độ đích (target) cho toàn bộ Node dựa vào index (Vẽ dạng cây)
-    void updateLayout();
+        // --- HÀM HỖ TRỢ KIẾN TRÚC MỚI ---
 
-    // Hàm hoán đổi 2 phần tử: Đổi logic mảng, đổi con trỏ Node, và nạp Animation
-    void swapNodes(int i, int j);
+        // Máy ảnh: Chụp lại trạng thái của m_data hiện tại ném vào Timeline
+        void captureSnapshot(const std::string& logMessage, Utils::Core::TransitionType transition, int macroStepID = -1);
 
-    // Tạo lại toàn bộ các EdgeUI kết nối cha - con (i -> 2i+1, 2i+2)
-    void rebuildEdges();
+        // Toán học: Tính toán tọa độ lý thuyết của Node thứ 'index' trên cây
+        sf::Vector2f getTheoreticalPosition(int index);
 
-public:
-    Heap();
-    ~Heap() override;
+        // --- CÁC HÀM THUẬT TOÁN (Chỉ còn logic thuần túy) ---
+        void heapifyUp(int index, int macroStepID);
+        void heapifyDown(int index, int macroStepID);
 
-    // --- CÁC THAO TÁC CỦA HEAP ---
-    void insert(int value);
-    void extractMax();
-    void clear();
+    public:
+        Heap();
+        ~Heap() override;
 
-    // --- IMPLEMENT TỪ DATASTRUCTURE ---
-    std::vector<DS::Command> getCommands() override;
-    void update(float dt) override;
-    void draw(sf::RenderTarget& target) override;
-    std::string getName() const override;
+        void insert(int value);
+        void extractMax();
+        void clear();
 
-    // Trong Heap.h
-    void bindDynamicIsland(GUI::DynamicIsland* island) override;
+        std::vector<DS::Command> getCommands() override;
+        void update(float dt) override;
+        void draw(sf::RenderTarget& target) override;
+        std::string getName() const override;
 
-    void setMousePosition(sf::Vector2f pos) override;
-};
-
+        void bindDynamicIsland(GUI::DynamicIsland* island) override;
+        void setMousePosition(sf::Vector2f pos) override;
+    };
 }

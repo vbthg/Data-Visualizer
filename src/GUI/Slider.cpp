@@ -1,4 +1,5 @@
 #include "Slider.h"
+#include "ResourceManager.h"
 
 namespace GUI
 {
@@ -6,35 +7,29 @@ namespace GUI
         : trackWidth(trackWidth), minValue(0.f), maxValue(1.f), stepSize(0.1f),
           currentValue(0.5f), isDragging(false), isHovered(false), opacityFactor(1.0f), position(0.f, 0.f)
     {
-        // 1. Setup Track Nền (Background Track)
+        // 1. Setup Track Nền
         bgTrack.setSize({trackWidth, trackHeight});
-        bgTrack.setCornerRadius(trackHeight / 2.0f, trackHeight / 2.0f, trackHeight / 2.0f, trackHeight / 2.0f);
-        // Đặt Origin ở GIỮA mép trái để dễ dàng định vị theo chiều dọc
+        bgTrack.setRadius(trackHeight / 2.0f); // Bo tròn hoàn toàn
+        bgTrack.setPower(2.0f);
         bgTrack.setOrigin(0.0f, trackHeight / 2.0f);
-        bgTrack.setFillColor(sf::Color(220, 220, 225)); // Màu xám nhạt
 
-        // 2. Setup Track Kích Hoạt (Active Track - iOS Blue)
+        // Tùy theme của bạn, nền có thể là đen mờ hoặc trắng mờ. Ví dụ: đen mờ
+        bgTrack.setFillColor(sf::Color(0, 0, 0), 0.2f);
+
+        // 2. Setup Track Kích Hoạt (Fill)
         activeTrack.setSize({0.0f, trackHeight});
-        activeTrack.setCornerRadius(trackHeight / 2.0f, trackHeight / 2.0f, trackHeight / 2.0f, trackHeight / 2.0f);
+        activeTrack.setRadius(trackHeight / 2.0f);
+        activeTrack.setPower(2.0f);
         activeTrack.setOrigin(0.0f, trackHeight / 2.0f);
-        activeTrack.setFillColor(sf::Color(0, 122, 255)); // Màu xanh nước biển chuẩn Apple
 
-        // 3. Setup Cục lăn (Thumb)
-        thumb.setRadius(thumbBaseRadius);
-        // Đặt Origin vào đúng TÂM hình tròn để khi Scale lên (phóng to), nó phình đều ra 4 phía
-        thumb.setOrigin(thumbBaseRadius, thumbBaseRadius);
-        thumb.setFillColor(sf::Color::White);
-        thumb.setOutlineThickness(1.0f);
-        thumb.setOutlineColor(sf::Color(200, 200, 200, 150)); // Thêm viền xám mờ để tách biệt với nền trắng
+        // Phần Fill thường là màu trắng hoặc xám sáng nổi bật
+        activeTrack.setFillColor(sf::Color(255, 255, 255), 0.3f);
+        activeTrack.setBakedGlass(&ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur.png"), sf::Vector2f(1920.f, 1080.f));
 
         // 4. Cấu hình độ cứng và ma sát của Lò xo (Spring Physics)
         thumbSpring.stiffness = 700.0f;
         thumbSpring.damping = 35.0f;
         thumbSpring.snapTo(currentValue);
-
-        scaleSpring.stiffness = 600.0f;
-        scaleSpring.damping = 35.0f;
-        scaleSpring.snapTo(1.0f);
     }
 
     void Slider::setPosition(sf::Vector2f pos)
@@ -128,9 +123,8 @@ namespace GUI
         // Chuyển tọa độ chuột toàn cục sang tọa độ cục bộ của Slider
         sf::Vector2f localMousePos = mousePos - position;
 
-        // Vùng Hitbox mở rộng (Fitts's Law): Thay vì chỉ bắt chính xác vào thanh cao 6px,
-        // ta mở rộng vùng bắt chuột ra cao 40px (Y: -20 đến 20) và dài ra 2 đầu thêm 10px.
-        sf::FloatRect hitbox(-10.0f, -20.0f, trackWidth + 20.0f, 40.0f);
+        // Hitbox giờ bao trọn cái viên thuốc này
+        sf::FloatRect hitbox(0.0f, -trackHeight / 2.0f, trackWidth, trackHeight);
 
         // 1. Hover Logic (Trạng thái trỏ chuột)
         if (event.type == sf::Event::MouseMoved)
@@ -171,16 +165,6 @@ namespace GUI
         {
             isDragging = false;
         }
-
-        // 4. Xử lý hoạt ảnh phóng to cục Thumb khi Hover hoặc Dragging
-        if (isDragging || isHovered)
-        {
-            scaleSpring.target = 1.25f; // Phóng to 30%
-        }
-        else
-        {
-            scaleSpring.target = 1.0f; // Trả về bình thường
-        }
     }
 
     void Slider::update(const sf::RenderWindow& window, float dt)
@@ -191,47 +175,41 @@ namespace GUI
         {
             sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             sf::Vector2f localMousePos = mousePos - position;
-            sf::FloatRect hitbox(-10.0f, -20.0f, trackWidth + 20.0f, 40.0f);
+            // Hitbox giờ bao trọn cái viên thuốc này
+            sf::FloatRect hitbox(0.0f, -trackHeight / 2.0f, trackWidth, trackHeight);
 
             bool currentHover = hitbox.contains(localMousePos);
             if (isHovered != currentHover)
             {
                 isHovered = currentHover;
-                scaleSpring.target = (isHovered) ? 1.3f : 1.0f;
             }
         }
 
         // 1. Cập nhật hệ thống Vật lý Lò xo
         thumbSpring.update(dt);
-        scaleSpring.update(dt);
 
-        // 2. Tính toán vị trí X hiện tại của cục lăn dựa trên giá trị của lò xo
+        // 2. Tính toán chiều rộng hiện tại của phần Fill dựa trên giá trị của lò xo
         float currentSpringVal = std::clamp(thumbSpring.position, minValue, maxValue);
         float ratio = (currentSpringVal - minValue) / (maxValue - minValue);
-        float currentX = ratio * trackWidth;
+        float currentWidth = trackHeight + ratio * (trackWidth - trackHeight);
 
         // 3. Cập nhật đồ họa
-        // Di chuyển cục thumb
-        thumb.setPosition(position.x + currentX, position.y);
-        // Áp dụng scale-up cho thumb
-        thumb.setScale(scaleSpring.position, scaleSpring.position);
-        // Thanh xanh (activeTrack) sẽ kéo dài từ 0 đến chính giữa cục thumb
-        activeTrack.setSize({currentX, trackHeight});
+        // Cập nhật chiều rộng cho activeTrack
+        activeTrack.setSize({currentWidth, trackHeight});
 
         // 4. Cập nhật Opacity (Morphing Effect)
+        // Giả sử màu gốc là Đen cho nền, Trắng cho fill
         auto applyAlpha = [&](sf::Color color) -> sf::Color
         {
             color.a = static_cast<sf::Uint8>(color.a * opacityFactor);
             return color;
         };
 
-        bgTrack.setFillColor(applyAlpha(sf::Color(220, 220, 225)));
-        activeTrack.setFillColor(applyAlpha(sf::Color(0, 122, 255)));
-        thumb.setFillColor(applyAlpha(sf::Color::White));
-
-        // Cập nhật cả Alpha của viền mờ xung quanh thumb
-        sf::Color outlineCol = sf::Color(200, 200, 200, 150);
-        thumb.setOutlineColor(applyAlpha(outlineCol));
+        bgTrack.setFillColor(sf::Color(0, 0, 0), 0.2f * opacityFactor);
+        activeTrack.setFillColor(sf::Color(255, 255, 255), 0.3f * opacityFactor);
+        // 3. THÊM VIỀN: Tạo độ sắc sảo cho khối kính (Rất quan trọng)
+        activeTrack.setOutlineColor(sf::Color(255, 255, 255, (sf::Uint8)(150 * opacityFactor)));
+        activeTrack.setOutlineThickness(0.5f);
 
         leftIcon.setColor(applyAlpha(sf::Color(150, 150, 150)));
         rightIcon.setColor(applyAlpha(sf::Color(150, 150, 150)));
@@ -247,7 +225,7 @@ namespace GUI
         {
             window.draw(activeTrack);
         }
-        window.draw(thumb);
+//        window.draw(thumb);
 
         window.draw(leftIcon);
         window.draw(rightIcon);

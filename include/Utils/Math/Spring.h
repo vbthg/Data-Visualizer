@@ -31,5 +31,29 @@ namespace Utils
                 velocity = 0.0f;
             }
         };
+
+        struct Spring2D
+        {
+            sf::Vector2f position = {1.0f, 1.0f};
+            sf::Vector2f target = {1.0f, 1.0f};
+            sf::Vector2f velocity = {0.0f, 0.0f};
+
+            float stiffness = 600.0f;
+            float damping = 35.0f;
+
+            void update(float dt)
+            {
+                float physicsDt = std::min(dt, 0.0166f);
+                Utils::Math::Smoothing::spring(position.x, target.x, velocity.x, stiffness, damping, physicsDt);
+                Utils::Math::Smoothing::spring(position.y, target.y, velocity.y, stiffness, damping, physicsDt);
+            }
+
+            void snapTo(sf::Vector2f val)
+            {
+                position = val;
+                target = val;
+                velocity = {0.0f, 0.0f};
+            }
+        };
     }
 }

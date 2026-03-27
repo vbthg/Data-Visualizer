@@ -56,6 +56,7 @@ namespace GUI
         void setTextColor(sf::Color color); // Set 1 màu cho cả 3
         void setOutline(float thickness, sf::Color color);
         void setOpacity(float opacity);
+        void setPower(int power);
 
         void applyPreset(ButtonPreset preset);
 

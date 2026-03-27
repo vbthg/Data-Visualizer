@@ -41,7 +41,7 @@ namespace Utils
 
                     if(std::abs(diff) < minS) return t;
                     if(std::abs(step) < minS) return c + ((diff > 0) ? minS : -minS);
-                    return c + step;
+                    return std::max(0.0f, std::min(255.0f, c + step));
                 };
 
                 return sf::Color(

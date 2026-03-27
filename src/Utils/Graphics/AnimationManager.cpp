@@ -61,6 +61,50 @@ namespace Utils
         m_isPlaying = false;
     }
 
+    // Thêm vào AnimationManager.h trước
+    // void finishAll();
+
+    void AnimationManager::finishAll()
+    {
+        if(m_steps.empty()) return;
+
+        // Chạy xuyên qua tất cả các bước còn lại
+        while(m_currentIndex < m_steps.size())
+        {
+            AnimationStep& step = m_steps[m_currentIndex];
+
+            // Nếu bước này chưa kịp Start, hãy Start nó
+            if(m_currentTime == 0.0f && step.onStart)
+            {
+                step.onStart();
+            }
+
+            // Ép Update về 1.0 (trạng thái cuối)
+            if(step.onUpdate)
+            {
+                step.onUpdate(1.0f);
+            }
+
+            // Gọi Finish để hoàn tất logic thuật toán của bước đó
+            if(step.onFinish)
+            {
+                step.onFinish();
+            }
+
+            m_currentIndex++;
+            m_currentTime = 0.0f;
+        }
+
+        m_isPlaying = false;
+        m_steps.clear();
+        m_currentIndex = 0;
+
+        if(m_island)
+        {
+            m_island->hideMessage();
+        }
+    }
+
     void AnimationManager::stepForward()
     {
         if(m_currentIndex < m_steps.size())
@@ -115,7 +159,13 @@ namespace Utils
             }
         }
 
-        m_currentTime += (dt * m_timeScale);
+
+        // Nếu còn quá nhiều bước (VD > 3), tự động tăng tốc độ để đuổi kịp logic
+        float dynamicScale = m_timeScale;
+        size_t remaining = m_steps.size() - m_currentIndex;
+        if(remaining > 3) dynamicScale *= (remaining * 0.5f);
+
+        m_currentTime += (dt * dynamicScale);
         float t = m_currentTime / currentStep.duration;
 
         if(t >= 1.0f)

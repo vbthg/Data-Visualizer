@@ -1,5 +1,6 @@
 #include "Button.h"
 #include "Easing.h"
+#include "ViewHandler.h"
 #include <iostream>
 
 namespace GUI
@@ -16,7 +17,7 @@ namespace GUI
 
         // 2. Setup Background (RoundedRect)
         bgShape.setSize(size);
-        bgShape.setCornerRadius(Theme::Style::ButtonRadius, Theme::Style::ButtonRadius, Theme::Style::ButtonRadius, Theme::Style::ButtonRadius); // Mặc định bo 12px
+        bgShape.setRadius(Theme::Style::ButtonRadius, Theme::Style::ButtonRadius, Theme::Style::ButtonRadius, Theme::Style::ButtonRadius); // Mặc định bo 12px
 
         // QUAN TRỌNG: Đặt Origin vào TÂM để lò xo Scale hoạt động đúng từ giữa ra
         bgShape.setOrigin(size.x / 2.0f, size.y / 2.0f);
@@ -64,7 +65,7 @@ namespace GUI
     void Button::setCornerRadius(float radius)
     {
         // Gọi thẳng hàm của RoundedRectangleShape
-        bgShape.setCornerRadius(radius, radius, radius, radius);
+        bgShape.setRadius(radius, radius, radius, radius);
         m_baseRadius = radius;
     }
 
@@ -72,6 +73,11 @@ namespace GUI
     {
         content.setString(text);
         centerText();
+    }
+
+    void Button::setPower(int power)
+    {
+        bgShape.setPower(power);
     }
 
     void Button::triggerTextPop()
@@ -242,11 +248,11 @@ namespace GUI
             scaleSpring.target = 0.8f;
         }
         // Nếu nút đang hiện rõ (opacityFactor ~ 1.0) và không bị nhấn
-//        else if (!isPressed)
-//        {
-//            // Trả về kích thước gốc
-//            scaleSpring.target = 1.0f;
-//        }
+        else if (!isPressed)
+        {
+            // Trả về kích thước gốc
+            scaleSpring.target = 1.0f;
+        }
 
         // 4. Cập nhật Vật Lý Lò Xo
         scaleSpring.update(dt);
@@ -258,7 +264,7 @@ namespace GUI
         if (m_maxScale > 1.0f && scaleSpring.position != scaleSpring.target) // Chỉ tính toán biến thiên góc bo nếu nút có cấu hình phình to
         {
             // Hard-code mức tăng cực kỳ an toàn và đẹp mắt: Cộng thêm 10px so với gốc
-            float expandedRadius = m_baseRadius + 10.0f;
+            float expandedRadius = m_baseRadius + 4.0f;
 
             // Tính tiến trình t (Mẫu số m_maxScale - 1.0f giờ đã là hằng số an toàn)
             float t = std::clamp((btnScale - 1.0f) / (m_maxScale - 1.0f), 0.0f, 1.0f);
@@ -275,41 +281,79 @@ namespace GUI
 
 
         // Chỉ in log nếu cái nút này có chữ chứa số "1x"
-        if (content.getString() == "1x" || content.getString() == "1.0x")
-        {
-            std::cout << "Spring Scale: " << btnScale
-                      << " | Shape Width: " << bgShape.getGlobalBounds().width << "\n";
-        }
+//        if (content.getString() == "1x" || content.getString() == "1.0x")
+//        {
+//            std::cout << "Spring Scale: " << btnScale
+//                      << " | Shape Width: " << bgShape.getGlobalBounds().width << "\n";
+//        }
 
         // Scale chữ từ tâm (SFML Text cần setOrigin ở giữa để scale không bị lệch)
 //        content.setScale(textScaleSpring.position, textScaleSpring.position);
     }
 
+//    void Button::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+//    {
+//        // 1. Hover Logic (Micro Interaction: Không scale, chỉ đảm bảo target=1.0)
+//        if (bgShape.getGlobalBounds().contains(window.mapPixelToCoords(sf::Mouse::getPosition(window))))
+//        {
+//            if (!isPressed) scaleSpring.target = 1.0f;
+//        }
+//
+//        // 2. Click Logic
+//        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+//        {
+//            if (isHovered)
+//            {
+//                isPressed = true;
+//                scaleSpring.target = 0.96f; // Nhấn: Co nhẹ
+//            }
+//        }
+//        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+//        {
+//            if (isPressed)
+//            {
+//                isPressed = false;
+//                scaleSpring.target = 1.0f; // Thả: Bật về
+//
+//                if (isHovered && onClick)
+//                {
+//                    onClick();
+//                }
+//            }
+//        }
+//    }
+
     void Button::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
-        // 1. Hover Logic (Micro Interaction: Không scale, chỉ đảm bảo target=1.0)
-        if (bgShape.getGlobalBounds().contains(window.mapPixelToCoords(sf::Mouse::getPosition(window))))
+        if(event.type == sf::Event::MouseMoved)
         {
-//            if (!isPressed) scaleSpring.target = 1.0f;
-        }
+            sf::Vector2i mousePos(event.mouseMove.x, event.mouseMove.y);
+            isHovered = Utils::ViewHandler::isMouseInFrame(mousePos, window, bgShape.getGlobalBounds());
 
-        // 2. Click Logic
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
-        {
-            if (isHovered)
+            if(isHovered && !isPressed)
             {
-                isPressed = true;
-                scaleSpring.target = 0.96f; // Nhấn: Co nhẹ
+                scaleSpring.target = 1.0f;
             }
         }
-        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+
+        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
-            if (isPressed)
+            sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
+            if(Utils::ViewHandler::isMouseInFrame(mousePos, window, bgShape.getGlobalBounds()))
+            {
+                isPressed = true;
+                scaleSpring.target = 0.96f;
+            }
+        }
+        else if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+        {
+            if(isPressed)
             {
                 isPressed = false;
-                scaleSpring.target = 1.0f; // Thả: Bật về
+                scaleSpring.target = 1.0f;
 
-                if (isHovered && onClick)
+                sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
+                if(Utils::ViewHandler::isMouseInFrame(mousePos, window, bgShape.getGlobalBounds()) && onClick)
                 {
                     onClick();
                 }

@@ -12,8 +12,8 @@ namespace Utils
             namespace Animation
             {
                 // -- Physics (Vật lý lò xo) --
-                constexpr float ButtonStiffness = 700.0f;
-                constexpr float ButtonDamping = 40.0f;
+                constexpr float ButtonStiffness = 600.0f;
+                constexpr float ButtonDamping = 70.0f;
 
                 constexpr float CardStiffness = 300.0f;
                 constexpr float CardDamping = 22.0f;
@@ -65,10 +65,10 @@ namespace Utils
                 inline const float DockWidthDamping = 30.0f;
 
                 // Vật lý cho sự nở ra của SpeedController (Nhanh và nảy hơn chút)
-                inline const float MorphStiffness = 500.0f;
-                inline const float MorphDamping = 30.0f;
+                inline const float MorphStiffness = 350.0f;
+                inline const float MorphDamping = 25.0f;
 
-                inline const float HoldDelay = 0.5f; // Ngưỡng thời gian nhấn giữ để Expand
+                inline const float HoldDelay = 0.6f; // Ngưỡng thời gian nhấn giữ để Expand
             }
 
             // --- 2. HÌNH DÁNG & KÍCH THƯỚC (GEOMETRY) ---
@@ -83,14 +83,14 @@ namespace Utils
                 constexpr float CatBoardH = 460.0f;
                 constexpr float CatCardW = 320.0f;
                 constexpr float CatCardH = 460.0f;
-                constexpr float CatRadius = 48.0f;
+                constexpr float CatRadius = 60.0f;
 
                 // 2. Bảng Data Structures (1200x580)
                 constexpr float AlgoBoardW = 1200.0f;
                 constexpr float AlgoBoardH = 580.0f;
                 constexpr float AlgoCardW = 300.0f;
                 constexpr float AlgoCardH = 580.0f;
-                constexpr float AlgoRadius = 48.0f;
+                constexpr float AlgoRadius = 90.0f;
 
                 // Item con
                 constexpr float ItemRadius = 48.0f;
@@ -124,7 +124,18 @@ namespace Utils
                 inline const float SeparatorMargin = 16.0f;    // Khoảng không gian vạch ngăn chiếm (width + padding)
 
                 inline const float SpeedControllerGap = 15.0f; // Khoảng cách giữa nút 1x và Slider khi nở ra
-                inline const float SpeedSliderWidth = 120.0f;  // Chiều dài thanh trượt tốc độ
+                inline const float SpeedSliderWidth = 200.0f;  // Chiều dài thanh trượt tốc độ
+
+
+                const float ExpandedPaddingLeft = 80.f;  // Lề trái cho Back, Title, Description
+                const float ExpandedPaddingRight = 200.f; // Lề phải cho Icon
+                const float ExpandedPaddingTop = 60.f;    // Lề trên cho nút Back
+
+                const float TitleOffsetY = -100.f;        // Độ nhích lên của Title so với tâm
+                const float DescSpacingY = 70.f;          // Khoảng cách từ Title xuống Description
+                const float ButtonSpacingY = 280.f;       // Khoảng cách từ Title xuống nút Start
+
+                const float IconMaxWidth = 256.f;
             }
 
             // --- 3. BẢNG MÀU (COLORS) ---
@@ -162,6 +173,19 @@ namespace Utils
 
                 // Màu vạch ngăn (Trắng, Alpha 12% ~ 30/255)
                 inline const sf::Color SeparatorTint = sf::Color(255, 255, 255, 30);
+
+                inline const sf::Color DockShadow = sf::Color(0, 0, 0, 40);
+
+
+//                inline const sf::Color PendingBarColor = sf::Color(255, 255, 255, 30);       // Trắng rất mờ, ẩn mình hơn
+//                inline const sf::Color CompletedBarColor = sf::Color(10, 132, 255, 100);     // Xanh dương mờ (Tạo vệt đồng màu)
+//                inline const sf::Color ActiveBarColor = sf::Color(10, 132, 255, 255);        // Xanh dương rực rỡ (Apple Blue)
+//                inline const sf::Color DividerColor = sf::Color(0, 0, 0, 255);               // Đen tuyệt đối (Giữ nguyên)
+
+inline const sf::Color PendingBarColor = sf::Color(255, 255, 255, 40);       // Trắng mờ
+inline const sf::Color CompletedBarColor = sf::Color(255, 255, 255, 150);    // Xám sáng (Tăng độ sáng để bớt đục)
+inline const sf::Color ActiveBarColor = sf::Color(255, 255, 255, 255);       // Trắng tuyệt đối
+inline const sf::Color DividerColor = sf::Color(0, 0, 0, 255);               // Đen tuyệt đối
             }
         }
     }
