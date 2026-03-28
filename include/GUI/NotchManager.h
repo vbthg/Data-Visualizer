@@ -28,9 +28,13 @@ namespace GUI
 
         // API Duy nhất để các Cấu trúc dữ liệu (AVL, Graph...) giao tiếp với UI
         // Ví dụ: pushNotification(Scenario::Processing, "Comparing", "15 > 10", "MagnifyingGlass");
-        void pushNotification(Scenario type, const std::string& title = "", const std::string& subtitle = "", const std::string& iconCode = "");
+        void pushNotification(Scenario type, const sf::String& title = "", const sf::String& subtitle = "", const sf::String& iconCode = "");
 
         void update(float dt);
+
+        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+        void updateMousePos(sf::Vector2i mousePos, const sf::RenderWindow& window);
+        sf::FloatRect getBounds() const;
 
 
         void updateStep(int current, int total, float duration)
@@ -68,12 +72,12 @@ namespace GUI
         const sf::Vector2f SIZE_COMPACT = {220.f, 40.f};
         const sf::Vector2f SIZE_STANDARD = {400.f, 50.f};
         const sf::Vector2f SIZE_EXPANDED = {500.f, 80.f};
-        const sf::Vector2f SIZE_TRAY = {550.f, 120.f};
+        const sf::Vector2f SIZE_TRAY = {720.f, 170.f};
 
         // Bán kính bo góc (x = bottom, y = top flare)
         const sf::Vector2f RADII_COMPACT = {14.f, 7.f};
         const sf::Vector2f RADII_STANDARD = {14.f, 10.f};
         const sf::Vector2f RADII_EXPANDED = {14.f, 12.f};
-        const sf::Vector2f RADII_TRAY = {14.f, 14.f};
+        const sf::Vector2f RADII_TRAY = {38.f, 15.f};
     };
 }

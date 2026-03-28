@@ -16,10 +16,23 @@ namespace GUI
           m_shadowColor(sf::Color::Transparent), m_shadowBlur(0.f), m_shadowOffset({0.f, 0.f})
     {
         // Khởi tạo vị trí ban đầu cho Spring để tránh hiện tượng giật kích thước khung hình đầu
+        m_sizeSpring.stiffness = 350.f;
+        m_sizeSpring.damping = 30.f;
         m_sizeSpring.snapTo(size);
 
+        m_radiusBottomSpring.stiffness = 350.f;
+        m_radiusBottomSpring.damping = 30.f;
         m_radiusBottomSpring.snapTo(15.f);
+
+        m_radiusTopFlareSpring.stiffness = 350.f;
+        m_radiusBottomSpring.damping = 30.f;
         m_radiusTopFlareSpring.snapTo(23.f);
+
+        // Set stiffness cao và damping vừa phải để có độ nảy "Apple-like"
+        m_scaleSpring.snapTo(1.f);
+        m_scaleSpring.stiffness = 300.f;
+        m_scaleSpring.damping = 20.f;
+
 
         if(!s_isShaderLoaded)
         {
@@ -65,6 +78,11 @@ namespace GUI
     void Notch::setWaveformState(GUI::Waveform::State state)
     {
         m_waveform.setState(state);
+    }
+
+    void Notch::setScaleTarget(float target)
+    {
+        m_scaleSpring.target = target;
     }
 
 //    void Notch::update(float dt)
@@ -116,7 +134,13 @@ namespace GUI
 
     void Notch::update(float dt)
     {
+        m_scaleSpring.update(dt);
 
+        // Áp dụng scale vào Transformable (Notch kế thừa từ sf::Transformable)
+        float currentScale = m_scaleSpring.position;
+        setScale(currentScale, currentScale);
+        // Đảm bảo việc scale diễn ra từ tâm của cạnh trên (Origin ở giữa-trên)
+        setOrigin(m_size.x / 2.0f, 0.f);
 
 
         // 1. Cập nhật vật lý cho khung hình Notch
@@ -160,7 +184,7 @@ namespace GUI
 
             float t = m_transitionProgress;
             // Dùng EaseOutQuart của bạn để tạo cảm giác trượt mượt mà
-            float ease = Utils::Math::Easing::easeOutQuart(t);
+            float ease = Utils::Math::Easing::easeOutExpo(t);
 
             // Xử lý Content cũ: Mờ dần và trượt xuống dưới
             if(m_oldContent)

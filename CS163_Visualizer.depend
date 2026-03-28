@@ -8,8 +8,12 @@
 	<cmath>
 	<algorithm>
 
-1774594354 source:d:\cs163_visualizer\cs163_visualizer.cpp
+1774667532 source:d:\cs163_visualizer\cs163_visualizer.cpp
 	"Application.h"
+	"ResourceManager.h"
+	<SFML/Graphics.hpp>
+	"FileDropManager.h"
+	"NotchManager.h"
 
 1761058563 c:\users\lenovo\documents\libraries\sfml-2.6.1\include\sfml\graphics.hpp
 	<SFML/Window.hpp>
@@ -447,12 +451,14 @@
 1769502700 d:\cs163_visualizer\include\utils\graphics\windowcontrol.h
 	<SFML/Graphics.hpp>
 
-1769656678 source:d:\cs163_visualizer\src\gui\titlebar.cpp
+1774602294 source:d:\cs163_visualizer\src\gui\titlebar.cpp
 	"TitleBar.h"
 	"Smoothing.h"
+	"FileDropManager.h"
+	"WindowConfig.h"
 	<Windows.h>
 
-1769536752 d:\cs163_visualizer\include\gui\titlebar.h
+1774602198 d:\cs163_visualizer\include\gui\titlebar.h
 	<SFML/Graphics.hpp>
 	"Button.h"
 
@@ -507,13 +513,14 @@
 	"ResourceManager.h"
 	"Button.h"
 
-1774597472 source:d:\cs163_visualizer\src\application.cpp
+1774602309 source:d:\cs163_visualizer\src\application.cpp
 	"Application.h"
 	"WindowConfig.h"
 	"IntroState.h"
 	"NotchManager.h"
 	"FileTray.h"
 	"FileDropManager.h"
+	<windows.h>
 	<iostream>
 
 1774513993 source:d:\cs163_visualizer\src\gui\menucard.cpp
@@ -649,16 +656,18 @@
 	<string>
 	<functional>
 
-1774514707 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
+1774668688 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
 	"VisualizerState.h"
 	"ResourceManager.h"
 	"Theme.h"
 	"SpeedController.h"
 	"ViewHandler.h"
 	"WindowConfig.h"
+	"NotchManager.h"
+	"FileDropManager.h"
 	<iostream>
 
-1774595701 d:\cs163_visualizer\include\states\visualizerstate.h
+1774602208 d:\cs163_visualizer\include\states\visualizerstate.h
 	"State.h"
 	"DataStructure.h"
 	"FloatingDock.h"
@@ -833,7 +842,7 @@
 	<SFML/Graphics.hpp>
 	"Squircle.h"
 
-1774513147 source:d:\cs163_visualizer\src\gui\speedcontroller.cpp
+1774668070 source:d:\cs163_visualizer\src\gui\speedcontroller.cpp
 	"SpeedController.h"
 	"ViewHandler.h"
 	<iostream>
@@ -898,14 +907,14 @@
 	"AnimationMetadata.h"
 	"Easing.h"
 
-1774548662 source:d:\cs163_visualizer\src\gui\notch.cpp
+1774634229 source:d:\cs163_visualizer\src\gui\notch.cpp
 	"Notch.h"
 	"Easing.h"
 	<iostream>
 	<cmath>
 	<memory>
 
-1774449407 d:\cs163_visualizer\include\gui\notch.h
+1774633765 d:\cs163_visualizer\include\gui\notch.h
 	<SFML/Graphics.hpp>
 	<string>
 	<memory>
@@ -915,7 +924,7 @@
 	"GUI/NotchContent.h"
 	"NotchEnums.h"
 
-1774431085 source:d:\cs163_visualizer\src\gui\notchcontent.cpp
+1774634876 source:d:\cs163_visualizer\src\gui\notchcontent.cpp
 	"NotchContent.h"
 	"ResourceManager.h"
 	<math.h>
@@ -934,7 +943,7 @@
 	"Waveform.h"
 	<cmath>
 
-1774593936 d:\cs163_visualizer\include\gui\notchmanager.h
+1774631493 d:\cs163_visualizer\include\gui\notchmanager.h
 	<SFML/Graphics.hpp>
 	<string>
 	<memory>
@@ -942,10 +951,11 @@
 	"NotchEnums.h"
 	"WindowConfig.h"
 
-1774548892 source:d:\cs163_visualizer\src\gui\notchmanager.cpp
+1774668656 source:d:\cs163_visualizer\src\gui\notchmanager.cpp
 	"GUI/NotchManager.h"
 	"GUI/NotchContent.h"
 	"FileTray.h"
+	"ViewHandler.h"
 	<iostream>
 
 1774449897 d:\cs163_visualizer\include\gui\progressbar.h
@@ -957,7 +967,7 @@
 	"Theme.h"
 	<iostream>
 
-1774539001 d:\cs163_visualizer\include\gui\notchenums.h
+1774634044 d:\cs163_visualizer\include\gui\notchenums.h
 
 1774482916 source:d:\cs163_visualizer\src\utils\system\filedropmanager.cpp
 	"FileDropManager.h"
@@ -974,13 +984,13 @@
 1774513646 source:d:\cs163_visualizer\src\utils\system\windowconfig.cpp
 	"WindowConfig.h"
 
-1774546908 d:\cs163_visualizer\include\gui\filetray.h
+1774628866 d:\cs163_visualizer\include\gui\filetray.h
 	"NotchContent.h"
 	"Spring.h"
 	"Squircle.h"
 	<iostream>
 
-1774549526 source:d:\cs163_visualizer\src\gui\filetray.cpp
+1774628946 source:d:\cs163_visualizer\src\gui\filetray.cpp
 	"FileTray.h"
 	"ResourceManager.h"
 	<cmath>

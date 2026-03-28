@@ -1,5 +1,7 @@
 #include "TitleBar.h"
 #include "Smoothing.h"
+#include "FileDropManager.h"
+#include "WindowConfig.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -99,6 +101,10 @@ namespace GUI
 
         // Cập nhật icon
         updateMaximizeIcon();
+
+        FileDropManager::shutdown();
+        FileDropManager::init(windowRef.getSystemHandle());
+        Utils::System::applyLetterboxView(windowRef, lastSize.x, lastSize.y);
     }
 
     void TitleBar::updateMaximizeIcon()

@@ -85,7 +85,7 @@ namespace GUI
                                      m_widthSpring.position, 50.0f);
 
 //                if(!bounds.contains(worldPos))
-                if(Utils::ViewHandler::isMouseInFrame(mousePos, window, bounds))
+                if(!Utils::ViewHandler::isMouseInFrame(mousePos, window, bounds))
                 {
                     collapse();
                 }

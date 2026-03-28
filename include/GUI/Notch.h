@@ -20,6 +20,7 @@ namespace GUI
         void setFillColor(sf::Color color, float alphaTint = 1.0f);
         void setShadow(sf::Color color, float blur, sf::Vector2f offset);
         void setWaveformState(GUI::Waveform::State state);
+        void setScaleTarget(float target);
 
         void changeContent(std::unique_ptr<NotchContent> nextContent);
         void update(float dt);
@@ -27,6 +28,7 @@ namespace GUI
         sf::Vector2f getSize() const;
         sf::FloatRect getLocalBounds() const;
         sf::FloatRect getGlobalBounds() const;
+        GUI::NotchContent* getContent() const { return m_currentContent.get(); }
 
         void setStepInfo(int current, int total, float duration);
         void setScenario(Scenario scenario)
@@ -56,6 +58,7 @@ namespace GUI
         Utils::Physics::Spring2D m_sizeSpring;
         Utils::Physics::Spring m_radiusBottomSpring;
         Utils::Physics::Spring m_radiusTopFlareSpring;
+        Utils::Physics::Spring m_scaleSpring; // Lò xo quản lý tỉ lệ phóng đại (1.0 là bình thường)
 
         std::unique_ptr<NotchContent> m_currentContent;
         std::unique_ptr<NotchContent> m_oldContent;

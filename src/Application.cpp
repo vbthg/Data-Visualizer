@@ -4,12 +4,17 @@
 #include "NotchManager.h"
 #include "FileTray.h"
 #include "FileDropManager.h"
+#include <windows.h>
 #include <iostream>
 
 Application::Application()
 {
     // 1. Setup Window
-    window.create(sf::VideoMode::getDesktopMode(), "Algorithm Visualizer", sf::Style::Fullscreen);
+    window.create(sf::VideoMode::getDesktopMode(), "Algorithm Visualizer", sf::Style::Default);
+    HWND hwnd = window.getSystemHandle();
+    SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
     window.setFramerateLimit(60);
     window.setVerticalSyncEnabled(true);
 

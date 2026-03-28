@@ -35,6 +35,8 @@ namespace GUI
         centerText(m_icon);
         centerText(m_title);
         centerText(m_subtitle);
+
+//        setAlpha(1.f);
     }
 
     void NotchContent::setVerticalOffset(float offset)

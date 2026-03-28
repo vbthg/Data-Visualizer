@@ -6,7 +6,7 @@
 
 namespace GUI
 {
-    class InputField
+    class InputField : public sf::Drawable, public sf::Transformable
     {
     public:
         enum class Type
@@ -29,10 +29,16 @@ namespace GUI
         // --- Core ---
         void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void update(float dt);
-        void draw(sf::RenderWindow& window);
+        virtual void draw(sf::RenderTarget& target, sf::RenderStates states)
 
         bool isFocused() const { return focused; }
         void setFocus(bool focus);
+
+        // Thêm hàm này để đồng bộ Glassmorphism nếu cần
+        void setBackgroundTexture(const sf::Texture* tex, sf::Vector2f res = {1920.f, 1080.f})
+        {
+            bgShape.setBakedGlass(tex, res);
+        }
 
     private:
         Type inputType;

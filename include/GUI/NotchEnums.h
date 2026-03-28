@@ -14,7 +14,8 @@ namespace GUI
     // Các kịch bản ngữ cảnh dành cho thuật toán gọi
     enum class Scenario
     {
-        Idle,           // Trạng thái nghỉ
+        Initial,        // Mới vào app, chưa có dữ liệu
+        Idle,           // Trạng thái nghỉ (đã có dữ liệu)
         Processing,     // Đang duyệt, đang so sánh (Nhảy Waveform)
         Success,        // Hoàn thành xuất sắc (Màu xanh, tự thu hồi)
         Error,          // Lỗi (Màu đỏ, rung lắc, tự thu hồi chậm)

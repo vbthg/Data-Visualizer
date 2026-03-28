@@ -15,26 +15,28 @@ namespace GUI
         GUI::Squircle m_trayBackground;
         sf::Text m_trayIcon;
         sf::Text m_trayTitle;
+        sf::Text m_traySubtitle;
 
         Utils::Physics::Spring m_scaleSpring;
 
     public:
         // Truyền chuỗi rỗng vào lớp cha để nó không vẽ gì cả
-        FileTray(const std::string& iconCode, const std::string& title)
+        FileTray(const sf::String& iconCode, const sf::String& title, const sf::String& subtitle)
             : NotchContent("", "", "")
         {
             static int instanceCount = 0;
             instanceCount++;
             std::cout << "[LIFE] FileTray Instance #" << instanceCount << " created!" << std::endl;
 
-            initElements(iconCode, title);
+            initElements(iconCode, title, subtitle);
         }
 
         void update(float dt, sf::Vector2f notchSize) override;
         void setAlpha(float alpha) override;
         void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+        void setScale(float x);
 
     private:
-        void initElements(const std::string& icon, const std::string& text);
+        void initElements(const sf::String& icon, const sf::String& title, const sf::String& subtitle);
     };
 }

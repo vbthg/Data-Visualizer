@@ -89,6 +89,14 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
         }
     };
 
+    speedCtrl = new GUI::SpeedController(font);
+    // Đừng quên gán callback để thuật toán nhận tốc độ mới
+    // speedCtrl->onSpeedChanged = [this](float s) { currentDS->setSpeed(s); };
+    dock->addItem(speedCtrl);
+
+    // 5. Thêm vạch ngăn cuối
+    dock->addItem(new GUI::Separator(Theme::Style::DockHeight));
+
     if (currentDS)
     {
         currentDS->bindDynamicIsland(notch);
@@ -144,7 +152,7 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
 
 
 
-
+    GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Initial);
 
 
     // Ra lệnh bay lên đúng vị trí
@@ -235,7 +243,8 @@ void VisualizerState::handleInput(sf::Event& event)
     {
         // KHÔNG set lại window.setView() ở đây nữa vì Application.cpp đã lo việc giữ tỉ lệ (letterbox)
         // Chỉ gọi onResize để cập nhật lại các thành phần UI (nếu cần)
-        onResize(event.size.width, event.size.height);
+        Utils::System::updateCustomView(m_camera, event.size.width, event.size.height);
+//        onResize(event.size.width, event.size.height);
     }
 
     // 1. ZOOM: Phóng to / Thu nhỏ tại tâm chuột
@@ -486,6 +495,8 @@ void VisualizerState::update(float dt)
     static bool wasDragging = false;
     bool isDragging = FileDropManager::isDragging();
 
+    std::cout << wasDragging << " " << isDragging << "\n";
+
     if (isDragging && !wasDragging)
     {
         GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::FileTray, "Drop file to load", "", "\xef\x84\x9e");
@@ -509,6 +520,9 @@ void VisualizerState::update(float dt)
     wasDragging = isDragging;
 
     GUI::NotchManager::getInstance().update(dt);
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    // PHẢI GỌI DÒNG NÀY
+    GUI::NotchManager::getInstance().updateMousePos(mousePos, window);
 
 
     if (currentDS)

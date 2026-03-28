@@ -236,23 +236,34 @@ namespace GUI
         cursor.setPosition(cursorX, currentY);
     }
 
-    void InputField::draw(sf::RenderWindow& window)
+    void InputField::draw(sf::RenderTarget& target, sf::RenderStates states) const
     {
-        window.draw(bgShape);
+        // Kết hợp transform của Notch và transform nội bộ của InputField
+        states.transform *= getTransform();
 
-        if (rawString.empty() && !focused)
-        {
-            window.draw(placeholderText);
-        }
-        else
-        {
-            window.draw(displayText);
-
-            // Chỉ vẽ cursor khi đang focus và đến nhịp nhấp nháy
-            if (focused && showCursor)
-            {
-                window.draw(cursor);
-            }
-        }
+        target.draw(bgShape, states);
+        target.draw(displayText, states);
+        if (rawString.empty() && !focused) target.draw(placeholderText, states);
+        if (focused && showCursor) target.draw(cursor, states);
     }
+
+//    void InputField::draw(sf::RenderWindow& window)
+//    {
+//        window.draw(bgShape);
+//
+//        if (rawString.empty() && !focused)
+//        {
+//            window.draw(placeholderText);
+//        }
+//        else
+//        {
+//            window.draw(displayText);
+//
+//            // Chỉ vẽ cursor khi đang focus và đến nhịp nhấp nháy
+//            if (focused && showCursor)
+//            {
+//                window.draw(cursor);
+//            }
+//        }
+//    }
 }
