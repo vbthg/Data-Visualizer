@@ -72,12 +72,14 @@ namespace GUI
         const sf::Vector2f SIZE_COMPACT = {220.f, 40.f};
         const sf::Vector2f SIZE_STANDARD = {400.f, 50.f};
         const sf::Vector2f SIZE_EXPANDED = {500.f, 80.f};
-        const sf::Vector2f SIZE_TRAY = {720.f, 170.f};
+        const sf::Vector2f SIZE_TRAY = {320.f, 180.f};
+        const sf::Vector2f SIZE_INPUT = {650.f, 55.f};
 
         // Bán kính bo góc (x = bottom, y = top flare)
         const sf::Vector2f RADII_COMPACT = {14.f, 7.f};
         const sf::Vector2f RADII_STANDARD = {14.f, 10.f};
         const sf::Vector2f RADII_EXPANDED = {14.f, 12.f};
-        const sf::Vector2f RADII_TRAY = {38.f, 15.f};
+        const sf::Vector2f RADII_TRAY = {45.f, 15.f};
+        const sf::Vector2f RADII_INPUT = {17.f, 13.f};
     };
 }

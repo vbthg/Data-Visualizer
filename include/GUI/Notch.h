@@ -29,6 +29,7 @@ namespace GUI
         sf::FloatRect getLocalBounds() const;
         sf::FloatRect getGlobalBounds() const;
         GUI::NotchContent* getContent() const { return m_currentContent.get(); }
+        GUI::ProgressBar& getProgressBar() { return m_progressBar; }
 
         void setStepInfo(int current, int total, float duration);
         void setScenario(Scenario scenario)

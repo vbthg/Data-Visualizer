@@ -29,6 +29,11 @@ namespace Utils
                 return 1.0f - std::pow(1.0f - t, 4.0f);
             }
 
+            inline float easeInOutQuart(float t)
+            {
+                return t < 0.5f ? 8.f * t * t * t * t : 1.f - std::pow(-2.f * t + 2.f, 4.f) / 2.f;
+            }
+
             // 2. Ease Out Quint (Nhanh, dứt khoát hơn - MacOS Style)
             inline float easeOutQuint(float t)
             {

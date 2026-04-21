@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "NodeUI.h"
 #include "Spring.h"
+#include "AnimationMetadata.h"
 
 namespace GUI
 {
@@ -54,6 +55,7 @@ namespace GUI
         NodeUI* getEndNode() const;
 
         // --- HÀM MỚI ĐỂ QUẢN LÝ TRẠNG THÁI ---
+        void applyState(const Core::EdgeState& state);
         void setFocusState(bool isFocused);
 
         // --- CÁC HÀM TƯƠNG TÁC ---

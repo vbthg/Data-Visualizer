@@ -56,6 +56,23 @@ namespace GUI
         return m_endNode;
     }
 
+    void EdgeUI::applyState(const Core::EdgeState& state)
+    {
+        // Cập nhật trạng thái Focus (để kích hoạt lerp m_targetThickness/Color trong update)
+        setFocusState(state.isFocused);
+
+        // Cập nhật các biến logic từ Timeline
+        m_isPulsing = state.isPulsing;
+        m_pulseProgress = state.pulseProgress;
+        m_pulseColor = state.pulseColor;
+
+        m_isColorFilling = (state.fillProgress > 0.0f);
+        m_fillProgress = state.fillProgress;
+        m_baseFillColor = state.baseFillColor;
+        m_fillColor = state.fillColor;
+        m_fillFromStart = state.fillFromStart;
+    }
+
     void EdgeUI::setFocusState(bool isFocused)
     {
         m_isFocused = isFocused;
@@ -68,7 +85,7 @@ namespace GUI
         }
         else
         {
-            // Trạng thái Dim (Mờ đi 70% và độ dày co lại còn 1.0f)
+            // Trạng thái Dim (Mờ đi 70% và độ dày co lại còn 4.0f)
             m_targetThickness = 4.0f;
             m_targetColor = sf::Color(80, 80, 80, 60); // Xám tối và trong suốt
         }
@@ -203,7 +220,7 @@ namespace GUI
         sf::Vector2f controlPoint = anchorPoint + normal * m_offsetSpring.position;
 //        sf::Vector2f controlPoint = midPoint + normal * m_offsetSpring.position;
 
-        int segments = 30;
+        int segments = 1;
         m_vertices.resize((segments + 1) * 2);
 
         sf::Vector2f prevP = startPos;

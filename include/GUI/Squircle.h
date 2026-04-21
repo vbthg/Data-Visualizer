@@ -29,6 +29,7 @@ namespace GUI
         sf::FloatRect getLocalBounds() const;
         sf::FloatRect getGlobalBounds() const;
         sf::Color getFillColor() const; // Thêm dòng này
+        sf::Color getOutlineColor() const { return m_outlineColor; }
 
     private:
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;

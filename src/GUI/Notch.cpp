@@ -270,7 +270,7 @@ namespace GUI
             cleanStates.shader = nullptr; // Chốt hạ: Cấm tuyệt đối Shader can thiệp!
 
             // 3. Vẽ nội dung bằng trạng thái sạch
-            target.draw(m_waveform, cleanStates);
+            if(m_currentScenario != GUI::Scenario::FileTray) target.draw(m_waveform, cleanStates);
             if(m_oldContent) target.draw(*m_oldContent, cleanStates);
             if(m_currentContent) target.draw(*m_currentContent, cleanStates);
 

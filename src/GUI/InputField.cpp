@@ -11,11 +11,12 @@ namespace GUI
         : inputType(type), size(sizeParams), focused(false), cursorTimer(0.0f), showCursor(false)
     {
         // 1. Setup Background (Squircle)
+        bgShape.setPower(2.f);
         bgShape.setSize(size);
-        bgShape.setRadius(12.0f);
+        bgShape.setRadius(size.x / 2.f);
         bgShape.setOrigin(size.x / 2.0f, size.y / 2.0f);
         bgShape.setFillColor(sf::Color(245, 245, 245)); // Xám rất nhạt
-        bgShape.setOutlineThickness(1.5f);
+        bgShape.setOutlineThickness(1.f);
         bgShape.setOutlineColor(sf::Color::Transparent);
 
         // 2. Setup Texts
@@ -72,14 +73,76 @@ namespace GUI
 
         if (focused)
         {
-            bgShape.setOutlineColor(Theme::Color::Primary); // Bật viền xanh
-            bgShape.setFillColor(sf::Color::White);
+            // Màu Apple Focus: Trắng mờ hơn một chút để thấy chiều sâu
+            bgShape.setFillColor(sf::Color(255, 255, 255, 40));
+            bgShape.setOutlineColor(sf::Color(245, 245, 247, 180));
         }
         else
         {
-            bgShape.setOutlineColor(sf::Color::Transparent); // Tắt viền
-            bgShape.setFillColor(sf::Color(245, 245, 245));
+            // Màu Apple Idle: Trắng cực mờ
+            bgShape.setFillColor(sf::Color(255, 255, 255, 20));
+            bgShape.setOutlineColor(sf::Color::Transparent);
         }
+    }
+
+ void InputField::setGlobalAlpha(float alpha)
+{
+    float a = std::max(0.0f, std::min(1.0f, alpha));
+    sf::Uint8 alphaByte = static_cast<sf::Uint8>(a * 255.f);
+
+    // 1. Màu nền: Tăng Alpha lên để nó nổi bật trên nền đen
+    sf::Color fillCol = sf::Color::White;
+
+    // Tăng từ 45 lên 80 khi focus, và từ 25 lên 50 khi idle
+    sf::Uint8 targetAlpha = focused ? 40 : 20;
+    fillCol.a = static_cast<sf::Uint8>(a * targetAlpha);
+    bgShape.setFillColor(fillCol);
+
+    // 2. Màu viền: Cho nó sáng hơn một chút
+//    sf::Color outlineCol = focused ? Theme::Color::Primary : sf::Color(255, 255, 255, 30);
+//    sf::Color outlineCol = focused ? sf::Color(245, 245, 247, 180) : sf::Color(255, 255, 255, 100);
+    sf::Color outlineCol = sf::Color(245, 245, 247, 180);
+    // Nếu đang focus thì hiện rõ, không focus thì hiện viền trắng siêu mờ
+    sf::Uint8 outlineAlpha = focused ? 180 : 0;
+    outlineCol.a = static_cast<sf::Uint8>(a * outlineAlpha);
+//    outlineCol.a = static_cast<sf::Uint8>(180);
+    bgShape.setOutlineColor(outlineCol);
+
+    // 3. Chữ và Placeholder: Phải là TRẮNG TUYỀN (255, 255, 255)
+    // Đừng dùng Theme::Color::TextPrimary nếu nó là màu xám/đen
+    displayText.setFillColor(sf::Color(255, 255, 255, alphaByte));
+
+    sf::Color phCol = sf::Color(255, 255, 255, static_cast<sf::Uint8>(alphaByte * 0.5f));
+    placeholderText.setFillColor(phCol);
+
+    // 4. Con trỏ
+    cursor.setFillColor(sf::Color(Theme::Color::Primary.r,
+                                  Theme::Color::Primary.g,
+                                  Theme::Color::Primary.b, alphaByte));
+}
+
+    void InputField::setSize(sf::Vector2f size)
+    {
+        size = size;
+        bgShape.setSize(size);
+
+        // Mỗi lần đổi size, text cần được tính lại vị trí để luôn ở giữa chiều cao
+        updateTextPosition();
+    }
+
+    void InputField::updateTextPosition()
+    {
+        // Căn văn bản theo trục dọc (Vertical centering)
+        // Giả sử có 15px lề trái (Padding)
+        float paddingLeft = 15.f;
+        float textY = size.y / 2.0f;
+
+        displayText.setOrigin(0.f, displayText.getGlobalBounds().height / 2.0f);
+        displayText.setPosition(paddingLeft, textY);
+
+        // Tương tự cho placeholder
+        placeholderText.setOrigin(0.f, placeholderText.getGlobalBounds().height / 2.0f);
+        placeholderText.setPosition(paddingLeft, textY);
     }
 
     void InputField::triggerErrorShake()
@@ -195,7 +258,8 @@ namespace GUI
         showCursor = true;
 
         // Nếu focus bị mất viền đỏ (do vừa shake), trả lại màu xanh
-        if (focused) bgShape.setOutlineColor(Theme::Color::Primary);
+//        if (focused) bgShape.setOutlineColor(Theme::Color::Primary);
+        if (focused) bgShape.setOutlineColor(sf::Color(245, 245, 247, 180));
     }
 
     void InputField::update(float dt)

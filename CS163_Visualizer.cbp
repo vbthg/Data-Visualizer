@@ -60,6 +60,7 @@
 		<Unit filename="CS163_visualizer.cpp" />
 		<Unit filename="include/Application.h" />
 		<Unit filename="include/Core/AnimationMetadata.h" />
+		<Unit filename="include/Core/HistoryEntry.h" />
 		<Unit filename="include/Core/HistoryManager.h" />
 		<Unit filename="include/Core/ISnapshot.h" />
 		<Unit filename="include/Core/Interpolator.h" />
@@ -72,8 +73,10 @@
 		<Unit filename="include/GUI/DockItem.h" />
 		<Unit filename="include/GUI/DynamicIsland.h" />
 		<Unit filename="include/GUI/EdgeUI.h" />
-		<Unit filename="include/GUI/FileTray.h" />
+		<Unit filename="include/GUI/FileTrayContent.h" />
 		<Unit filename="include/GUI/FloatingDock.h" />
+		<Unit filename="include/GUI/HistoryBoard.h" />
+		<Unit filename="include/GUI/InputContent.h" />
 		<Unit filename="include/GUI/InputField.h" />
 		<Unit filename="include/GUI/InputPopover.h" />
 		<Unit filename="include/GUI/MenuCard.h" />
@@ -85,6 +88,7 @@
 		<Unit filename="include/GUI/ProgressBar.h" />
 		<Unit filename="include/GUI/PseudoCodeBox.h" />
 		<Unit filename="include/GUI/RoundedRectangleShape.h" />
+		<Unit filename="include/GUI/Scrollbar.h" />
 		<Unit filename="include/GUI/Separator.h" />
 		<Unit filename="include/GUI/Slider.h" />
 		<Unit filename="include/GUI/SpeedController.h" />
@@ -112,14 +116,17 @@
 		<Unit filename="include/Utils/Math/Smoothing.h" />
 		<Unit filename="include/Utils/Math/Spring.h" />
 		<Unit filename="include/Utils/System/FileDropManager.h" />
+		<Unit filename="include/Utils/System/FileUtils.h" />
 		<Unit filename="include/Utils/System/WindowConfig.h" />
 		<Unit filename="src/Application.cpp" />
 		<Unit filename="src/DataStructures/Heap.cpp" />
 		<Unit filename="src/GUI/Button.cpp" />
 		<Unit filename="src/GUI/DynamicIsland.cpp" />
 		<Unit filename="src/GUI/EdgeUI.cpp" />
-		<Unit filename="src/GUI/FileTray.cpp" />
+		<Unit filename="src/GUI/FileTrayContent.cpp" />
 		<Unit filename="src/GUI/FloatingDock.cpp" />
+		<Unit filename="src/GUI/HistoryBoard.cpp" />
+		<Unit filename="src/GUI/InputContent.cpp" />
 		<Unit filename="src/GUI/InputField.cpp" />
 		<Unit filename="src/GUI/InputPopover.cpp" />
 		<Unit filename="src/GUI/MenuCard.cpp" />
@@ -129,6 +136,7 @@
 		<Unit filename="src/GUI/NotchManager.cpp" />
 		<Unit filename="src/GUI/ProgressBar.cpp" />
 		<Unit filename="src/GUI/PseudoCodeBox.cpp" />
+		<Unit filename="src/GUI/Scrollbar.cpp" />
 		<Unit filename="src/GUI/Separator.cpp" />
 		<Unit filename="src/GUI/Slider.cpp" />
 		<Unit filename="src/GUI/SpeedController.cpp" />

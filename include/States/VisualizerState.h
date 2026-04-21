@@ -9,6 +9,8 @@
 #include "StructurePanel.h"
 #include "Slider.h"
 #include "Spring.h"
+#include "HistoryBoard.h"
+#include "TimelineManager.h"
 #include <stack>
 
 // Giả sử bạn sẽ tạo hoặc đã có class này để vẽ hình bo góc
@@ -33,7 +35,7 @@ private:
 //    sf::Texture m_bgBlurLevel3; // Mờ 50px cho CodeBox
 
     // --- DATA ---
-    DataStructure* currentDS;
+    DS::DataStructure* currentDS;
 
     // --- UI Components ---
     GUI::FloatingDock* dock;
@@ -42,11 +44,21 @@ private:
     GUI::PseudoCodeBox* pseudoBox;
     GUI::Slider* testSlider;
     GUI::StructurePanel* structurePanel;
+    GUI::HistoryBoard* m_historyBoard;
+
+    int m_lastSyncIdx = -1; // Khởi tạo là -1 để nó đồng bộ ngay lần đầu tiên
+
+    Core::TimelineManager* m_timeline;
 
     void onResize(unsigned int width, unsigned int height);
 
+    void createMockTest();
+    void renderMock(sf::RenderTarget& target, const Core::RenderFrame& frame);
+
+    void updateNotchLogic();
+
 public:
-    VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, DataStructure* ds);
+    VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, DS::DataStructure* ds);
     virtual ~VisualizerState();
 
     void init() override;

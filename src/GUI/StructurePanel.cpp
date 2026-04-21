@@ -4,6 +4,16 @@
 #include "ViewHandler.h"
 #include <iostream>
 #include <cmath>
+#include <unordered_set>
+
+/*
+        float sdSuperellipse(vec2 p, vec2 b, float r, float power) {
+            vec2 q = abs(p) - b + r;
+            vec2 maxQ = max(q, 0.0);
+            float distN = pow(pow(maxQ.x, power) + pow(maxQ.y, power), 1.0 / power);
+            return min(max(q.x, q.y), 0.0) + distN - r;
+        }
+*/
 
 namespace GUI
 {
@@ -12,32 +22,51 @@ namespace GUI
     // Sửa lại đoạn shader trong maskShaderCode
     // Sửa lại đoạn shader trong maskShaderCode
     const std::string maskShaderCode = R"(
-        #version 120
-        uniform sampler2D u_texture;
-        uniform vec2 u_panelSize;
-        uniform float u_radius;
-        uniform float u_power;
+#version 120
+uniform sampler2D u_texture;
+uniform vec2 u_halfSize;    // Truyền từ CPU: u_panelSize * 0.5
+uniform vec2 u_innerBound;  // Truyền từ CPU: u_halfSize - vec2(u_radius)
+uniform float u_radius;
 
-        float sdSuperellipse(vec2 p, vec2 b, float r, float power) {
-            vec2 q = abs(p) - b + r;
-            vec2 maxQ = max(q, 0.0);
-            float distN = pow(pow(maxQ.x, power) + pow(maxQ.y, power), 1.0 / power);
-            return min(max(q.x, q.y), 0.0) + distN - r;
-        }
+void main() {
+    vec2 uv = gl_TexCoord[0].xy;
 
-        void main() {
-            vec2 uv = gl_TexCoord[0].xy;
-            vec4 color = texture2D(u_texture, uv);
+    // Tính tọa độ pixel so với tâm (Local Position)
+    // u_halfSize * 2.0 chính là u_panelSize ban đầu
+    vec2 p = (uv * (u_halfSize * 2.0)) - u_halfSize;
+    vec2 ap = abs(p);
 
-            vec2 localPixelPos = uv * u_panelSize;
-            vec2 halfSize = u_panelSize * 0.5;
-            vec2 p = localPixelPos - halfSize;
-            float rad = min(u_radius, min(halfSize.x, halfSize.y));
-            float dist = sdSuperellipse(p, halfSize, rad, u_power);
-            float alphaMask = 1.0 - smoothstep(-0.5, 0.5, dist);
+    // --- TỐI ƯU 1: EARLY EXIT (Vùng chữ thập) ---
+    if (ap.x < u_innerBound.x || ap.y < u_innerBound.y) {
+        gl_FragColor = texture2D(u_texture, uv);
+        return;
+    }
 
-            gl_FragColor = vec4(color.rgb, color.a * alphaMask);
-        }
+    // --- TỐI ƯU 2: CHỈ TÍNH TOÁN CHO 4 GÓC ---
+    vec2 q = ap - u_innerBound;
+
+    // Kiểm tra nhanh: Nếu pixel nằm quá xa bán kính (góc ngoài cùng), hủy pixel luôn
+    // Điều này giúp tiết kiệm việc texture2D cho những vùng chắc chắn trong suốt
+    if (q.x > u_radius + 0.5 && q.y > u_radius + 0.5) {
+        discard;
+    }
+
+    // Tối ưu n=4 (không dùng pow)
+    float x2 = q.x * q.x;
+    float y2 = q.y * q.y;
+    float dist = sqrt(sqrt(x2 * x2 + y2 * y2)) - u_radius;
+
+    // Khử răng cưa
+    float alphaMask = 1.0 - smoothstep(-0.5, 0.5, dist);
+
+    // Nếu hoàn toàn trong suốt thì không cần sample texture
+    if (alphaMask <= 0.0) {
+        discard;
+    }
+
+    vec4 color = texture2D(u_texture, uv);
+    gl_FragColor = vec4(color.rgb, color.a * alphaMask);
+}
     )";
 
     StructurePanel::StructurePanel()
@@ -52,7 +81,7 @@ namespace GUI
         m_frame->setOutlineThickness(1.5f);
         m_frame->setBakedGlass(&ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur - Blur 50.png"), sf::Vector2f(1920.f, 1080.f));
         m_frame->setPosition(m_padding, m_padding);
-        m_frame->setFillColor(sf::Color::White, 0.3f);
+//        m_frame->setFillColor(sf::Color::White, 0.3f);
         m_frame->setShadow(Theme::Color::DockShadow, 55.f, {0.f, 20.f});
 
         m_widthSpring.stiffness = 400.f; m_widthSpring.damping = 40.f;
@@ -78,6 +107,33 @@ namespace GUI
 
         // Load Shader cắt góc riêng biệt
         m_isMaskLoaded = sf::Shader::isAvailable() && m_maskShader.loadFromMemory(maskShaderCode, sf::Shader::Fragment);
+
+
+
+        // 1. Create the button (assuming you have a font loaded)
+        resetBtn = new GUI::Button(ResourceManager::getInstance().getFont("assets/fonts/Phosphor.ttf"), L"\uE626", {60.f, 60.f});
+        resetBtn->applyPreset(GUI::ButtonPreset::Ghost);
+        resetBtn->setCharacterSize(27);
+        resetBtn->setPosition(sf::Vector2f(1.5f * m_padding + 30.f, 1.5f * m_padding + 30.f));
+
+        // 2. Define the callback
+        // We use a lambda to call the resetView method of your structurePanel instance
+        resetBtn->onClick = [this]()
+        {
+            m_isAutoFollow = true;
+            fitView(false);
+
+            // Visual feedback for the button text
+//            resetBtn->triggerTextPop();
+        };
+
+
+        m_emptyMessage.setFont(ResourceManager::getInstance().getFont("assets/fonts/SFProDisplay-Bold.ttf"));
+        m_emptyMessage.setString("Start with a node.");
+        m_emptyMessage.setCharacterSize(60);
+        m_emptyMessage.setFillColor(sf::Color(255, 255, 255, 130)); // Trắng mờ (Muted)
+        m_emptyMessage.setOutlineThickness(0.5f);
+        m_emptyMessage.setOutlineColor(sf::Color(0, 0, 0, 50));
     }
 
     StructurePanel::~StructurePanel()
@@ -91,6 +147,9 @@ namespace GUI
         m_widthSpring.position = m_widthSpring.target * 0.8f;
         m_heightSpring.position = m_heightSpring.target * 0.8f;
         m_alphaSpring.position = 0.0f;
+
+        // Đảm bảo các node nằm ngay giữa panel khi vừa xuất hiện
+//        fitView(true);
     }
 
     void StructurePanel::updateLayout(unsigned int windowWidth, unsigned int windowHeight, bool isCodePanelOpen)
@@ -98,10 +157,63 @@ namespace GUI
         m_heightSpring.target = windowHeight - (m_padding * 2.0f) - m_dockSpace;
         m_widthSpring.target = isCodePanelOpen ? (windowWidth - m_codePanelWidth - m_padding * 3.0f) : (windowWidth - m_padding * 2.0f);
         m_alphaSpring.target = 1.0f;
+
+        // Gọi fitView để tính lại target Center dựa trên kích thước khung mới
+        m_isAutoFollow = true;
+        fitView(false);
+    }
+
+    sf::Vector2f StructurePanel::mapPanelPixelToWorld(sf::Vector2i mousePos, const sf::RenderWindow& window, float zoom)
+    {
+        // Nếu không truyền zoom cụ thể, lấy giá trị hiện tại của lò xo
+        float currentZoom = (zoom < 0.f) ? m_zoomSpring.position : zoom;
+
+        // 1. Chuyển từ pixel cửa sổ sang tọa độ UI (đã tính đến việc resize cửa sổ app)
+        sf::Vector2f windowCoords = window.mapPixelToCoords(mousePos);
+
+        // 2. Lấy Bounds của Frame để tính độ lệch (Local Offset)
+        sf::FloatRect bounds = m_frame->getGlobalBounds();
+        sf::Vector2f localOffset = windowCoords - sf::Vector2f(bounds.left, bounds.top);
+
+        // 3. Tính toán hệ số Zoom dựa trên Buffer cố định (1920)
+        // Hệ số này xác định 1 pixel trên Frame bằng bao nhiêu đơn  vị trong World
+        float worldUnitsPerPixel = currentZoom;
+        // Tính kích thước View tương ứng với mức zoom được yêu cầu
+        sf::Vector2f viewSize(1920.0f * currentZoom, 1080.0f * currentZoom);
+
+        // 4. Tìm góc trái trên của View (điểm này luôn khớp với pixel 0,0 của Buffer)
+        sf::Vector2f viewTopLeft = m_viewCenterSpring.position - (viewSize / 2.0f);
+
+        // 5. Công thức cuối cùng cho hệ Crop
+        return viewTopLeft + (localOffset * worldUnitsPerPixel);
     }
 
     void StructurePanel::update(float dt, sf::RenderWindow& window)
     {
+        resetBtn->update(window, dt);
+
+
+        // 1. Logic Empty State & Alpha
+        if(m_nodeUIMap.empty())
+        {
+            m_alphaSpring.target = 0.0f;
+
+            // Căn giữa Origin cho văn bản nhiều dòng
+            sf::FloatRect bounds = m_emptyMessage.getLocalBounds();
+            // SFML mặc định căn lề trái, nên ta đặt tâm vào giữa bounds
+            m_emptyMessage.setOrigin(bounds.left + bounds.width/2.0f,
+                                     bounds.top + bounds.height/2.0f);
+
+            sf::Vector2f center = m_frame->getPosition() + (m_frame->getSize() / 2.0f);
+            m_emptyMessage.setPosition(center);
+        }
+        else
+        {
+//            m_alphaSpring.snapTo(1.f);
+            m_alphaSpring.target = 1.f; // Hiện panel mờ khi có node
+        }
+
+
         // Cập nhật lò xo camera
         m_viewCenterSpring.update(dt);
         m_view.setCenter(m_viewCenterSpring.position);
@@ -110,35 +222,61 @@ namespace GUI
         m_heightSpring.update(dt);
         m_alphaSpring.update(dt);
 
+
+
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        sf::FloatRect bounds = getGlobalBounds();
+
+//        if(bounds.contains(window.mapPixelToCoords(mousePos)))
+        if(Utils::ViewHandler::isMouseInFrame(mousePos, window, bounds))
+        {
+            m_mouseWorldPos = mapPanelPixelToWorld(mousePos, window);
+        }
+        else
+        {
+            // Nếu chuột văng ra ngoài panel, set một tọa độ cực xa để các Edge không bị hút
+            m_mouseWorldPos = sf::Vector2f(-99999.0f, -99999.0f);
+        }
+
+
         // 2. Logic Zoom mượt mà
         float oldZoom = m_zoomSpring.position;
         m_zoomSpring.update(dt);
 
-        if(std::abs(m_zoomSpring.position - oldZoom) > 0.0001f)
+        // 2. Nếu có sự thay đổi Zoom, thực hiện bù trừ tâm (Anchor)
+        if(!m_isAutoFollow && std::abs(m_zoomSpring.position - oldZoom) > 0.0001f)
         {
-            // Lấy vị trí chuột hiện tại (tính theo pixel window)
             sf::Vector2i mousePos = sf::Mouse::getPosition(window);
             sf::FloatRect bounds = getGlobalBounds();
 
             if(bounds.contains(window.mapPixelToCoords(mousePos)))
             {
-                // Lấy tọa độ world của chuột TRƯỚC khi thay đổi zoom
-                sf::Vector2f mouseWorldBefore = Utils::ViewHandler::mapPixelToWorld(mousePos, window, bounds, m_view);
+                // Dùng hàm map chuyên dụng cho Crop đã thống nhất ở turn trước
+                // mouseWorldBefore tính dựa trên zoom cũ
+                sf::Vector2f mouseWorldBefore = mapPanelPixelToWorld(mousePos, window, oldZoom);
 
-                // Cập nhật kích thước View theo lò xo
+                // Cập nhật size view mới
                 m_view.setSize(1920.0f * m_zoomSpring.position, 1080.0f * m_zoomSpring.position);
 
-                // Lấy tọa độ world của chuột SAU khi thay đổi zoom
-                sf::Vector2f mouseWorldAfter = Utils::ViewHandler::mapPixelToWorld(mousePos, window, bounds, m_view);
+                // mouseWorldAfter tính dựa trên zoom mới
+                sf::Vector2f mouseWorldAfter = mapPanelPixelToWorld(mousePos, window, m_zoomSpring.position);
 
-                // Dịch chuyển View để điểm dưới chuột không bị chạy mất
-                m_view.setCenter(m_view.getCenter() + (mouseWorldBefore - mouseWorldAfter));
+                // Cập nhật lò xo Center: Dịch chuyển cả Target và Position để không bị khựng
+                sf::Vector2f offset = mouseWorldBefore - mouseWorldAfter;
+                m_viewCenterSpring.target += offset;
+                m_viewCenterSpring.position += offset;
             }
             else
             {
-                // Nếu chuột nằm ngoài panel, chỉ zoom vào tâm
                 m_view.setSize(1920.0f * m_zoomSpring.position, 1080.0f * m_zoomSpring.position);
             }
+        }
+
+        else if(m_isAutoFollow && std::abs(m_zoomSpring.position - oldZoom) > 0.0001f)
+        {
+            // Nếu đang Auto-Follow, ta vẫn cần cập nhật size của View theo lò xo zoom
+            // nhưng KHÔNG cộng thêm offset bù trừ vào target Center
+            m_view.setSize(1920.0f * m_zoomSpring.position, 1080.0f * m_zoomSpring.position);
         }
 
 
@@ -148,7 +286,9 @@ namespace GUI
         m_frame->setSize({w, h});
 
         float alphaValue = std::max(0.0f, std::min(m_alphaSpring.position, 1.0f));
-        m_frame->setFillColor(sf::Color::White, 0.3f * alphaValue);
+//        std::cout << alphaValue << "\n";
+        m_frame->setFillColor(sf::Color::White, 0.2f * alphaValue);
+//        m_frame->setFillColor(sf::Color::White, 0.2f * alphaValue);
         m_frame->setOutlineColor(sf::Color(255, 255, 255, static_cast<sf::Uint8>(40 * alphaValue)));
 //
 //        if(std::abs((float)m_contentBuffer.getSize().x - w) > 2.0f
@@ -165,6 +305,13 @@ namespace GUI
 
     void StructurePanel::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
+        resetBtn->handleEvent(event, window);
+
+        if(event.type == sf::Event::MouseWheelScrolled || m_isPanning)
+        {
+            m_isAutoFollow = false; // "Tôi tự làm được, đừng giành camera của tôi!"
+        }
+
         // Bắt đầu Pan khi nhấn Space
         if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
         {
@@ -181,28 +328,19 @@ namespace GUI
         // Thực hiện Pan khi chuột di chuyển và đang giữ Space
         if(event.type == sf::Event::MouseMoved && m_isPanning)
         {
-//            sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
             sf::Vector2i currentMousePos = {event.mouseMove.x, event.mouseMove.y};
 
+            // Tính độ lệch Pixel
             sf::Vector2f delta;
             delta.x = static_cast<float>(m_lastMousePos.x - currentMousePos.x);
             delta.y = static_cast<float>(m_lastMousePos.y - currentMousePos.y);
 
-            // Cộng dồn vào target của lò xo để tạo độ trượt
-            m_viewCenterSpring.target += (delta * m_zoomSpring.position);
+            // Quy đổi delta pixel sang delta World:
+            // Trong hệ Crop: 1 pixel = (m_view.size / 1920) units.
+            float worldScale = m_zoomSpring.position; // Vì size = 1920 * zoom
 
+            m_viewCenterSpring.target += delta * worldScale;
             m_lastMousePos = currentMousePos;
-//            sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
-//
-//            // Tính toán độ lệch (Delta)
-//            sf::Vector2f delta;
-//            delta.x = static_cast<float>(m_lastMousePos.x - currentMousePos.x);
-//            delta.y = static_cast<float>(m_lastMousePos.y - currentMousePos.y);
-//
-//            // Di chuyển View theo độ lệch (nhân với hệ số Zoom hiện tại để mượt hơn)
-//            m_view.move(delta * m_currentZoom);
-//
-//            m_lastMousePos = currentMousePos;
         }
 
         if(event.type == sf::Event::MouseWheelScrolled)
@@ -214,18 +352,249 @@ namespace GUI
             m_zoomSpring.target *= factor;
 
             // Giới hạn zoom từ 0.2x đến 5.0x để tránh lỗi hiển thị
-            m_zoomSpring.target = std::max(0.4f, std::min(m_zoomSpring.target, 4.0f));
+            m_zoomSpring.target = std::max(0.6f, std::min(m_zoomSpring.target, 4.f));
         }
     }
 
-    void StructurePanel::renderContent(DataStructure* ds)
+//    void StructurePanel::renderContent(DataStructure* ds)
+//    {
+//        if (!ds || m_contentBuffer.getSize().x == 0) return;
+//
+//        m_contentBuffer.clear(sf::Color::Transparent);
+//        m_contentBuffer.setView(m_view);
+//        ds->draw(m_contentBuffer);
+//        m_contentBuffer.display();
+//    }
+
+    // StructurePanel.cpp
+
+//    void StructurePanel::renderContent(DataStructure* ds, const Core::RenderFrame& frame)
+//    {
+////        std::cout << "DEBUG: RenderTexture Created (" << w << "x" << h << ")" << std::endl;
+////        std::cout << "DEBUG: RenderTexture Created (" << std::endl;
+//        // Kiểm tra an toàn
+//        if (!ds || m_contentBuffer.getSize().x == 0) return;
+//
+//        m_contentBuffer.clear(sf::Color::Transparent);
+//
+//        // Áp dụng Camera (Pan/Zoom) hiện tại của Panel vào Buffer
+//        m_contentBuffer.setView(m_view);
+//
+//        // THAY ĐỔI QUAN TRỌNG:
+//        // Thay vì ds->draw(m_contentBuffer), ta gọi hàm render mới
+//        // Hàm này sẽ vẽ các Node/Edge theo tọa độ đã được nội suy trong frame
+//        ds->render(m_contentBuffer, frame);
+//
+//        m_contentBuffer.display();
+//    }
+
+void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
+{
+    // --- 1. CHUẨN BỊ TRA CỨU (O(N)) ---
+    // Chuyển sang unordered_set để việc tìm kiếm đạt O(1)
+    std::unordered_set<int> currentFrameNodes;
+    std::unordered_set<uint64_t> currentFrameEdges;
+
+    // --- 2. ĐỒNG BỘ NODE ---
+    for(const auto& nodeState : frame.nodes)
     {
-        if (!ds || m_contentBuffer.getSize().x == 0) return;
+        currentFrameNodes.insert(nodeState.id);
+
+        if(m_nodeUIMap.find(nodeState.id) == m_nodeUIMap.end())
+        {
+            float defaultRadius = 25.0f;
+            m_nodeUIMap[nodeState.id] = std::make_unique<NodeUI>(
+                &ResourceManager::getInstance().getFont("assets/fonts/SFProtext-regular.ttf"),
+                defaultRadius);
+
+            // Có node mới -> Cần tính lại vị trí
+            m_needsReposition = true;
+        }
+
+        auto& nodeUI = m_nodeUIMap[nodeState.id];
+        nodeUI->applyState(nodeState);
+        nodeUI->update(dt);
+
+        // Kiểm tra vận tốc: chỉ cần kiểm tra trị tuyệt đối
+        sf::Vector2f vel = nodeUI->getVelocity();
+        if(std::abs(vel.x) > 0.1f || std::abs(vel.y) > 0.1f)
+            m_needsReposition = true;
+    }
+
+    // --- 3. ĐỒNG BỘ EDGE ---
+    for(const auto& edgeState : frame.edges)
+    {
+        uint64_t edgeKey = getEdgeKey(edgeState.startNodeId, edgeState.endNodeId);
+        currentFrameEdges.insert(edgeKey);
+
+        if(m_edgeUIMap.find(edgeKey) == m_edgeUIMap.end())
+        {
+            NodeUI* startNode = m_nodeUIMap[edgeState.startNodeId].get();
+            NodeUI* endNode = m_nodeUIMap[edgeState.endNodeId].get();
+            m_edgeUIMap[edgeKey] = std::make_unique<EdgeUI>(startNode, endNode);
+        }
+
+        auto& edgeUI = m_edgeUIMap[edgeKey];
+        edgeUI->setMousePosition(m_mouseWorldPos);
+        edgeUI->applyState(edgeState);
+        edgeUI->update(dt);
+    }
+
+    // --- 4. DỌN DẸP RÁC (Garbage Collection - O(N)) ---
+    // Xóa Node cũ
+    for(auto it = m_nodeUIMap.begin(); it != m_nodeUIMap.end();)
+    {
+        if(currentFrameNodes.find(it->first) == currentFrameNodes.end()) {
+            it = m_nodeUIMap.erase(it);
+            m_needsReposition = true; // Xóa node cũng cần tính lại BBox
+        } else {
+            ++it;
+        }
+    }
+
+    // Xóa Edge cũ
+    for(auto it = m_edgeUIMap.begin(); it != m_edgeUIMap.end();)
+    {
+        if(currentFrameEdges.find(it->first) == currentFrameEdges.end()) {
+            it = m_edgeUIMap.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // --- 5. SMART FIT VIEW (Logic Base State) ---
+    // Chỉ gọi fitView nếu m_isAutoFollow đang bật và người dùng không can thiệp
+    if(m_isAutoFollow && m_needsReposition && !m_isPanning)
+    {
+        fitView(false);
+
+        // Dừng reposition khi các lò xo đã ổn định
+        if (std::abs(m_viewCenterSpring.velocity.x) < 0.1f &&
+            std::abs(m_viewCenterSpring.velocity.y) < 0.1f)
+        {
+            m_needsReposition = false;
+        }
+    }
+}
+
+    void StructurePanel::renderContent()
+    {
+        // Không cần frame hay dt ở đây nữa, vì m_nodeUIMap và m_edgeUIMap đã được update xong xuôi
+        if(m_contentBuffer.getSize().x == 0) return;
 
         m_contentBuffer.clear(sf::Color::Transparent);
         m_contentBuffer.setView(m_view);
-        ds->draw(m_contentBuffer);
+
+        // 1. Vẽ Layer Dây (Nằm dưới)
+        for(const auto& pair : m_edgeUIMap)
+        {
+            pair.second->draw(m_contentBuffer);
+        }
+
+        // 2. Vẽ Layer Node (Nằm trên)
+        for(const auto& pair : m_nodeUIMap)
+        {
+            pair.second->draw(m_contentBuffer);
+        }
+
         m_contentBuffer.display();
+    }
+
+    // StructurePanel.cpp
+
+    sf::FloatRect StructurePanel::calculateBoundingBox()
+    {
+        if (m_nodeUIMap.empty())
+        {
+            // Trả về một vùng mặc định nếu không có node nào
+            return sf::FloatRect(0.f, 0.f, 1.f, 1.f);
+        }
+
+        float minX = std::numeric_limits<float>::max();
+        float minY = std::numeric_limits<float>::max();
+        float maxX = std::numeric_limits<float>::lowest();
+        float maxY = std::numeric_limits<float>::lowest();
+
+        for (const auto& pair : m_nodeUIMap)
+        {
+            sf::Vector2f pos = pair.second->getCurrentPosition();
+            float radius = 25.0f; // Bán kính node (nên lấy từ NodeUI nếu có thể)
+
+            minX = std::min(minX, pos.x - radius);
+            minY = std::min(minY, pos.y - radius);
+            maxX = std::max(maxX, pos.x + radius);
+            maxY = std::max(maxY, pos.y + radius);
+        }
+
+        return sf::FloatRect(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    void StructurePanel::fitView(bool immediate)
+    {
+        if(m_nodeUIMap.empty())
+        {
+            // If empty, return to a default state (e.g., center of the buffer)
+            sf::Vector2f defaultCenter(1920.f / 2.f, 1080.f / 2.f);
+            if(immediate)
+            {
+                m_zoomSpring.snapTo(1.0f);
+                m_viewCenterSpring.snapTo(defaultCenter);
+            }
+            else
+            {
+                m_zoomSpring.target = 1.0f;
+                m_viewCenterSpring.target = defaultCenter;
+            }
+            return;
+        }
+
+        sf::FloatRect bbox = calculateBoundingBox();
+//        float w = m_frame->getSize().x;
+//        float h = m_frame->getSize().y;
+
+        float w = m_widthSpring.target;
+        float h = m_heightSpring.target;
+
+        if(w <= 0 || h <= 0) return;
+
+
+        std::cout << "[PREVIOUS TARGET SIZE]: " << w << " " << h << "\n";
+        std::cout << "[BOUNDING BOX]: " << bbox.left << " " << bbox.top << " " << bbox.width << " " << bbox.height << "\n";
+
+        // Calculate target zoom with padding
+        float padding = 80.0f;
+        float targetZoomX = (bbox.width + padding * 2.0f) / w;
+        float targetZoomY = (bbox.height + padding * 2.0f) / h;
+        float targetZoom = std::max(targetZoomX, targetZoomY);
+
+        // Limit zoom range
+        targetZoom = std::max(0.6f, std::min(targetZoom, 4.0f));
+
+        std::cout << "[TARGET ZOOM]: " << targetZoom << "\n";
+
+        sf::Vector2f bboxCenter(bbox.left + bbox.width / 2.0f, bbox.top + bbox.height / 2.0f);
+
+        std::cout << "[BOUNDING BOX CENTER]: " << bboxCenter.x << " " << bboxCenter.y << "\n";
+
+        // Offset for the Crop system to keep things centered in the 1920x1080 buffer
+        sf::Vector2f offset;
+        offset.x = (1920.0f - w) / 2.0f;
+        offset.y = (1080.0f - h) / 2.0f;
+
+        sf::Vector2f targetCenter = bboxCenter + (offset * targetZoom);
+
+        std::cout << "[TARGET VIEW CENTER]: " << targetCenter.x << " " << targetCenter.y << "\n";
+
+        if(immediate)
+        {
+            m_zoomSpring.snapTo(targetZoom);
+            m_viewCenterSpring.snapTo(targetCenter);
+        }
+        else
+        {
+            m_zoomSpring.target = targetZoom;
+            m_viewCenterSpring.target = targetCenter;
+        }
     }
 
     void StructurePanel::zoomAt(float delta, sf::Vector2f mouseWorldPos)
@@ -245,6 +614,7 @@ namespace GUI
         float w = m_frame->getSize().x;
         float h = m_frame->getSize().y;
 
+
         if(w > 0 && h > 0)
         {
             sf::Sprite contentSprite(m_contentBuffer.getTexture());
@@ -257,15 +627,32 @@ namespace GUI
 
             if(m_isMaskLoaded)
             {
-                m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
-                m_maskShader.setUniform("u_panelSize", sf::Vector2f(w, h));
-                m_maskShader.setUniform("u_radius", 30.0f);
-                m_maskShader.setUniform("u_power", 4.0f);
+
+                sf::Vector2f halfSize(w * 0.5f, h * 0.5f);
+sf::Vector2f innerBound(halfSize.x - 30.f, halfSize.y - 30.f);
+
+m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
+m_maskShader.setUniform("u_halfSize", halfSize);
+m_maskShader.setUniform("u_innerBound", innerBound);
+m_maskShader.setUniform("u_radius", 30.f);
+//                m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
+//                m_maskShader.setUniform("u_panelSize", sf::Vector2f(w, h));
+//                m_maskShader.setUniform("u_radius", 30.0f);
+//                m_maskShader.setUniform("u_power", 4.0f);
                 states.shader = &m_maskShader;
             }
 
             target.draw(contentSprite, states);
         }
+
+        // 2. Vẽ Empty Message nếu không có node
+        if(m_nodeUIMap.empty())
+        {
+            // Có thể nhân thêm m_alphaSpring.position nếu muốn chữ cũng fade out mượt mà
+            target.draw(m_emptyMessage);
+        }
+
+        resetBtn->draw(target);
     }
 
     sf::FloatRect StructurePanel::getGlobalBounds() const

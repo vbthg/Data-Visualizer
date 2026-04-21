@@ -17,6 +17,18 @@ namespace Core
             currentIndex = -1;
         }
 
+        // Thêm hàm này vào đây
+        std::shared_ptr<ISnapshot> getSnapshotAt(int index) const
+        {
+            // Kiểm tra biên để tránh crash (Bounds checking)
+            if(index < 0 || index >= (int)history.size())
+            {
+                return nullptr;
+            }
+
+            return history[index];
+        }
+
         // Thêm một bản ghi mới vào lịch sử
         void addSnapshot(std::shared_ptr<ISnapshot> snapshot)
         {

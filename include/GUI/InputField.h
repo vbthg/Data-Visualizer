@@ -19,17 +19,37 @@ namespace GUI
 
         // --- Cấu hình ---
         void setPosition(sf::Vector2f pos);
-        sf::Vector2f getPosition() const;
-        sf::Vector2f getSize() const;
+        // Trong InputField.h
+        void setFillColor(sf::Color color) { bgShape.setFillColor(color); }
+        void setOutlineColor(sf::Color color) { bgShape.setOutlineColor(color); }
+        void setOutlineThickness(float thickness) { bgShape.setOutlineThickness(thickness); }
+        void setSize(sf::Vector2f size);
+
+        // Tùy chỉnh bo góc cho Squircle bên trong
+        void setCornerRadius(float radius) { bgShape.setRadius(radius); }
+        void setCornerPower(float power) { bgShape.setPower(power); }
+        void setGlobalAlpha(float alpha);
 
         void setPlaceholder(const std::string& text);
+
+        // Quan trọng: Hàm để tự căn tâm
+        void centerOrigin()
+        {
+            this->bgShape.setOrigin(size.x / 2.0f, size.y / 2.0f);
+        }
+
+
+        sf::FloatRect getGlobalBounds() { return bgShape.getGlobalBounds(); }
+
+        sf::Vector2f getPosition() const;
+        sf::Vector2f getSize() const;
         std::string getText() const;
         void clear();
 
         // --- Core ---
         void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void update(float dt);
-        virtual void draw(sf::RenderTarget& target, sf::RenderStates states)
+        virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
         bool isFocused() const { return focused; }
         void setFocus(bool focus);
@@ -39,6 +59,8 @@ namespace GUI
         {
             bgShape.setBakedGlass(tex, res);
         }
+
+        void triggerErrorShake();
 
     private:
         Type inputType;
@@ -63,9 +85,9 @@ namespace GUI
         Utils::Physics::Spring shakeSpring;
 
         // Xử lý logic nội bộ
-        void triggerErrorShake();
         bool isValidInput(sf::Uint32 unicode);
         bool wouldOverflowInt(const std::string& newStr);
         void updateTextLayout();
+        void updateTextPosition();
     };
 }

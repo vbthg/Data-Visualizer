@@ -17,33 +17,31 @@ namespace Math
             if(alpha <= 0.0f) return start.position;
             if(alpha >= 1.0f) return end.position;
 
-            if(type == Core::TransitionType::Orbital)
+            if (type == Core::TransitionType::Orbital)
             {
-                sf::Vector2f center = (start.position + end.position) / 2.0f;
                 sf::Vector2f dir = end.position - start.position;
+                float distSq = dir.x * dir.x + dir.y * dir.y; // Dùng bình phương khoảng cách
 
+                if (distSq < 0.0001f) return start.position;
+
+                float dist = std::sqrt(distSq);
+                sf::Vector2f center = (start.position + end.position) / 2.f;
                 sf::Vector2f v_perp(-dir.y, dir.x);
-                float dist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
 
-                if(dist > 0.0001f)
-                {
-                    // Hệ số 0.3f tạo độ nông/sâu của quỹ đạo cung tròn
-                    center += (v_perp / dist) * (dist * 0.3f);
-                }
+                // Center cũng nên mượt
+                center += (v_perp / dist) * (dist * 0.3f);
 
                 float startAngle = std::atan2(start.position.y - center.y, start.position.x - center.x);
                 float endAngle = std::atan2(end.position.y - center.y, end.position.x - center.x);
 
-                if(endAngle - startAngle > PI) endAngle -= 2.0f * PI;
-                if(endAngle - startAngle < -PI) endAngle += 2.0f * PI;
+                // Chuẩn hóa góc (Wrap angle)
+                while (endAngle - startAngle > PI)  endAngle -= 2.f * PI;
+                while (endAngle - startAngle < -PI) endAngle += 2.f * PI;
 
                 float currentAngle = Easing::lerp(startAngle, endAngle, alpha);
                 float radius = std::sqrt(std::pow(start.position.x - center.x, 2) + std::pow(start.position.y - center.y, 2));
 
-                return sf::Vector2f(
-                    center.x + radius * std::cos(currentAngle),
-                    center.y + radius * std::sin(currentAngle)
-                );
+                return { center.x + radius * std::cos(currentAngle), center.y + radius * std::sin(currentAngle) };
             }
             else if(type == Core::TransitionType::ArcSwing)
             {

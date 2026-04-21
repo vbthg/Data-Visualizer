@@ -14,6 +14,8 @@ namespace GUI {
         void setSize(sf::Vector2f size);
         void setFillColor(sf::Color color);
 
+        bool isFinished() const;
+
         sf::Vector2f getSize() const { return m_size; }
 
     protected:

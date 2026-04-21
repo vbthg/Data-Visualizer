@@ -361,10 +361,10 @@ namespace GUI
         }
     }
 
-    void Button::draw(sf::RenderWindow& window)
+    void Button::draw(sf::RenderTarget& target)
     {
-        window.draw(bgShape); // RoundedRectangleShape kế thừa sf::Drawable
-        window.draw(content);
+        target.draw(bgShape); // RoundedRectangleShape kế thừa sf::Drawable
+        target.draw(content);
     }
 
     void Button::setOpacity(float opacity)

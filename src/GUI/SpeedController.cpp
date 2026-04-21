@@ -190,14 +190,14 @@ namespace GUI
         }
     }
 
-    void SpeedController::draw(sf::RenderWindow& window)
+    void SpeedController::draw(sf::RenderTarget& target)
     {
-        m_mainButton.draw(window);
+        m_mainButton.draw(target);
 
         // Tối ưu Draw Call: Chỉ vẽ khi có độ mờ > 0
         if(m_widthSpring.position > m_collapsedWidth + 1.0f)
         {
-            m_slider.draw(window);
+            m_slider.draw(target);
         }
     }
 

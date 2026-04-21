@@ -26,6 +26,12 @@ namespace GUI
         m_size = size;
     }
 
+    bool ProgressBar::isFinished() const
+    {
+        // Chỉ coi là xong nếu đã chạy hết bước cuối cùng
+        return (m_currentStep >= m_totalSteps) && (m_stepTimer >= m_stepDuration);
+    }
+
     void ProgressBar::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         if(m_totalSteps <= 0)
         {

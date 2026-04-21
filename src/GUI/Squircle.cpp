@@ -27,13 +27,25 @@ namespace GUI
         uniform vec2 u_screenPos;
         uniform vec2 u_resolution;
 
-        float sdSuperellipse(vec2 p, vec2 b, float r, float power)
-        {
-            vec2 q = abs(p) - b + r;
-            vec2 maxQ = max(q, 0.0);
-            float distN = pow(pow(maxQ.x, power) + pow(maxQ.y, power), 1.0 / power);
-            return min(max(q.x, q.y), 0.0) + distN - r;
-        }
+float sdSuperellipse(vec2 p, vec2 b, float r, float power)
+{
+    vec2 q = abs(p) - b + r;
+    vec2 maxQ = max(q, 0.0);
+    float distN;
+
+    if (power > 3.0) // Giả định là 4.0
+    {
+        float x2 = maxQ.x * maxQ.x;
+        float y2 = maxQ.y * maxQ.y;
+        distN = sqrt(sqrt(x2 * x2 + y2 * y2));
+    }
+    else // Giả định là 2.0 (Đường tròn tiêu chuẩn)
+    {
+        distN = length(maxQ);
+    }
+
+    return min(max(q.x, q.y), 0.0) + distN - r;
+}
 
         // Dùng thuật toán Alpha Blending thay vì mix() để hòa trộn màu outline không bị ám đen
         vec4 alphaBlend(vec4 top, vec4 bottom)
@@ -50,6 +62,42 @@ namespace GUI
         {
             vec2 halfSize = u_size * 0.5;
             vec2 p = gl_TexCoord[0].xy * u_totalSize - u_totalSize * 0.5;
+
+
+// 1. Cận an toàn cho bo góc
+    float maxRad = max(max(u_radii.x, u_radii.y), max(u_radii.z, u_radii.w));
+    float safety = maxRad + u_outlineThickness;
+
+    // 2. Cận an toàn cho Outline (để không bị mất viền ở các cạnh thẳng)
+    float edgeSafety = u_outlineThickness + 0.5; // +0.5 để tránh lỗi làm tròn pixel
+
+    // 3. ĐIỀU KIỆN ĐÚNG:
+    // Dải đứng: phải hẹp hơn lõi bo góc VÀ phải nằm THỤT VÀO so với biên trên/dưới để chừa chỗ cho viền ngang
+    bool inVertical = abs(p.x) < (halfSize.x - safety) && abs(p.y) < (halfSize.y - edgeSafety);
+
+    // Dải ngang: phải thấp hơn lõi bo góc VÀ phải nằm THỤT VÀO so với biên trái/phải để chừa chỗ cho viền dọc
+    bool inHorizontal = abs(p.y) < (halfSize.y - safety) && abs(p.x) < (halfSize.x - edgeSafety);
+
+    if (inVertical || inHorizontal)
+    {
+        // Ở đây ta chắc chắn pixel nằm TRONG vùng fill của Squircle
+        // Không có shadow, không có viền, alpha chắc chắn là 1.0
+
+        vec4 baseColor = vec4(u_fillColor.rgb, u_fillAlpha);
+
+        if (u_resolution.x > 0.0)
+        {
+            vec2 pixelPosOnScreen = u_screenPos + (p + halfSize);
+            vec2 screenUV = pixelPosOnScreen / u_resolution;
+            vec4 glassColor = texture2D(u_bakedBlurTexture, screenUV);
+            gl_FragColor = vec4(mix(glassColor.rgb, u_fillColor.rgb, u_fillAlpha), glassColor.a);
+        }
+        else
+        {
+            gl_FragColor = baseColor;
+        }
+        return;
+    }
 
             float rad = 0.0;
             if (p.x < 0.0 && p.y < 0.0)        rad = u_radii.x;
@@ -68,7 +116,8 @@ namespace GUI
             {
                 vec2 shadowP = p - u_shadowOffset;
                 float sDist = sdSuperellipse(shadowP, halfSize, u_radii.x, u_power);
-                float shadowAlphaVal = exp(-5.0 * pow(max(sDist + u_shadowBlur * 0.5, 0.0) / max(u_shadowBlur, 0.001), 2.0));
+                float ratio = max(sDist + u_shadowBlur * 0.5, 0.0) / max(u_shadowBlur, 0.001);
+float shadowAlphaVal = exp(-5.0 * (ratio * ratio));
 
                 // Cắt bỏ phần bóng đổ lọt vào bên trong shape để giữ đúng màu của kính và outline
                 shadowAlphaVal *= (1.0 - shapeAlpha);

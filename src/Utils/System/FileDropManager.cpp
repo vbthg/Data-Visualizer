@@ -5,6 +5,7 @@
 #include <ole2.h>
 #include <shellapi.h>
 #include <mutex>
+#include <iostream>
 
 static bool g_isDragging = false;
 static sf::Vector2f g_hoverPosition(0.f, 0.f);
@@ -92,15 +93,33 @@ public:
             if (hDrop)
             {
                 UINT fileCount = DragQueryFileA(hDrop, 0xFFFFFFFF, NULL, 0);
+//                std::cout << "[DEBUG] Files found: " << fileCount << std::endl;
                 for (UINT i = 0; i < fileCount; ++i)
                 {
-                    char filePath[MAX_PATH];
-                    if (DragQueryFileA(hDrop, i, filePath, MAX_PATH))
+                    // Bước 1: Gọi hàm với NULL để lấy độ dài cần thiết (không bao gồm \0)
+                    UINT pathLen = DragQueryFileA(hDrop, i, NULL, 0);
+
+                    if (pathLen > 0)
                     {
-                        g_droppedFiles.push_back(std::string(filePath));
+                        // Bước 2: Cấp phát bộ nhớ động vừa đủ (pathLen + 1 cho ký tự \0)
+                        std::vector<char> pathBuffer(pathLen + 1);
+
+                        // Bước 3: Lấy đường dẫn thật sự vào buffer
+                        if (DragQueryFileA(hDrop, i, pathBuffer.data(), pathLen + 1))
+                        {
+                            g_droppedFiles.push_back(std::string(pathBuffer.data()));
+                        }
                     }
+
+
+//                    char filePath[MAX_PATH];
+////                    char filePath[32768];
+//                    if (DragQueryFileA(hDrop, i, filePath, MAX_PATH))
+//                    {
+//                        g_droppedFiles.push_back(std::string(filePath));
+//                    }
                 }
-                DragFinish(hDrop);
+//                DragFinish(hDrop);
                 GlobalUnlock(medium.hGlobal);
             }
             ReleaseStgMedium(&medium);

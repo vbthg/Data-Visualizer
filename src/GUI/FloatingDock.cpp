@@ -68,6 +68,7 @@ namespace GUI
             auto btn = new Button(iconFont, cmd.name, {Theme::Style::IconButtonSize, Theme::Style::IconButtonSize});
             btn->applyPreset(ButtonPreset::Ghost);
             btn->setCornerRadius(Theme::Style::DockHighlightRadius);
+            btn->setCharacterSize(25);
 
             btn->onClick = [this, btn, cmd]()
             {

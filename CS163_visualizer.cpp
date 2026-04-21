@@ -1,6 +1,11 @@
 //#define sandBox
+#define App
+//#define History_Board
 
-#ifndef sandBox
+
+
+
+#ifdef App
 
 #include "Application.h"
 #include "ResourceManager.h"
@@ -92,6 +97,8 @@ const float DRAG_EXIT_DELAY = 0.15f; // Đợi 0.15 giây mới thực sự tắ
                     GUI::NotchManager::getInstance().updateStep(currentStep, totalSteps, stepDuration);
                 }
             }
+
+            GUI::NotchManager::getInstance().handleEvent(event, window);
         }
 
         // 2. main.cpp
@@ -176,7 +183,6 @@ const float DRAG_EXIT_DELAY = 0.15f; // Đợi 0.15 giây mới thực sự tắ
                 }
             }
         }
-
         GUI::NotchManager::getInstance().update(dt);
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         // PHẢI GỌI DÒNG NÀY

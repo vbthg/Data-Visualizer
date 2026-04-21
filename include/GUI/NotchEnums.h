@@ -8,7 +8,8 @@ namespace GUI
         Compact,    // Nghỉ ngơi / Chờ (Chỉ hiện icon)
         Standard,   // Đang chạy thuật toán (Chứa Text và Waveform)
         Expanded,   // Cảnh báo / Lỗi / Chờ tương tác (To, rõ ràng)
-        Tray
+        Tray,
+        Input
     };
 
     // Các kịch bản ngữ cảnh dành cho thuật toán gọi
@@ -21,6 +22,7 @@ namespace GUI
         Error,          // Lỗi (Màu đỏ, rung lắc, tự thu hồi chậm)
         Warning,        // Cảnh báo nhẹ
         AwaitingInput,  // Dừng lại chờ người dùng click chuột
+        Input,          // Input Field để nhập đường dẫn file
         FileTray
     };
 

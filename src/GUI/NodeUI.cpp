@@ -1,4 +1,5 @@
 #include "NodeUI.h"
+#include <string>
 
 namespace GUI
 {
@@ -43,6 +44,26 @@ namespace GUI
         return m_arcOffset;
     }
 
+    void NodeUI::applyState(const Core::NodeState& state)
+    {
+        // 1. Áp dụng ngay lập tức vị trí hoàn hảo từ Timeline
+        m_currentPosition = state.position;
+        m_shape.setPosition(m_currentPosition);
+        m_valueText.setPosition(m_currentPosition);
+
+        // 2. Cập nhật các trạng thái màu sắc và Text
+//        setValue(std::to_string(state.value));
+        setValue(state.value);
+
+        m_scaleSpring.target = state.scale;
+        m_targetColor = state.fillColor;
+        m_targetOutlineColor = state.outlineColor;
+        m_targetTextColor = state.textColor;
+
+        // Cập nhật arcOffset nếu cần cho việc vẽ cây
+        m_arcOffset = state.arcPivot;
+    }
+
     void NodeUI::setValue(const std::string& val)
     {
         m_valueText.setString(val);
@@ -55,23 +76,23 @@ namespace GUI
     void NodeUI::setTargetPosition(float x, float y)
     {
         // Chỉ cập nhật Target, lò xo sẽ tự tính toán lực kéo trong hàm update()
-        m_xSpring.target = x;
-        m_ySpring.target = y;
+//        m_xSpring.target = x;
+//        m_ySpring.target = y;
     }
 
     void NodeUI::setExactPosition(float x, float y)
     {
-        // Ép vị trí hiện tại và đích đến bằng nhau
-        m_xSpring.position = x;
-        m_xSpring.target = x;
-        m_xSpring.velocity = 0.0f; // Triệt tiêu vận tốc dư thừa để Node không bị nảy
-
-        m_ySpring.position = y;
-        m_ySpring.target = y;
-        m_ySpring.velocity = 0.0f;
-
-        m_shape.setPosition(x, y);
-        m_valueText.setPosition(x, y);
+//        // Ép vị trí hiện tại và đích đến bằng nhau
+//        m_xSpring.position = x;
+//        m_xSpring.target = x;
+//        m_xSpring.velocity = 0.0f; // Triệt tiêu vận tốc dư thừa để Node không bị nảy
+//
+//        m_ySpring.position = y;
+//        m_ySpring.target = y;
+//        m_ySpring.velocity = 0.0f;
+//
+//        m_shape.setPosition(x, y);
+//        m_valueText.setPosition(x, y);
     }
 
     void NodeUI::setTargetColor(sf::Color bgTarget, sf::Color textTarget, sf::Color outlineTarget)
@@ -100,29 +121,42 @@ namespace GUI
     sf::Vector2f NodeUI::getCurrentPosition() const
     {
         // Trả về vị trí đang trượt của lò xo, rất quan trọng để EdgeUI bám theo
-        return sf::Vector2f(m_xSpring.position, m_ySpring.position);
+//        return sf::Vector2f(m_xSpring.position, m_ySpring.position);
+        return m_currentPosition;
     }
 
     sf::Vector2f NodeUI::getVelocity() const
     {
-        return sf::Vector2f(m_xSpring.velocity, m_ySpring.velocity);
+        return m_velocity;
+//        return sf::Vector2f(m_xSpring.velocity, m_ySpring.velocity);
     }
 
     sf::Vector2f NodeUI::getTargetPosition() const
     {
-        return sf::Vector2f(m_xSpring.target, m_ySpring.target);
+        return m_currentPosition;
+//        return sf::Vector2f(m_xSpring.target, m_ySpring.target);
     }
 
     void NodeUI::update(float dt)
     {
-        // 1. Cập nhật vật lý cho lò xo (vị trí & độ lớn)
-        m_xSpring.update(dt);
-        m_ySpring.update(dt);
+        // 1. TÍNH TOÁN VẬN TỐC (Cực kỳ quan trọng cho EdgeUI)
+        if(dt > 0.0001f)
+        {
+            // Vận tốc = (Vị trí hiện tại - Vị trí trước đó) / Thời gian
+            m_velocity = (m_currentPosition - m_lastPosition) / dt;
+            m_lastPosition = m_currentPosition;
+        }
+
+        // 1. Cập nhật vật lý cho lò xo (độ lớn)
+//        m_xSpring.update(dt);
+//        m_ySpring.update(dt);
         m_scaleSpring.update(dt);
 
         // 2. Áp dụng tọa độ mới vào hình khối và chữ
-        m_shape.setPosition(m_xSpring.position, m_ySpring.position);
-        m_valueText.setPosition(m_xSpring.position, m_ySpring.position);
+//        m_shape.setPosition(m_xSpring.position, m_ySpring.position);
+//        m_valueText.setPosition(m_xSpring.position, m_ySpring.position);
+        m_shape.setPosition(m_currentPosition);
+        m_valueText.setPosition(m_currentPosition);
 
         m_shape.setScale(m_scaleSpring.position, m_scaleSpring.position);
         m_valueText.setScale(m_scaleSpring.position, m_scaleSpring.position);

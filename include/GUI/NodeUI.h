@@ -3,6 +3,7 @@
 #include <string>
 #include "Spring.h"
 #include "Easing.h"
+#include "AnimationMetadata.h"
 
 namespace GUI
 {
@@ -18,9 +19,12 @@ namespace GUI
 
         // --- HỆ THỐNG VẬT LÝ (PHYSICS SPRINGS) ---
         // Lò xo giúp tạo chuyển động mượt mà và có quán tính
-        Utils::Physics::Spring m_xSpring;     // Lò xo quản lý tọa độ X
-        Utils::Physics::Spring m_ySpring;     // Lò xo quản lý tọa độ Y
+//        Utils::Physics::Spring m_xSpring;     // Lò xo quản lý tọa độ X
+//        Utils::Physics::Spring m_ySpring;     // Lò xo quản lý tọa độ Y
         Utils::Physics::Spring m_scaleSpring; // Lò xo quản lý độ lớn (phóng to/thu nhỏ)
+        sf::Vector2f m_currentPosition;
+        sf::Vector2f m_lastPosition;
+        sf::Vector2f m_velocity; // Vận tốc tự tính
 
         // --- HỆ THỐNG MÀU SẮC (COLOR MORPHING) ---
         // Tách biệt giữa màu hiện tại (Current) và màu đích đến (Target) để tạo hiệu ứng chuyển màu mượt mà
@@ -36,6 +40,8 @@ namespace GUI
     public:
         // Khởi tạo Node với font chữ và bán kính mặc định là 25.0f
         NodeUI(sf::Font* font, float radius = 25.0f);
+
+        void applyState(const Core::NodeState& state);
 
         // Cập nhật giá trị hiển thị (VD: "15", "99") và tự động căn giữa chữ
         void setValue(const std::string& val);

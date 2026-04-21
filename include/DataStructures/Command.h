@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <functional>
+#include <SFML/System/String.hpp>
 
 namespace DS // Namespace DataStructures (Optional, cho gọn)
 {
@@ -30,11 +31,11 @@ namespace DS // Namespace DataStructures (Optional, cho gọn)
     // 3. Command Struct: Định nghĩa một nút bấm
     struct Command
     {
-        std::string name;           // Tên hiển thị trên nút
+        sf::String name;           // Tên hiển thị trên nút
         InputType inputType;        // Loại Input UI cần vẽ
         std::function<void(InputArgs)> action; // Hàm callback logic
 
-        Command(std::string n, InputType type, std::function<void(InputArgs)> act)
+        Command(sf::String n, InputType type, std::function<void(InputArgs)> act)
             : name(n), inputType(type), action(act) {}
     };
 }

@@ -182,10 +182,12 @@ namespace Utils
 //                inline const sf::Color ActiveBarColor = sf::Color(10, 132, 255, 255);        // Xanh dương rực rỡ (Apple Blue)
 //                inline const sf::Color DividerColor = sf::Color(0, 0, 0, 255);               // Đen tuyệt đối (Giữ nguyên)
 
-inline const sf::Color PendingBarColor = sf::Color(255, 255, 255, 40);       // Trắng mờ
-inline const sf::Color CompletedBarColor = sf::Color(255, 255, 255, 150);    // Xám sáng (Tăng độ sáng để bớt đục)
-inline const sf::Color ActiveBarColor = sf::Color(255, 255, 255, 255);       // Trắng tuyệt đối
-inline const sf::Color DividerColor = sf::Color(0, 0, 0, 255);               // Đen tuyệt đối
+                inline const sf::Color PendingBarColor = sf::Color(255, 255, 255, 40);       // Trắng mờ
+                inline const sf::Color CompletedBarColor = sf::Color(255, 255, 255, 150);    // Xám sáng (Tăng độ sáng để bớt đục)
+                inline const sf::Color ActiveBarColor = sf::Color(255, 255, 255, 255);       // Trắng tuyệt đối
+                inline const sf::Color DividerColor = sf::Color(0, 0, 0, 255);               // Đen tuyệt đối
+
+                inline const sf::Color NodeDefault = sf::Color(230, 183, 167);
             }
         }
     }

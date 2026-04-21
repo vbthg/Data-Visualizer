@@ -13,6 +13,7 @@ namespace GUI
 
         // notchSize dùng để tính toán tọa độ Neo (Anchoring) cho 3 Zones
         virtual void update(float dt, sf::Vector2f notchSize);
+        virtual void handleEvent(const sf::Event& event, const sf::RenderWindow& window) {}
 
         // Điều khiển độ mờ của toàn bộ cụm content (0.0f - 1.0f)
         virtual void setAlpha(float alpha);

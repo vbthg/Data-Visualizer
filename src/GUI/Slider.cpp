@@ -215,19 +215,19 @@ namespace GUI
         rightIcon.setColor(applyAlpha(sf::Color(150, 150, 150)));
     }
 
-    void Slider::draw(sf::RenderWindow& window)
+    void Slider::draw(sf::RenderTarget& target)
     {
         if (opacityFactor <= 0.01f) return;
 
-        window.draw(bgTrack);
+        target.draw(bgTrack);
         // Chỉ vẽ thanh xanh nếu độ dài của nó lớn hơn 0.1px
         if (activeTrack.getSize().x > 0.1f)
         {
-            window.draw(activeTrack);
+            target.draw(activeTrack);
         }
 //        window.draw(thumb);
 
-        window.draw(leftIcon);
-        window.draw(rightIcon);
+        target.draw(leftIcon);
+        target.draw(rightIcon);
     }
 }

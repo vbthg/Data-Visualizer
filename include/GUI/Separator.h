@@ -17,7 +17,7 @@ namespace GUI
         virtual ~Separator() = default;
 
         void update(sf::RenderWindow& window, float dt) override;
-        void draw(sf::RenderWindow& window) override;
+        void draw(sf::RenderTarget& target) override;
         void handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
 
         void setPosition(const sf::Vector2f pos) override;

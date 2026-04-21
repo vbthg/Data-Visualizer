@@ -288,10 +288,11 @@ namespace GUI
         {
             window.draw(titleText);
 
-            input1->draw(window);
+//            input1->draw(window);
+            window.draw(*input1);
             if (currentCommand.inputType == DS::InputType::TwoIntegers)
             {
-                input2->draw(window);
+                window.draw(*input2);
             }
 
             btnConfirm->draw(window);

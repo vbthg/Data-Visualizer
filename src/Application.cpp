@@ -2,7 +2,7 @@
 #include "WindowConfig.h"
 #include "IntroState.h"
 #include "NotchManager.h"
-#include "FileTray.h"
+#include "FileTrayContent.h"
 #include "FileDropManager.h"
 #include <windows.h>
 #include <iostream>

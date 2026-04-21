@@ -1,9 +1,8 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <vector>
 
-namespace Utils
-{
 namespace Core
 {
     enum class TransitionType
@@ -21,6 +20,9 @@ namespace Core
 
         // MỚI THÊM: Điểm tựa để xoay (Dùng riêng cho ArcSwing)
         sf::Vector2f arcPivot;
+
+        // THÊM DÒNG NÀY: Để mỗi Node biết mình nên bay kiểu gì (Linear, Orbital, ...)
+        TransitionType transition = TransitionType::Linear;
 
         sf::Color fillColor = sf::Color::White;
         sf::Color outlineColor = sf::Color(200, 200, 200);
@@ -52,5 +54,12 @@ namespace Core
         bool isFocused = true;
         float opacity = 255.0f;
     };
+
+    // THÊM DÒNG NÀY VÀO CUỐI NAMESPACE Core
+    struct RenderFrame
+    {
+        std::vector<NodeState> nodes;
+        std::vector<EdgeState> edges;
+    };
 }
-}
+

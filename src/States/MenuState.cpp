@@ -13,7 +13,7 @@
 #include <random>    // Để dùng std::random_device, std::mt19937
 #include <VisualizerState.h>
 #include <DataStructure.h>
-#include <SinglyLinkedList.h>
+//#include <SinglyLinkedList.h>
 #include <Heap.h>
 #include <cassert>
 
@@ -545,6 +545,8 @@ void MenuState::updateLayout(float dt)
     for(auto c : cards) c->update(dt, window);
 }
 
+
+
 void MenuState::handleInput(sf::Event& event)
 {
     // [THÊM] Nếu đang chuyển cảnh thì không nhận input click
@@ -620,7 +622,7 @@ void MenuState::handleInput(sf::Event& event)
             std::cout << "START ALGO ID: " << algoID << std::endl;
             // TODO: Chuyển Scene sang VisualizeState tại đây
 
-            states.push(new VisualizerState(window, states, new DS::Heap()));  ///**************************
+            states.push(new VisualizerState(window, states, new DS::Heap(true)));  ///**************************
         };
 
         auto onBack = [this]() {

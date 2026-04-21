@@ -24,9 +24,9 @@ namespace GUI
         // Vạch ngăn tĩnh, không cần update logic
     }
 
-    void Separator::draw(sf::RenderWindow& window)
+    void Separator::draw(sf::RenderTarget& target)
     {
-        window.draw(m_line);
+        target.draw(m_line);
     }
 
     void Separator::handleEvent(const sf::Event& event, sf::RenderWindow& window)

@@ -3,12 +3,11 @@
 #include <map>
 #include <string>
 #include "AnimationMetadata.h"
+#include "ISnapshot.h"
 
-namespace Utils
-{
 namespace Core
 {
-    class Snapshot
+    class Snapshot : public Core::ISnapshot
     {
     public:
         // ID của thao tác lớn (Macro-step), ví dụ: 1 cho Insert(10), 2 cho ExtractMax()
@@ -25,5 +24,4 @@ namespace Core
 
         Snapshot() = default;
     };
-}
 }

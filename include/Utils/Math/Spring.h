@@ -1,5 +1,6 @@
 #pragma once
 #include "Smoothing.h"
+#include <algorithm>
 
 namespace Utils
 {

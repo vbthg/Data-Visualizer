@@ -5,21 +5,45 @@
 #include "ViewHandler.h"
 #include "WindowConfig.h"
 #include "NotchManager.h"
+#include "FileUtils.h"
 #include "FileDropManager.h"
 //#include "drawGlassPane.h"
 #include <iostream>
+#include <algorithm> // Bổ sung thư viện cho std::find_if
 
 namespace Theme = Utils::Graphics::Theme;
 
-VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, DataStructure* ds)
-    : window(win), states(st), currentDS(ds),
-      font(ResourceManager::getInstance().getFont("assets/fonts/font.ttf")) // Sửa lại đường dẫn theo ý bạn
+VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, DS::DataStructure* ds)
+    : window(win), states(st), currentDS(ds), m_lastSyncIdx(-1), m_isDragging(false),
+      font(ResourceManager::getInstance().getFont("assets/fonts/font.ttf"))
 {
     // 1. Khởi tạo Dock
+    std::cout << "1. Start Constructor" << std::endl;
+
     dock = new GUI::FloatingDock();
-    popover = new GUI::InputPopover(font); // Khởi tạo Popover
+    popover = new GUI::InputPopover(font);
     notch = new GUI::DynamicIsland(font);
     pseudoBox = new GUI::PseudoCodeBox(ResourceManager::getInstance().getFont("assets/fonts/consolas-regular.ttf"), window.getSize().x, window.getSize().y);
+
+    m_timeline = new Core::TimelineManager();
+    std::cout << "2. Timeline Created" << std::endl;
+    m_historyBoard = new GUI::HistoryBoard();
+    std::cout << "3. HistoryBoard Created" << std::endl;
+
+    // Sửa lỗi lambda capture tham chiếu rác, chuyển từ [&] sang [this]
+    m_historyBoard->setOnJumpCallback([this](int targetIdx) {
+        m_timeline->seek(targetIdx);
+        m_timeline->pause();
+    });
+
+    std::cout << "4. About to sync Timeline" << std::endl;
+    if (m_timeline && m_historyBoard)
+        m_historyBoard->syncWithManager(*m_timeline);
+
+
+
+
+
 
     // Nạp thử code test
     std::vector<std::string> testCode = {
@@ -33,7 +57,6 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
         "}"
     };
     pseudoBox->loadCode("BST::Insert", testCode);
-
 
     // 2. Thêm nhóm Navigation (Điều hướng)
     GUI::Button* btnPrev = new GUI::Button(font, "Back", {Theme::Style::IconButtonSize, Theme::Style::IconButtonSize});
@@ -57,8 +80,6 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
 
     // "Ngôi sao" của chúng ta: SpeedController
     GUI::SpeedController* speedCtrl = new GUI::SpeedController(font);
-    // Đừng quên gán callback để thuật toán nhận tốc độ mới
-    // speedCtrl->onSpeedChanged = [this](float s) { currentDS->setSpeed(s); };
     dock->addItem(speedCtrl);
 
     // 5. Thêm vạch ngăn cuối
@@ -69,109 +90,97 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
     btnReset->applyPreset(GUI::ButtonPreset::Ghost);
     dock->addItem(btnReset);
 
-    dock -> updateLayout();
+    dock->updateLayout();
 
-    // 2. Nạp Commands từ cấu trúc dữ liệu (Dock sẽ tự động sinh nút và tính size)
+
+//std::cout << "OK!" << std::endl;
+    // Nạp Commands từ cấu trúc dữ liệu
     if (currentDS)
     {
-        dock->setCommands(currentDS->getCommands(), font);
+        std::cout << "[COMMANDS SIZE: ]" << (currentDS->getCommands()).size() << "\n";
+        dock->setCommands(currentDS->getCommands(), ResourceManager::getInstance().getFont("assets/fonts/Phosphor.ttf"));
 
-
+        dock->addItem(new GUI::Separator(Theme::Style::DockHeight));
+        GUI::SpeedController* speedCtrl = new GUI::SpeedController(font);
+        dock->addItem(speedCtrl);
     }
 
-    // NỐI DÂY (WIRING): Khi Dock báo có nút bị click -> Mở Popover!
+    // 3. Bơm (Inject) Timeline vào cấu trúc dữ liệu
+    if(currentDS)
+    {
+        currentDS->setTimelineManager(m_timeline);
+    }
+
+
+
+    // NỐI DÂY (WIRING):
     dock->onCommandClicked = [this](sf::Vector2f btnPos, DS::Command cmd)
     {
-        // Chỉ mở Popover nếu nó đang đóng để tránh giật lag
         if (!popover->isOpen())
         {
             popover->open(btnPos, cmd);
         }
     };
 
-    speedCtrl = new GUI::SpeedController(font);
-    // Đừng quên gán callback để thuật toán nhận tốc độ mới
-    // speedCtrl->onSpeedChanged = [this](float s) { currentDS->setSpeed(s); };
-    dock->addItem(speedCtrl);
 
-    // 5. Thêm vạch ngăn cuối
-    dock->addItem(new GUI::Separator(Theme::Style::DockHeight));
 
-    if (currentDS)
-    {
-        currentDS->bindDynamicIsland(notch);
-    }
+//    if (currentDS)
+//    {
+//        currentDS->bindDynamicIsland(notch);
+//    }
 
     // 3. Setup Layout ban đầu
-    // Đặt Dock ẩn sâu dưới màn hình 100px để chuẩn bị cho hiệu ứng trượt lên
     dock->snapToY(window.getSize().y + 100.0f);
-
-    // Kéo viên thuốc lên cách viền trên -100px (Giấu đi)
     notch->snapToY(-100.0f);
-
-
-    m_isDragging = false;
-//    m_camera.setSize(window.getSize().x, window.getSize().y);
-//    m_camera.setCenter(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
 
     m_camera.setSize(Utils::System::DESIGN_WIDTH, Utils::System::DESIGN_HEIGHT);
     m_camera.setCenter(Utils::System::DESIGN_WIDTH / 2.f, Utils::System::DESIGN_HEIGHT / 2.f);
 
-
-    // Giả sử bạn đã có sẵn đối tượng ResourceManager tên là 'resMgr'
-    // Khởi tạo slider với độ dài track là 200px
     testSlider = new GUI::Slider(200.f);
-
-    // Thiết lập giới hạn: [0.25x -> 2.0x], bước nhảy 0.25
-    testSlider -> setRange(0.25f, 2.0f, 0.25f);
-
-    // Đặt giá trị mặc định ban đầu (VD: 1.0x)
-    testSlider -> setValue(1.0f);
-
-    // Đặt vị trí ra giữa màn hình để dễ nhìn
-    testSlider -> setPosition(sf::Vector2f(400.f, 300.f));
-
-    testSlider -> setIcons(ResourceManager::getInstance().getTexture("assets/textures/tortoise.png"),
-                        ResourceManager::getInstance().getTexture("assets/textures/hare.png"));
-
+    testSlider->setRange(0.25f, 2.0f, 0.25f);
+    testSlider->setValue(1.0f);
+    testSlider->setPosition(sf::Vector2f(400.f, 300.f));
+    testSlider->setIcons(ResourceManager::getInstance().getTexture("assets/textures/tortoise.png"),
+                         ResourceManager::getInstance().getTexture("assets/textures/hare.png"));
 
     structurePanel = new GUI::StructurePanel();
     bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
     structurePanel->initIntro(1920.f, 1080.f, isCodeOpen);
 
-
-
-    // Load tài nguyên mờ (Giả sử ID texture bạn đặt trong Figma)
     m_bgOriginal = ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur.png");
 
-    // Nạp ảnh mờ cho Dock
     if (dock)
     {
         dock->setBlurTexture(ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur - Blur 25.png"), sf::Vector2f(1920.f, 1080.f));
     }
 
-
-
     GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Initial);
-
-
-    // Ra lệnh bay lên đúng vị trí
     onResize(window.getSize().x, window.getSize().y);
+
+    std::cout << "5. End Constructor" << std::endl;
+
+
+
+//    return;
 }
 
 VisualizerState::~VisualizerState()
 {
     if (dock) delete dock;
-    if (popover) delete popover; // Nhớ xóa vùng nhớ
+    if (popover) delete popover;
     if (currentDS) delete currentDS;
     if (notch) delete notch;
-    if(structurePanel) delete structurePanel;
+    if (structurePanel) delete structurePanel;
+    if (m_historyBoard) delete m_historyBoard;
+    if (m_timeline) delete m_timeline;
+    // Bổ sung các con trỏ bị thiếu gây memory leak
+    if (pseudoBox) delete pseudoBox;
+    if (testSlider) delete testSlider;
 }
 
 void VisualizerState::onEnter()
 {
     GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Idle);
-//    m_wasDragging = false;
 }
 
 void VisualizerState::onExit()
@@ -179,43 +188,9 @@ void VisualizerState::onExit()
     GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Idle);
 }
 
-//void VisualizerState::onResize(unsigned int width, unsigned int height)
-//{
-//    Utils::System::updateCustomView(m_camera, width, height);
-//
-//    // Do bên trong FloatingDock, ta đã setOrigin ở giữa cạnh trên (Top-Center)
-//    // Nên tọa độ X của Dock chính là Tâm của màn hình
-//    float centerX = width / 2.0f;
-//
-//    // Tọa độ Y đích: Cách đáy màn hình 40px
-//    // Giả sử dockHeight = 70.f (như đã set trong FloatingDock.cpp)
-//    float dockHeight = 70.0f;
-//    float targetY = height - dockHeight - 40.0f;
-//
-//    // Cập nhật vị trí X ngay lập tức
-//    dock->setPosition(centerX, dock->getPosition().y);
-////    dock->setPosition(1400, height / 2.f - 150);
-//
-//    // Đặt Target Y để lò xo tự trượt đến (Hoặc trượt lên lúc mở, hoặc trượt xuống lúc resize)
-//    dock->setTargetY(targetY);
-////    dock->setTargetY(height / 2.f - 150);
-//
-//    if (notch)
-//    {
-//        notch->setX(centerX);
-//        notch->setTargetY(40.f);
-//    }
-//
-//    if (pseudoBox)
-//    {
-//        pseudoBox->onResize(width, height);
-//    }
-//
-////    updateLayoutTargets(event.size.width, event.size.height);
-//}
-
 void VisualizerState::onResize(unsigned int width, unsigned int height)
 {
+//    std::cout << "RESIZE TRIGGERED: " << width << "x" << height << std::endl;
     Utils::System::updateCustomView(m_camera, width, height);
 
     float centerX = Utils::System::DESIGN_WIDTH / 2.0f;
@@ -233,76 +208,98 @@ void VisualizerState::onResize(unsigned int width, unsigned int height)
 
     if(pseudoBox)
     {
-        pseudoBox->onResize(Utils::System::DESIGN_WIDTH, Utils::System::DESIGN_HEIGHT);
+//        pseudoBox->onResize(Utils::System::DESIGN_WIDTH, Utils::System::DESIGN_HEIGHT);
+    }
+}
+
+void VisualizerState::updateNotchLogic()
+{
+    static int lastIdx = -1;
+    int currentIdx = m_timeline->getCurrentIdx();
+
+    // Nếu bước hiện tại của Timeline thay đổi
+    if (currentIdx != lastIdx) {
+        auto snap = m_timeline->getSnapshot(currentIdx);
+        if (snap) {
+            // Bắn log tiếng Anh lên Notch Manager
+            GUI::NotchManager::getInstance().pushNotification(
+                snap->scenario,
+                snap->logMessage,
+                "",
+                ""
+            );
+        }
+        lastIdx = currentIdx;
     }
 }
 
 void VisualizerState::handleInput(sf::Event& event)
 {
+//    return;
+
     if(event.type == sf::Event::Resized)
     {
-        // KHÔNG set lại window.setView() ở đây nữa vì Application.cpp đã lo việc giữ tỉ lệ (letterbox)
-        // Chỉ gọi onResize để cập nhật lại các thành phần UI (nếu cần)
         Utils::System::updateCustomView(m_camera, event.size.width, event.size.height);
-//        onResize(event.size.width, event.size.height);
     }
 
-    // 1. ZOOM: Phóng to / Thu nhỏ tại tâm chuột
-    if(event.type == sf::Event::MouseWheelScrolled)
+//    // 1. ZOOM: Phóng to / Thu nhỏ tại tâm chuột
+//    if(event.type == sf::Event::MouseWheelScrolled)
+//    {
+//        sf::Vector2i mousePos(event.mouseWheelScroll.x, event.mouseWheelScroll.y);
+//        sf::FloatRect frameBounds = structurePanel->getGlobalBounds();
+//
+//        if(Utils::ViewHandler::isMouseInFrame(mousePos, window, frameBounds))
+//        {
+//            sf::Vector2f mouseWorldBefore = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
+//
+//            float zoomFactor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
+//            m_camera.zoom(zoomFactor);
+//
+//            sf::Vector2f mouseWorldAfter = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
+//
+//            m_camera.move(mouseWorldBefore - mouseWorldAfter);
+//        }
+//    }
+//
+//    // 2. PAN
+//    if(event.type == sf::Event::MouseButtonPressed)
+//    {
+//        bool isPanKey = (event.mouseButton.button == sf::Mouse::Right ||
+//                         event.mouseButton.button == sf::Mouse::Middle ||
+//                        (event.mouseButton.button == sf::Mouse::Left && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)));
+//
+//        if(isPanKey)
+//        {
+//            m_isDragging = true;
+//            m_lastMousePos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+//        }
+//    }
+//
+//    // 3. PAN - Đang di chuyển
+//    if(event.type == sf::Event::MouseMoved && m_isDragging)
+//    {
+//        sf::Vector2i currentMousePos(event.mouseMove.x, event.mouseMove.y);
+//
+//        sf::Vector2f worldLastPos = window.mapPixelToCoords(m_lastMousePos, m_camera);
+//        sf::Vector2f worldCurrentPos = window.mapPixelToCoords(currentMousePos, m_camera);
+//
+//        m_camera.move(worldLastPos - worldCurrentPos);
+//        m_lastMousePos = currentMousePos;
+//    }
+//
+//    // 4. PAN - Kết thúc kéo
+//    if(event.type == sf::Event::MouseButtonReleased)
+//    {
+//        m_isDragging = false;
+//    }
+
+    int targetIdx = m_historyBoard->handleEvent(event, window);
+    if (targetIdx != -1)
     {
-        sf::Vector2i mousePos(event.mouseWheelScroll.x, event.mouseWheelScroll.y);
-        sf::FloatRect frameBounds = structurePanel->getGlobalBounds();
-
-        if(Utils::ViewHandler::isMouseInFrame(mousePos, window, frameBounds))
-        {
-            // Lưu tọa độ World của chuột TRƯỚC khi zoom
-            sf::Vector2f mouseWorldBefore = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-
-            float zoomFactor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
-            m_camera.zoom(zoomFactor);
-
-            // Lưu tọa độ World của chuột SAU khi zoom
-            sf::Vector2f mouseWorldAfter = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-
-            // Dịch chuyển camera để bù đắp sai lệch, giữ điểm dưới chuột đứng yên
-            m_camera.move(mouseWorldBefore - mouseWorldAfter);
-        }
+        m_timeline->seek(targetIdx);
+        m_timeline->pause();
     }
 
-    // 2. PAN: Kéo thả khung nhìn (Dùng chuột phải/giữa hoặc Space + Chuột trái)
-    if(event.type == sf::Event::MouseButtonPressed)
-    {
-        bool isPanKey = (event.mouseButton.button == sf::Mouse::Right ||
-                         event.mouseButton.button == sf::Mouse::Middle ||
-                        (event.mouseButton.button == sf::Mouse::Left && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)));
-
-        if(isPanKey)
-        {
-            m_isDragging = true;
-            m_lastMousePos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
-        }
-    }
-
-    // 3. PAN - Đang di chuyển chuột
-    if(event.type == sf::Event::MouseMoved && m_isDragging)
-    {
-        sf::Vector2i currentMousePos(event.mouseMove.x, event.mouseMove.y);
-
-        // Tính Delta dựa trên tọa độ World để việc kéo mượt mà bất kể độ Zoom
-        sf::Vector2f worldLastPos = window.mapPixelToCoords(m_lastMousePos, m_camera);
-        sf::Vector2f worldCurrentPos = window.mapPixelToCoords(currentMousePos, m_camera);
-
-        m_camera.move(worldLastPos - worldCurrentPos);
-        m_lastMousePos = currentMousePos;
-    }
-
-    // 4. PAN - Kết thúc kéo thả
-    if(event.type == sf::Event::MouseButtonReleased)
-    {
-        m_isDragging = false;
-    }
-
-    // ƯU TIÊN SỰ KIỆN CỦA UI
     if(popover && popover->isOpen())
     {
         popover->handleEvent(event, window);
@@ -317,7 +314,6 @@ void VisualizerState::handleInput(sf::Event& event)
         pseudoBox->handleEvent(event, window);
     }
 
-    // TEST TẠM: Bấm phím 'C'
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::C)
     {
         if(pseudoBox)
@@ -326,9 +322,10 @@ void VisualizerState::handleInput(sf::Event& event)
             bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
             structurePanel->updateLayout(1920.f, 1080.f, isCodeOpen);
         }
+
+//        this->createMockTest();
     }
 
-    // TEST TẠM: Phím Xuống
     static int testLine = 0;
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down)
     {
@@ -342,7 +339,6 @@ void VisualizerState::handleInput(sf::Event& event)
         }
     }
 
-    // TEST TẠM: Phím Lên
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up)
     {
         testLine = std::max(0, testLine - 1);
@@ -350,245 +346,201 @@ void VisualizerState::handleInput(sf::Event& event)
     }
 
     testSlider->handleEvent(event, window);
-    structurePanel->handleEvent(event, window);
+    if(structurePanel) structurePanel->handleEvent(event, window);
 }
-
-/*
-
-void VisualizerState::handleInput(sf::Event& event)
-{
-    if (event.type == sf::Event::Resized)
-    {
-        sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
-        window.setView(sf::View(visibleArea));
-
-        onResize(event.size.width, event.size.height);
-    }
-
-
-
-    // 1. ZOOM: Phóng to / Thu nhỏ tại tâm chuột
-    if(event.type == sf::Event::MouseWheelScrolled)
-    {
-        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::FloatRect frameBounds = structurePanel->getGlobalBounds();
-
-        if(Utils::ViewHandler::isMouseInFrame(mousePos, window, frameBounds))
-        {
-            // Lưu tọa độ World của chuột TRƯỚC khi zoom
-            sf::Vector2f mouseWorldBefore = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-
-            float zoomFactor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
-            m_camera.zoom(zoomFactor);
-
-            // Lưu tọa độ World của chuột SAU khi zoom
-            sf::Vector2f mouseWorldAfter = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-
-            // Dịch chuyển camera để bù đắp sai lệch, giữ điểm dưới chuột đứng yên
-            m_camera.move(mouseWorldBefore - mouseWorldAfter);
-        }
-    }
-
-    // 2. PAN: Kéo thả khung nhìn (Dùng chuột phải/giữa hoặc Space + Chuột trái)
-    if(event.type == sf::Event::MouseButtonPressed)
-    {
-        bool isPanKey = (event.mouseButton.button == sf::Mouse::Right ||
-                         event.mouseButton.button == sf::Mouse::Middle ||
-                        (event.mouseButton.button == sf::Mouse::Left && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)));
-
-        if(isPanKey)
-        {
-            m_isDragging = true;
-            m_lastMousePos = sf::Mouse::getPosition(window);
-        }
-    }
-
-    // 3. PAN - Đang di chuyển chuột
-    if(event.type == sf::Event::MouseMoved && m_isDragging)
-    {
-        sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
-
-        // Tính Delta dựa trên tọa độ World để việc kéo mượt mà bất kể độ Zoom
-        sf::Vector2f worldLastPos = window.mapPixelToCoords(m_lastMousePos, m_camera);
-        sf::Vector2f worldCurrentPos = window.mapPixelToCoords(currentMousePos, m_camera);
-
-        m_camera.move(worldLastPos - worldCurrentPos);
-        m_lastMousePos = currentMousePos;
-    }
-
-    // 4. PAN - Kết thúc kéo thả
-    if(event.type == sf::Event::MouseButtonReleased)
-    {
-        m_isDragging = false;
-    }
-
-
-
-
-    // Truyền event cho Dock (Dock sẽ tự chia cho các nút bên trong)
-    // ƯU TIÊN SỰ KIỆN:
-    // Nếu Popover đang mở, nó sẽ chặn luồng sự kiện (Người dùng không bấm được Dock nữa)
-    if (popover && popover->isOpen())
-    {
-        popover->handleEvent(event, window);
-    }
-    else
-    {
-        if (dock) dock->handleEvent(event, window);
-    }
-
-    // 1. Cho bảng Code tự xử lý sự kiện click chuột của nó (bấm mấu kéo)
-    if (pseudoBox)
-    {
-        pseudoBox->handleEvent(event, window);
-    }
-
-    // 2. TEST TẠM: Bấm phím 'C' để gọi toggleState() trượt bảng ra/vào
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::C)
-    {
-        if (pseudoBox)
-        {
-            pseudoBox->toggleState();
-            // Cập nhật lại Target để lò xo giãn ra / co vào
-            bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
-            structurePanel->updateLayout(1920.f, 1080.f, isCodeOpen);
-        }
-    }
-
-
-
-    // TEST TẠM: Phím Xuống để chạy code tới dòng tiếp theo
-
-    static int testLine = 0;
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down)
-    {
-
-        testLine++;
-        if (pseudoBox)
-        {
-            pseudoBox->updateStep(testLine, {
-                {"cur", "Node(" + std::to_string(testLine * 10) + ")"},
-                {"min_idx", std::to_string(testLine)}
-            });
-        }
-    }
-
-    // TEST TẠM: Phím Lên để lùi code lại
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up)
-    {
-//        static int testLine = 0;
-        testLine = std::max(0, testLine - 1);
-        if (pseudoBox) pseudoBox->updateStep(testLine, {});
-    }
-
-
-    // Đặt bên trong vòng lặp while (window.pollEvent(event))
-    testSlider -> handleEvent(event, window);
-
-    structurePanel->handleEvent(event, window);
-}
-
-*/
 
 void VisualizerState::update(float dt)
 {
-    static bool wasDragging = false;
-    bool isDragging = FileDropManager::isDragging();
+//    return;
 
-    std::cout << wasDragging << " " << isDragging << "\n";
 
-    if (isDragging && !wasDragging)
+    m_timeline->update(dt);
+
+    int currentIdx = m_timeline->getCurrentIdx();
+    if (currentIdx != m_lastSyncIdx)
     {
-        GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::FileTray, "Drop file to load", "", "\xef\x84\x9e");
+        auto currentSnap = m_timeline->getSnapshot(currentIdx);
+        if (currentSnap)
+        {
+            GUI::NotchManager::getInstance().pushNotification(
+                currentSnap->scenario,
+                currentSnap->operationName,
+                currentSnap->logMessage,
+                ""
+            );
+
+            GUI::NotchManager::getInstance().updateStep(
+                currentIdx + 1,
+                m_timeline->getCount(),
+                0.5f
+            );
+        }
+        m_lastSyncIdx = currentIdx;
     }
-    else if (!isDragging && wasDragging)
+
+    if (m_historyBoard)
     {
-        if (FileDropManager::hasDroppedFiles())
-        {
-            std::vector<std::string> files = FileDropManager::popDroppedFiles();
-            if (!files.empty())
-            {
-                GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Processing, "Loading Data...", files[0], "\xef\x84\x9e");
-                // loadData(files[0]);
-            }
-        }
-        else
-        {
-            GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Idle);
-        }
+        m_historyBoard->update(dt, window, m_timeline->getCurrentIdx());
     }
-    wasDragging = isDragging;
+
+    if (currentDS && structurePanel)
+    {
+        // 1. Lấy frame hiện tại
+        Core::RenderFrame currentFrame = m_timeline->getCurrentFrame();
+
+        // 2. Cập nhật lò xo camera của Panel
+        structurePanel->update(dt, window);
+
+        // 3. ĐỒNG BỘ LOGIC: Tính toán vị trí, vận tốc, lò xo của Node/Edge
+        structurePanel->syncGraphObjects(currentFrame, dt);
+    }
+
+    if (dock) dock->update(dt, window);
+    if (popover) popover->update(dt, window);
+    if (pseudoBox) pseudoBox->update(dt);
 
     GUI::NotchManager::getInstance().update(dt);
-    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-    // PHẢI GỌI DÒNG NÀY
-    GUI::NotchManager::getInstance().updateMousePos(mousePos, window);
-
-
-    if (currentDS)
-    {
-        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::FloatRect frameBounds = structurePanel->getGlobalBounds();;
-
-        // Chuyển đổi tọa độ Screen -> World Space của CTDL
-        sf::Vector2f worldMouse = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-
-        currentDS->setMousePosition(worldMouse);
-        currentDS->update(dt);
-    }
-
-
-
-    // Cập nhật vật lý cho Dock
-    if (dock) dock->update(dt, window);
-    if (popover) popover->update(dt, window); // Update animation của Popover
-    if (notch) notch->update(dt);
-    if (pseudoBox) pseudoBox->update(dt);
-    if(structurePanel)
-    {
-        structurePanel->update(dt, window),
-        // 3. THỰC HIỆN RENDER NỘI DUNG VÀO BUFFER
-        // Hàm này sẽ gọi ds->draw(m_contentBuffer) bên trong StructurePanel
-        structurePanel->renderContent(currentDS);
-    }
-
-    // Đặt trong hàm update chạy mỗi frame, truyền thêm delta time (dt)
-    testSlider -> update(window, dt);
+    GUI::NotchManager::getInstance().updateMousePos(sf::Mouse::getPosition(window), window);
 }
 
 void VisualizerState::draw()
 {
-    window.clear();
+//    return;
 
-    // LỚP 1: Wallpaper gốc
+    window.clear();
     window.draw(sf::Sprite(m_bgOriginal));
 
-
-    if(structurePanel) window.draw(*structurePanel);
-
-    // Vẽ Khung Code (Blur mạnh - Level 3)
-    // Giả sử bạn đã có codeBoxFrame và codeRenderTexture
-    if(pseudoBox)
+    if (m_timeline->getCount() > 0)
     {
-        // Bạn có thể tùy biến màu overlay tối hơn cho Code (Đen 40%)
-        // Utils::Graphics::drawGlassPane(window, *codeFrame, m_bgBlurLevel3, sf::Color(0, 0, 0, 100), ...);
-        pseudoBox->draw(window);
+        Core::RenderFrame frame = m_timeline->getCurrentFrame();
+
+        if (structurePanel)
+        {
+            // CHỈ VẼ: Áp những trạng thái đã tính toán lên buffer
+            structurePanel->renderContent();
+        }
     }
 
-    // Vẽ Dock (Blur vừa - Level 2)
-    if(dock)
-    {
-        // Dock có thể tự gọi hàm tiện ích này bên trong hàm draw của nó
-        dock->draw(window);
-    }
-
-    // Vẽ các thành phần nổi trên cùng
-//    if(notch) notch->draw(window);
-    if(popover) popover->draw(window);
+    if (structurePanel) window.draw(*structurePanel);
+    if (m_historyBoard) window.draw(*m_historyBoard);
+    if (pseudoBox) pseudoBox->draw(window);
+    if (dock) dock -> draw(window);
+    if (popover) popover -> draw(window);
     window.draw(GUI::NotchManager::getInstance());
 
-
 //    window.display();
+}
+
+//void VisualizerState::draw()
+//{
+//    // 1. Clear một màu cố định (VD: Màu xám đậm)
+//    window.clear(sf::Color(30, 30, 30));
+//
+//    // 2. Vẽ duy nhất cái background (Tạm thời ẩn hết bọn khác)
+////    window.draw(sf::Sprite(m_bgOriginal));
+//
+//    // 3. Display một lần duy nhất
+////    window.display();
+//}
+
+void VisualizerState::renderMock(sf::RenderTarget& target, const Core::RenderFrame& frame)
+{
+//    return;
+
+    for (const auto& edge : frame.edges)
+    {
+        auto itStart = std::find_if(frame.nodes.begin(), frame.nodes.end(), [&](const auto& n){ return n.id == edge.startNodeId; });
+        auto itEnd = std::find_if(frame.nodes.begin(), frame.nodes.end(), [&](const auto& n){ return n.id == edge.endNodeId; });
+
+        if (itStart != frame.nodes.end() && itEnd != frame.nodes.end())
+        {
+            sf::Vertex line[] = {
+                sf::Vertex(itStart->position, edge.fillColor),
+                sf::Vertex(itEnd->position, edge.fillColor)
+            };
+            line[0].color.a = static_cast<sf::Uint8>(edge.opacity);
+            line[1].color.a = static_cast<sf::Uint8>(edge.opacity);
+
+            target.draw(line, 2, sf::Lines);
+        }
+    }
+
+    for (const auto& node : frame.nodes)
+    {
+        float radius = 30.f * node.scale;
+        sf::CircleShape shape(radius);
+        shape.setOrigin(radius, radius);
+        shape.setPosition(node.position);
+
+        sf::Color fColor = node.fillColor;
+        fColor.a = static_cast<sf::Uint8>(node.opacity);
+        shape.setFillColor(fColor);
+
+        shape.setOutlineThickness(2.f * node.scale);
+        sf::Color oColor = node.outlineColor;
+        oColor.a = static_cast<sf::Uint8>(node.opacity);
+        shape.setOutlineColor(oColor);
+
+        target.draw(shape);
+
+        sf::Text text;
+        text.setFont(font);
+        text.setString(node.value);
+        text.setCharacterSize(static_cast<unsigned int>(24 * node.scale));
+        text.setFillColor(sf::Color::Black);
+
+        sf::FloatRect textRect = text.getLocalBounds();
+        text.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
+        text.setPosition(node.position);
+
+        target.draw(text);
+    }
+}
+
+void VisualizerState::createMockTest()
+{
+    m_timeline->clear();
+
+    auto s1 = std::make_shared<Core::ISnapshot>();
+    s1->operationName = "Heap Test";
+    s1->logMessage = "Initial state: Node 1 and 2 are far apart.";
+    s1->scenario = GUI::Scenario::Processing;
+
+    Core::NodeState n1, n2;
+    n1.id = 1; n1.position = {200, 300}; n1.value = "10";
+    n2.id = 2; n2.position = {800, 300}; n2.value = "20";
+    s1->nodeStates = {n1, n2};
+
+    Core::EdgeState e1;
+    e1.startNodeId = 1; e1.endNodeId = 2; e1.fillColor = sf::Color::White;
+    s1->edgeStates = {e1};
+    m_timeline->addSnapshot(s1);
+
+    auto s2 = std::make_shared<Core::ISnapshot>();
+    s2->operationName = "Heap Test";
+    s2->logMessage = "Nodes are moving closer and changing color!";
+    s2->scenario = GUI::Scenario::Success;
+
+    n1.position = {450, 300}; n1.fillColor = sf::Color::Green;
+    n2.position = {550, 300}; n2.fillColor = sf::Color::Cyan;
+    s2->nodeStates = {n1, n2};
+    s2->edgeStates = {e1};
+
+    m_timeline->addSnapshot(s2);
+
+    if (m_timeline != nullptr)
+    {
+        m_historyBoard->syncWithManager(*m_timeline);
+    }
+    m_timeline->seek(0); // Quay về bước 1
+    // 2. ÉP Notch hiện log của Snapshot 0 ngay lập tức
+    auto firstSnap = m_timeline->getSnapshot(0);
+    if (firstSnap)
+    {
+        // Giả sử NotchManager của ông có hàm pushNotification nhận string và scenario
+        GUI::NotchManager::getInstance().pushNotification(firstSnap->scenario, firstSnap->logMessage, "", "");
+    }
+    m_timeline->play();
 }
 
 void VisualizerState::init() {}

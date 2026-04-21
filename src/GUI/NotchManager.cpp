@@ -1,7 +1,11 @@
 #include "GUI/NotchManager.h"
 #include "GUI/NotchContent.h"
-#include "FileTray.h"
+#include "FileTrayContent.h"
 #include "ViewHandler.h"
+#include "InputContent.h"
+#include "FileDropManager.h"
+#include "ResourceManager.h"
+#include "ProgressBar.h"
 #include <iostream>
 
 namespace GUI
@@ -75,9 +79,55 @@ namespace GUI
             {
                 if(m_currentScenario == Scenario::Initial)
                 {
-                    pushNotification(Scenario::FileTray, "Import Data", "Drop a .txt file", "\xea\x8a");
+                    pushNotification(Scenario::Input, "", "", "");
+                    return;
                 }
             }
+        }
+
+        // 1. Logic TỰ ĐỘNG GIÃN NOTCH (Khi đang dragging file)
+        if (FileDropManager::isDragging())
+        {
+            if (m_currentScenario != Scenario::FileTray)
+            {
+                // Ép Notch hiện FileTray ngay khi file vừa chạm vào cửa sổ
+                pushNotification(Scenario::FileTray, "Import Data", "Drop to load file", "\xef\x84\x9e");
+            }
+
+            // Cập nhật hiệu ứng Hover Cyan nếu chuột nằm trong Notch
+            auto tray = dynamic_cast<FileTrayContent*>(m_notch->getContent());
+            if (tray) {
+                sf::Vector2f mousePos = FileDropManager::getHoverPosition();
+                // Nếu chuột đang đè lên Notch
+                tray->setHoverState(getBounds().contains(mousePos));
+            }
+        }
+        // Nếu hết dragging mà không thả file (Drag Leave) -> Quay về trạng thái chờ
+        else if (m_currentScenario == Scenario::FileTray && !FileDropManager::hasDroppedFiles())
+        {
+            // pushNotification(Scenario::Initial, "Import Data", "Click to load file", "\xea\x8a");
+        }
+
+        // 2. Logic XỬ LÝ FILE KHI THẢ (Drop)
+        if (FileDropManager::hasDroppedFiles())
+        {
+            auto files = FileDropManager::popDroppedFiles();
+            if (!files.empty())
+            {
+                // Lấy file đầu tiên để xử lý
+                std::string path = files[0];
+
+                // Kích hoạt chuỗi hiệu ứng: Processing -> Success
+                pushNotification(Scenario::Processing, "Importing...", path, "\xef\x84\x9e");
+                m_notch->getProgressBar().setStep(1, 1, 1.5f);
+            }
+        }
+
+        // 2. QUAN TRỌNG: Chuyển tiếp TẤT CẢ sự kiện vào Content hiện tại
+        // (Bao gồm TextEntered, KeyPressed, MouseMove...)
+        if (m_notch && m_notch->getContent())
+        {
+            m_notch->getContent()->handleEvent(event, window);
         }
     }
 
@@ -102,6 +152,9 @@ namespace GUI
                 m_notch->setSize(SIZE_TRAY);
                 m_notch->setRadii(RADII_TRAY.x, RADII_TRAY.y);
                 break;
+            case NotchSize::Input:
+                m_notch->setSize(SIZE_INPUT);
+                m_notch->setRadii(RADII_INPUT.x, RADII_INPUT.y);
         }
     }
 
@@ -112,16 +165,16 @@ namespace GUI
     // Dòng debug cực kỳ quan trọng
     std::cout << "[NOTCH DEBUG] Pushing Scenario: " << (int)type << " | Title: " << title.toAnsiString() << std::endl;
 
-        if(m_currentScenario == Scenario::FileTray && type != Scenario::FileTray)
-        {
-            GUI::FileTray* currentTray = dynamic_cast<GUI::FileTray*>(m_notch->getContent());
-            if(currentTray)
-            {
-                currentTray->setScale(0.f);
-            }
-            // Cần thêm logic delay việc changeContent() ở hàm update() cho đến khi scaleSpring chạm 0
-//            return;
-        }
+//        if(m_currentScenario == Scenario::FileTray && type != Scenario::FileTray)
+//        {
+//            GUI::FileTrayContent* currentTray = dynamic_cast<GUI::FileTrayContent*>(m_notch->getContent());
+//            if(currentTray)
+//            {
+//                currentTray->setContentScale(0.f);
+//            }
+//            // Cần thêm logic delay việc changeContent() ở hàm update() cho đến khi scaleSpring chạm 0
+////            return;
+//        }
         m_currentScenario = type;
 
 //        if(type == Scenario::FileTray) std::cout << "start PushNoti: title = " << title << "\n";
@@ -135,6 +188,7 @@ namespace GUI
             case Scenario::Initial:
             case Scenario::Idle:
             case Scenario::FileTray:
+            case Scenario::Input:
             case Scenario::AwaitingInput:
                 m_isAutoDismissing = false; // CÁC TRẠNG THÁI NÀY KHÔNG ĐƯỢC TỰ ẨN
                 break;
@@ -181,6 +235,9 @@ namespace GUI
             case Scenario::FileTray:
                 targetSize = NotchSize::Tray;
                 break;
+            case Scenario::Input:
+                targetSize = NotchSize::Input;
+                break;
         }
 
         applySize(targetSize);
@@ -200,17 +257,45 @@ namespace GUI
         }
         // ------------------------------------
 
-        if(type == Scenario::FileTray)
+        m_notch -> setScenario(type);
+
+        if (type == Scenario::Input)
         {
-//            iconCode = "\uEB32";
-//            title = "abc";
-//            std::cout << "title = " << title << "\n";
-            auto content = std::make_unique<GUI::FileTray>(iconCode, title, subtitle);
-//            auto content = std::make_unique<GUI::FileTray>("\uEB32", "abc");
+            auto content = std::make_unique<GUI::InputContent>(ResourceManager::getInstance().getFont("assets/fonts/SFProText-Regular.ttf"));
+
+            // Khi nhấn Enter
+            content->setOnSubmit([this](std::string path) {
+                // Kiểm tra file tồn tại ở đây hoặc báo Processing
+                this->pushNotification(Scenario::Processing, "Loading...", path, "\xef\x84\x9e");
+                m_notch->getProgressBar().setStep(1, 1, 0.8f);
+            });
+
+            // Khi nhấn Escape
+            content->setOnCancel([this]() {
+                this->pushNotification(Scenario::Initial, "Import Data", "Click to load file", "\xea\x8a");
+            });
+
             m_notch->changeContent(std::move(content));
-            return;
         }
-        if(type == Scenario::Initial)
+        else if(type == Scenario::FileTray)
+        {
+            // 1. Tạo Content mới (Dùng font từ ResourceManager)
+            auto content = std::make_unique<GUI::FileTrayContent>(ResourceManager::getInstance().getFont("assets/fonts/SFProText-Regular.ttf"));
+
+            // 2. Cài đặt Callback: Khi có file thả vào -> Chuyển sang Processing
+            content->setOnFileDropped([this](std::string path) {
+                // Kiểm tra xem file có đúng định dạng không nếu muốn
+                this->pushNotification(Scenario::Processing, "Importing Data", path, "\xef\x84\x9e");
+
+                // Chạy thanh bar ảo (Cách 1 đã thống nhất)
+                this->m_notch->getProgressBar().setStep(1, 1, 1.5f);
+            });
+
+            // 3. Đẩy vào Notch để bắt đầu Morphing
+            m_notch->changeContent(std::move(content));
+            return; // Kết thúc hàm ở đây
+        }
+        else if(type == Scenario::Initial)
         {
             // Dùng icon dấu + (mã L"\xea\x8a" nếu đổi sang sf::String)
 //            std::cout << "Made a Initial noti here!\n";
@@ -231,6 +316,11 @@ namespace GUI
 
     void NotchManager::update(float dt)
     {
+        if(FileDropManager::isDragging() && m_currentScenario != Scenario::FileTray)
+        {
+            pushNotification(Scenario::FileTray, "Drop File", "Release to import", "\xef\x84\x9e");
+        }
+
         if(m_isAutoDismissing)
         {
             m_dismissTimer += dt;
@@ -244,6 +334,16 @@ namespace GUI
         if(m_notch)
         {
             m_notch->update(dt);
+
+            // Tự động chuyển cảnh khi nạp xong dữ liệu
+            if (m_currentScenario == Scenario::Processing)
+            {
+                if (m_notch->getProgressBar().isFinished())
+                {
+                    // Đổi sang Success với Tick xanh (mã icon \xef\x80\x8c)
+                    pushNotification(Scenario::Success, "Imported", "Ready to visualize", "\xef\x80\x8c");
+                }
+            }
         }
     }
 

@@ -1,30 +1,31 @@
-// DataStructure.h
 #pragma once
-#include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
 #include "Command.h"
+#include "TimelineManager.h"
 
-namespace GUI { class DynamicIsland; }
-
-class DataStructure
+namespace DS
 {
-public:
-    virtual ~DataStructure() = default;
+    class DataStructure
+    {
+    protected:
+        Core::TimelineManager* m_timeline; // Lưu con trỏ quản lý lịch sử
 
-    virtual std::vector<DS::Command> getCommands() = 0;
+    public:
+        DataStructure() : m_timeline(nullptr) {}
+        virtual ~DataStructure() = default;
 
-    virtual void update(float dt) = 0;
+        // Hàm Setter để VisualizerState truyền Timeline vào
+        void setTimelineManager(Core::TimelineManager* tm)
+        {
+            m_timeline = tm;
+            if(m_timeline) m_timeline->clear();
+        }
 
-    // ĐỔI THÀNH RenderTarget để có thể vẽ vào RenderTexture
-    virtual void draw(sf::RenderTarget& target) = 0;
+        // BẮT BUỘC: Lớp con phải trả về danh sách các lệnh (Insert, Delete,...) để UI tạo nút bấm
+        virtual std::vector<Command> getCommands() = 0;
 
-    virtual std::string getName() const = 0;
-
-    virtual void bindDynamicIsland(GUI::DynamicIsland* island) {}
-
-    virtual void setMousePosition(sf::Vector2f pos) {}
-
-    // Thêm hàm này để các thuật toán tự căn chỉnh node vào tâm khung hình
-    virtual void setViewport(sf::FloatRect rect) {}
-};
+        // BẮT BUỘC: Lớp con phải có tên để hiển thị lên UI
+        virtual std::string getName() const = 0;
+    };
+}

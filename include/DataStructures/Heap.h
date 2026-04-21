@@ -1,63 +1,67 @@
 #pragma once
+
 #include "DataStructure.h"
-#include "GUI/NodeUI.h"
-#include "GUI/EdgeUI.h"
-#include "TimelineManager.h" // Thay thế AnimationManager
-#include "Snapshot.h"
-#include <map>
+#include "TimelineManager.h"
+#include "Command.h"
+#include "Theme.h"
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace DS
 {
-    // Cấu trúc lõi: Mỗi giá trị đi kèm 1 ID định danh vĩnh viễn
-    struct HeapElement
-    {
-        int value;
-        int id;
-    };
 
     class Heap : public DataStructure
     {
     private:
-        std::vector<HeapElement> m_data; // Dữ liệu logic (Bây giờ chứa cả ID)
-        int m_idCounter = 0;             // Bộ đếm sinh ID độc nhất
-        int m_currentMacroStep = 0;
+        std::vector<int> m_data;           // Mảng chứa dữ liệu Heap
+//        Core::TimelineManager* m_timeline; // Con trỏ để đẩy Snapshots
+        bool m_isMaxHeap;                  // true: Max Heap, false: Min Heap
 
-        // Hệ thống Mapping ID -> UI Thực thể (Quản lý rác tự động)
-        std::map<int, GUI::NodeUI*> m_nodeMap;
-        std::map<std::pair<int, int>, GUI::EdgeUI*> m_edgeMap;
-
-        Utils::Core::TimelineManager m_timeline;
-        sf::Font* m_font;
-        GUI::DynamicIsland* m_island; // Để truyền logMessage trực tiếp nếu cần
-
-        // --- HÀM HỖ TRỢ KIẾN TRÚC MỚI ---
-
-        // Máy ảnh: Chụp lại trạng thái của m_data hiện tại ném vào Timeline
-        void captureSnapshot(const std::string& logMessage, Utils::Core::TransitionType transition, int macroStepID = -1);
-
-        // Toán học: Tính toán tọa độ lý thuyết của Node thứ 'index' trên cây
-        sf::Vector2f getTheoreticalPosition(int index);
-
-        // --- CÁC HÀM THUẬT TOÁN (Chỉ còn logic thuần túy) ---
-        void heapifyUp(int index, int macroStepID);
-        void heapifyDown(int index, int macroStepID);
+        // Cấu hình Layout (Tọa độ thế giới 1920x1080)
+        const float START_X = 960.f;       // Giữa màn hình
+        const float START_Y = 180.f;       // Cách đỉnh màn hình 180px
+        const float H_GAP = 500.f;         // Khoảng cách ngang gốc
+        const float V_GAP = 140.f;         // Khoảng cách dọc giữa các tầng
 
     public:
-        Heap();
-        ~Heap() override;
+        Heap(bool isMax = true);
+        ~Heap() = default;
 
+        // --- Chức năng chính theo yêu cầu đồ án ---
         void insert(int value);
-        void extractMax();
-        void clear();
+        void extractRoot();                      // Extract Max (MaxHeap) hoặc Min (MinHeap)
+        void updateNodeValue(int idx, int val);  // Update giá trị tại index bất kỳ
+        void toggleHeapType();                   // Chuyển đổi Max <-> Min Heap
+        void buildHeap();                        // Xây dựng lại Heap từ mảng hiện tại
 
+        // --- Hệ thống UI Command ---
         std::vector<DS::Command> getCommands() override;
-        void update(float dt) override;
-        void draw(sf::RenderTarget& target) override;
-        std::string getName() const override;
 
-        void bindDynamicIsland(GUI::DynamicIsland* island) override;
-        void setMousePosition(sf::Vector2f pos) override;
+        std::string getName() const override { return "Binary Heap"; }
+
+    private:
+        // --- Helper Thuật toán ---
+        void siftUp(int index);
+        void siftDown(int index);
+        bool compare(int childVal, int parentVal); // Hàm so sánh dựa trên loại Heap hiện tại
+
+        // --- Helper Visualizing (Ghi hình) ---
+
+        // Tạo một Snapshot cơ bản dựa trên m_data hiện tại (đã nạp sẵn vị trí và Edge)
+        std::shared_ptr<Core::ISnapshot> createBaseSnapshot(std::string op, std::string msg);
+
+        // Ghi hình bước so sánh (Highlight 2 Node)
+        void recordCompare(int idx1, int idx2, std::string msg);
+
+        // Ghi hình bước Swap (Cấu hình Orbital Transition cho 2 Node)
+        void recordSwap(int idx1, int idx2, std::string msg);
+
+        // Ghi hình trạng thái cuối cùng (Highlight màu Success)
+        void recordSuccess(std::string op, std::string msg);
+
+        // --- Helper Toán học ---
+        sf::Vector2f getPos(int index); // Tính tọa độ (x, y) dựa trên chỉ số mảng
     };
+
 }
