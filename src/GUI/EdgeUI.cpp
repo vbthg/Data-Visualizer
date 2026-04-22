@@ -9,6 +9,7 @@ namespace GUI
     {
         m_startNode = start;
         m_endNode = end;
+        m_opacity = 1.f;
 
         m_isColorFilling = false;
 
@@ -71,6 +72,8 @@ namespace GUI
         m_baseFillColor = state.baseFillColor;
         m_fillColor = state.fillColor;
         m_fillFromStart = state.fillFromStart;
+
+        m_opacity = state.opacity;
     }
 
     void EdgeUI::setFocusState(bool isFocused)
@@ -137,7 +140,7 @@ namespace GUI
         m_currentColor = sf::Color(static_cast<sf::Uint8>(r),
                                    static_cast<sf::Uint8>(g),
                                    static_cast<sf::Uint8>(b),
-                                   static_cast<sf::Uint8>(a));
+                                   static_cast<sf::Uint8>(a * m_opacity));
 
         sf::Vector2f p1 = m_startNode->getCurrentPosition();
         sf::Vector2f p2 = m_endNode->getCurrentPosition();
@@ -244,6 +247,7 @@ namespace GUI
 
             // --- TÍNH TOÁN HIỆU ỨNG HẠT SÁNG (DATA PULSE) ---
             sf::Color vertexColor = m_currentColor;
+            vertexColor.a *= m_opacity;
 
             // ÁP DỤNG HIỆU ỨNG FILL/MỌC DÂY (Ghi đè màu dây nếu progress > 0)
             if (m_isColorFilling)

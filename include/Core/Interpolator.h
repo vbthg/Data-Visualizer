@@ -89,9 +89,22 @@ namespace Math
             result.scale = Easing::lerp(start.scale, end.scale, alpha);
             result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
 
-            result.fillColor = Easing::lerpColor(start.fillColor, end.fillColor, alpha);
-            result.outlineColor = Easing::lerpColor(start.outlineColor, end.outlineColor, alpha);
-            result.textColor = Easing::lerpColor(start.textColor, end.textColor, alpha);
+//            result.fillColor = Easing::lerpColor(start.fillColor, end.fillColor, alpha);
+//            result.outlineColor = Easing::lerpColor(start.outlineColor, end.outlineColor, alpha);
+//            result.textColor = Easing::lerpColor(start.textColor, end.textColor, alpha);
+
+            if(alpha > 0.01f)
+            {
+                result.fillColor = end.fillColor;
+                result.outlineColor = end.outlineColor;
+                result.textColor = end.textColor;
+            }
+            else
+            {
+                result.fillColor = start.fillColor;
+                result.outlineColor = start.outlineColor;
+                result.textColor = start.textColor;
+            }
 
             return result;
         }
@@ -105,7 +118,8 @@ namespace Math
 
             result.fillProgress = Easing::lerp(start.fillProgress, end.fillProgress, alpha);
             result.pulseProgress = Easing::lerp(start.pulseProgress, end.pulseProgress, alpha);
-            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
+//            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
+            result.opacity = end.opacity;
 
             result.fillFromStart = start.fillFromStart;
 

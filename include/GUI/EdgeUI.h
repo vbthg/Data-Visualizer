@@ -44,6 +44,9 @@ namespace GUI
         bool m_isColorFilling;
 
 
+        float m_opacity;
+
+
         void recalculateVertices();
 
     public:

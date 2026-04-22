@@ -56,9 +56,11 @@ namespace GUI
         setValue(state.value);
 
         m_scaleSpring.target = state.scale;
-        m_targetColor = state.fillColor;
-        m_targetOutlineColor = state.outlineColor;
-        m_targetTextColor = state.textColor;
+//        m_targetColor = state.fillColor;
+//        m_targetOutlineColor = state.outlineColor;
+//        m_targetTextColor = state.textColor;
+
+        setTargetColor(state.fillColor, state.textColor, state.outlineColor);
 
         // Cập nhật arcOffset nếu cần cho việc vẽ cây
         m_arcOffset = state.arcPivot;

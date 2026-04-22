@@ -754,13 +754,13 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1776747962 source:d:\cs163_visualizer\src\gui\edgeui.cpp
+1776842422 source:d:\cs163_visualizer\src\gui\edgeui.cpp
 	"EdgeUI.h"
 	"Easing.h"
 	<cmath>
 	<algorithm>
 
-1776215452 d:\cs163_visualizer\include\gui\edgeui.h
+1776842435 d:\cs163_visualizer\include\gui\edgeui.h
 	<SFML/Graphics.hpp>
 	"NodeUI.h"
 	"Spring.h"
@@ -773,7 +773,7 @@
 	"Easing.h"
 	"AnimationMetadata.h"
 
-1776216742 source:d:\cs163_visualizer\src\gui\nodeui.cpp
+1776839165 source:d:\cs163_visualizer\src\gui\nodeui.cpp
 	"NodeUI.h"
 	<string>
 
@@ -786,7 +786,7 @@
 	<functional>
 	<string>
 
-1776759286 source:d:\cs163_visualizer\src\datastructures\heap.cpp
+1776857348 source:d:\cs163_visualizer\src\datastructures\heap.cpp
 	"Heap.h"
 	"TreeLayoutUtils.h"
 	"Theme.h"
@@ -794,7 +794,7 @@
 	<ctime>
 	<cstdlib>
 
-1776617644 d:\cs163_visualizer\include\datastructures\heap.h
+1776857409 d:\cs163_visualizer\include\datastructures\heap.h
 	"DataStructure.h"
 	"TimelineManager.h"
 	"Command.h"
@@ -875,7 +875,7 @@
 	"Squircle.h"
 	"Spring.h"
 
-1776773327 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
+1776785980 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
 	"StructurePanel.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -898,12 +898,14 @@
 1774022419 d:\cs163_visualizer\include\utils\graphics\wraptext.h
 	<SFML/Graphics.hpp>
 
-1776759584 d:\cs163_visualizer\include\core\timelinemanager.h
+1776854965 d:\cs163_visualizer\include\core\timelinemanager.h
 	<vector>
 	<memory>
 	<algorithm>
 	"ISnapshot.h"
 	"Interpolator.h"
+	"Smoothing.h"
+	<iostream>
 
 1774767152 d:\cs163_visualizer\include\core\snapshot.h
 	<vector>
@@ -912,18 +914,18 @@
 	"AnimationMetadata.h"
 	"ISnapshot.h"
 
-1776218701 d:\cs163_visualizer\include\core\animationmetadata.h
+1776842487 d:\cs163_visualizer\include\core\animationmetadata.h
 	<SFML/Graphics.hpp>
 	<string>
 	<vector>
 
-1774833506 d:\cs163_visualizer\include\core\interpolator.h
+1776842187 d:\cs163_visualizer\include\core\interpolator.h
 	<SFML/Graphics.hpp>
 	<cmath>
 	"AnimationMetadata.h"
 	"Easing.h"
 
-1774690882 source:d:\cs163_visualizer\src\gui\notch.cpp
+1776792517 source:d:\cs163_visualizer\src\gui\notch.cpp
 	"Notch.h"
 	"Easing.h"
 	<iostream>
@@ -967,7 +969,7 @@
 	"NotchEnums.h"
 	"WindowConfig.h"
 
-1774723149 source:d:\cs163_visualizer\src\gui\notchmanager.cpp
+1776785994 source:d:\cs163_visualizer\src\gui\notchmanager.cpp
 	"GUI/NotchManager.h"
 	"GUI/NotchContent.h"
 	"FileTrayContent.h"

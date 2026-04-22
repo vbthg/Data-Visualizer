@@ -115,8 +115,8 @@ namespace GUI
 
     void Notch::changeContent(std::unique_ptr<NotchContent> nextContent)
     {
-        std::cout << "[NOTCH_CORE] changeContent called! Vua nhan content moi: " << nextContent.get() << std::endl;
-        std::cout << "[NOTCH_CORE] Pointer cu hien tai dang la: " << m_currentContent.get() << std::endl;
+//        std::cout << "[NOTCH_CORE] changeContent called! Vua nhan content moi: " << nextContent.get() << std::endl;
+//        std::cout << "[NOTCH_CORE] Pointer cu hien tai dang la: " << m_currentContent.get() << std::endl;
 
         if(m_currentContent)
         {

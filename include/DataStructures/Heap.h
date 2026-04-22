@@ -21,7 +21,7 @@ namespace DS
         // Cấu hình Layout (Tọa độ thế giới 1920x1080)
         const float START_X = 960.f;       // Giữa màn hình
         const float START_Y = 180.f;       // Cách đỉnh màn hình 180px
-        const float H_GAP = 500.f;         // Khoảng cách ngang gốc
+        const float H_GAP = 130.f;         // Khoảng cách ngang gốc
         const float V_GAP = 140.f;         // Khoảng cách dọc giữa các tầng
 
     public:
@@ -41,6 +41,11 @@ namespace DS
         std::string getName() const override { return "Binary Heap"; }
 
     private:
+//        std::vector<int> m_data;
+        std::vector<int> m_nodeIds; // Lưu trữ ID cố định cho từng phần tử
+        int m_nextUniqueId = 0;     // Biến đếm để tạo ID không trùng lặp
+
+
         // --- Helper Thuật toán ---
         void siftUp(int index);
         void siftDown(int index);
@@ -49,7 +54,7 @@ namespace DS
         // --- Helper Visualizing (Ghi hình) ---
 
         // Tạo một Snapshot cơ bản dựa trên m_data hiện tại (đã nạp sẵn vị trí và Edge)
-        std::shared_ptr<Core::ISnapshot> createBaseSnapshot(std::string op, std::string msg);
+        std::shared_ptr<Core::ISnapshot> createBaseSnapshot(std::string op, std::string msg, const std::map<int, sf::Color>& overrides = { });
 
         // Ghi hình bước so sánh (Highlight 2 Node)
         void recordCompare(int idx1, int idx2, std::string msg);

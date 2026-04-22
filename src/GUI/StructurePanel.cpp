@@ -307,6 +307,8 @@ void main() {
     {
         resetBtn->handleEvent(event, window);
 
+        if(m_nodeUIMap.empty()) return;
+
         if(event.type == sf::Event::MouseWheelScrolled || m_isPanning)
         {
             m_isAutoFollow = false; // "Tôi tự làm được, đừng giành camera của tôi!"
@@ -558,8 +560,8 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         if(w <= 0 || h <= 0) return;
 
 
-        std::cout << "[PREVIOUS TARGET SIZE]: " << w << " " << h << "\n";
-        std::cout << "[BOUNDING BOX]: " << bbox.left << " " << bbox.top << " " << bbox.width << " " << bbox.height << "\n";
+//        std::cout << "[PREVIOUS TARGET SIZE]: " << w << " " << h << "\n";
+//        std::cout << "[BOUNDING BOX]: " << bbox.left << " " << bbox.top << " " << bbox.width << " " << bbox.height << "\n";
 
         // Calculate target zoom with padding
         float padding = 80.0f;
@@ -570,11 +572,11 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         // Limit zoom range
         targetZoom = std::max(0.6f, std::min(targetZoom, 4.0f));
 
-        std::cout << "[TARGET ZOOM]: " << targetZoom << "\n";
+//        std::cout << "[TARGET ZOOM]: " << targetZoom << "\n";
 
         sf::Vector2f bboxCenter(bbox.left + bbox.width / 2.0f, bbox.top + bbox.height / 2.0f);
 
-        std::cout << "[BOUNDING BOX CENTER]: " << bboxCenter.x << " " << bboxCenter.y << "\n";
+//        std::cout << "[BOUNDING BOX CENTER]: " << bboxCenter.x << " " << bboxCenter.y << "\n";
 
         // Offset for the Crop system to keep things centered in the 1920x1080 buffer
         sf::Vector2f offset;
@@ -583,7 +585,7 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
 
         sf::Vector2f targetCenter = bboxCenter + (offset * targetZoom);
 
-        std::cout << "[TARGET VIEW CENTER]: " << targetCenter.x << " " << targetCenter.y << "\n";
+//        std::cout << "[TARGET VIEW CENTER]: " << targetCenter.x << " " << targetCenter.y << "\n";
 
         if(immediate)
         {

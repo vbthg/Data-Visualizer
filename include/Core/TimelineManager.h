@@ -4,6 +4,8 @@
 #include <algorithm>
 #include "ISnapshot.h"
 #include "Interpolator.h"
+#include "Smoothing.h"
+#include <iostream>
 
 namespace Core
 {
@@ -12,39 +14,74 @@ namespace Core
     private:
         std::vector<std::shared_ptr<ISnapshot>> m_snapshots;
         float m_cursor;      // Vị trí hiện tại (có thể là số thực để nội suy)
+        float m_targetCursor;
         float m_playbackSpeed;
         bool m_isPlaying;
+        bool m_isReviewing; // Bật khi người dùng tương tác với HistoryBoard
 
     public:
-        TimelineManager() : m_cursor(0.0f), m_playbackSpeed(0.6f), m_isPlaying(false) {}
+        TimelineManager() : m_cursor(0.0f), m_targetCursor(0.f), m_playbackSpeed(1.f), m_isPlaying(false), m_isReviewing(false) {}
 
         // --- QUẢN LÝ DỮ LIỆU (History Logic) ---
 
+        void setReviewMode(bool reviewing) { m_isReviewing = reviewing; }
+
+        void onNewMacroStarted()
+        {
+            if(m_snapshots.empty()) return;
+
+            // Đặt đích đến là snapshot cuối cùng của macro cũ
+            m_targetCursor = (float)m_snapshots.size() - 1.0f;
+            m_isPlaying = true;
+        }
+
         void addSnapshot(std::shared_ptr<ISnapshot> s)
         {
-            // Nếu đang ở giữa mà thêm cái mới -> Xóa "tương lai" (Branching history)
-            int currentIdx = (int)m_cursor;
-            if (currentIdx < (int)m_snapshots.size() - 1)
+            if(m_isReviewing)
             {
-                m_snapshots.erase(m_snapshots.begin() + currentIdx + 1, m_snapshots.end());
+                // Nếu đang xem lại mà có hành động mới -> Cắt bỏ tương lai
+                int currentIdx = (int)m_cursor;
+                if(currentIdx < (int)m_snapshots.size() - 1)
+                {
+                    m_snapshots.erase(m_snapshots.begin() + currentIdx + 1, m_snapshots.end());
+                }
+                m_isReviewing = false; // Thoát chế độ xem lại để quay về chế độ Real-time
             }
 
             m_snapshots.push_back(s);
-            // Thường khi thêm mới, ta muốn cursor nhảy đến cuối luôn
-            m_cursor = (float)m_snapshots.size() - 1.0f;
+            m_isPlaying = true;
         }
 
         // --- ĐIỀU KHIỂN THỜI GIAN (Playback Logic) ---
 
         void update(float dt)
         {
-            if (!m_isPlaying || m_snapshots.empty()) return;
+            if(!m_isPlaying || m_snapshots.empty()) return;
 
-            m_cursor += dt * m_playbackSpeed;
+            float maxIdx = (float)m_snapshots.size() - 1.0f;
 
-            if (m_cursor >= (float)m_snapshots.size() - 1.0f)
+            // Trường hợp 1: Đang cần "nhảy" để đuổi kịp macro mới
+            if(std::abs(m_targetCursor - m_cursor) > 0.001f)
             {
-                m_cursor = (float)m_snapshots.size() - 1.0f;
+                // Sử dụng damp để đuổi kịp target một cách mượt mà
+                // smoothing = 0.05f (càng nhỏ càng nhanh), minSpeed cao để dứt khoát
+                m_cursor = Utils::Math::Smoothing::damp(m_cursor, m_targetCursor, 0.05f, dt, 15.0f);
+            }
+            // Trường hợp 2: Đang chạy playback bình thường
+            else
+            {
+                m_cursor += dt * m_playbackSpeed;
+
+                // Giới hạn không cho vượt quá snapshot hiện có
+                if(m_cursor > maxIdx) m_cursor = maxIdx;
+
+                // Luôn đồng bộ targetCursor theo cursor khi đang chạy thường
+                m_targetCursor = m_cursor;
+            }
+
+            if(m_cursor >= maxIdx)
+            {
+                m_cursor = maxIdx;
                 m_isPlaying = false;
             }
         }
@@ -72,7 +109,46 @@ namespace Core
                     Core::NodeState startState = nodeB;
                     startState.scale = 0.0f;
                     startState.opacity = 0.0f;
-                    frame.nodes.push_back(Utils::Math::Interpolator::interpolateNode(startState, nodeB, alpha, nodeB.transition));
+
+                    float appearAlpha = std::min(1.0f, alpha / 0.3f);
+                    frame.nodes.push_back(Utils::Math::Interpolator::interpolateNode(startState, nodeB, appearAlpha, nodeB.transition));
+                }
+            }
+
+            // --- PHẦN 2: NODE BIẾN MẤT (Cực kỳ quan trọng) ---
+            for(const auto& nodeA : snapA->nodeStates)
+            {
+                auto itB = std::find_if(snapB->nodeStates.begin(), snapB->nodeStates.end(),
+                                       [&](const auto& n){ return n.id == nodeA.id; });
+
+                if(itB == snapB->nodeStates.end())
+                {
+                    // Nếu không tìm thấy trong B -> Node này đang bị xóa
+                    // Chúng ta nội suy từ trạng thái hiện tại về "hư không"
+                    Core::NodeState endState = nodeA;
+                    endState.scale = 0.0f;
+                    endState.opacity = 0.0f;
+
+                    // NODE BỊ XÓA: Muốn biến mất thật nhanh (biến mất hẳn khi alpha = 0.3)
+                    float disappearAlpha = std::min(1.0f, alpha / 0.3f);
+
+                    // Giữ nguyên vị trí cũ nhưng thu nhỏ và mờ dần
+                    frame.nodes.push_back(Utils::Math::Interpolator::interpolateNode(nodeA, endState, disappearAlpha, Core::TransitionType::Linear));
+                }
+            }
+
+
+            // Tương tự, bạn nên áp dụng logic này cho Edges (Cạnh) để chúng không mất đột ngột
+            for(const auto& edgeA : snapA->edgeStates)
+            {
+                auto itB = std::find_if(snapB->edgeStates.begin(), snapB->edgeStates.end(),
+                                       [&](const auto& e){ return e.startNodeId == edgeA.startNodeId && e.endNodeId == edgeA.endNodeId; });
+
+                if(itB == snapB->edgeStates.end())
+                {
+                    Core::EdgeState endEdge = edgeA;
+                    endEdge.opacity = 0.0f;
+                    frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(edgeA, endEdge, alpha));
                 }
             }
 

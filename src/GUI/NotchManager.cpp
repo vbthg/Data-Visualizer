@@ -163,7 +163,7 @@ namespace GUI
 //        std::cout << "[DEBUG] Push: " << (int)type << " | Title: " << title << " " << title.size() << "\n";
 
     // Dòng debug cực kỳ quan trọng
-    std::cout << "[NOTCH DEBUG] Pushing Scenario: " << (int)type << " | Title: " << title.toAnsiString() << std::endl;
+//    std::cout << "[NOTCH DEBUG] Pushing Scenario: " << (int)type << " | Title: " << title.toAnsiString() << std::endl;
 
 //        if(m_currentScenario == Scenario::FileTray && type != Scenario::FileTray)
 //        {

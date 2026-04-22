@@ -52,7 +52,7 @@ namespace Core
 
         // Trạng thái hiển thị cơ bản
         bool isFocused = true;
-        float opacity = 255.0f;
+        float opacity = 1.0f;
     };
 
     // THÊM DÒNG NÀY VÀO CUỐI NAMESPACE Core
