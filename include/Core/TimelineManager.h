@@ -50,6 +50,8 @@ namespace Core
 
             m_snapshots.push_back(s);
             m_isPlaying = true;
+
+//            std::cout << "[SNAPSHOTS SIZE]: " << m_snapshots.size() << "\n";
         }
 
         // --- ĐIỀU KHIỂN THỜI GIAN (Playback Logic) ---
@@ -84,6 +86,8 @@ namespace Core
                 m_cursor = maxIdx;
                 m_isPlaying = false;
             }
+
+//            std::cout << "[M_CURSOR]: " << m_cursor << "\n";
         }
 
         Core::RenderFrame getCurrentFrame() const

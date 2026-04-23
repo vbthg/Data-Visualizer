@@ -397,9 +397,12 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
     std::unordered_set<int> currentFrameNodes;
     std::unordered_set<uint64_t> currentFrameEdges;
 
+//    std::cout << "SyncGraphObject Called!\n";
+
     // --- 2. ĐỒNG BỘ NODE ---
     for(const auto& nodeState : frame.nodes)
     {
+//        std::cout << "NODE IN SYNCGRAPHOBJECT\n";
         currentFrameNodes.insert(nodeState.id);
 
         if(m_nodeUIMap.find(nodeState.id) == m_nodeUIMap.end())
@@ -426,6 +429,8 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
     // --- 3. ĐỒNG BỘ EDGE ---
     for(const auto& edgeState : frame.edges)
     {
+//        std::cout << "EDGE IN SYNCGRAPHOBJECT\n";
+
         uint64_t edgeKey = getEdgeKey(edgeState.startNodeId, edgeState.endNodeId);
         currentFrameEdges.insert(edgeKey);
 
@@ -491,12 +496,15 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         for(const auto& pair : m_edgeUIMap)
         {
             pair.second->draw(m_contentBuffer);
+
+//            std::cout << "DRAW EDGE!\n";
         }
 
         // 2. Vẽ Layer Node (Nằm trên)
         for(const auto& pair : m_nodeUIMap)
         {
             pair.second->draw(m_contentBuffer);
+//            std::cout << "DRAW NODE!\n";
         }
 
         m_contentBuffer.display();

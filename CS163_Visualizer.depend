@@ -545,7 +545,7 @@
 	"wrapText.h"
 	"Utils/Graphics/Theme.h"
 
-1776617758 source:d:\cs163_visualizer\src\states\menustate.cpp
+1776859363 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -562,6 +562,7 @@
 	<VisualizerState.h>
 	<DataStructure.h>
 	<Heap.h>
+	"AVLTree.h"
 	<cassert>
 
 1774084395 d:\cs163_visualizer\include\states\menustate.h
@@ -754,7 +755,7 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1776842422 source:d:\cs163_visualizer\src\gui\edgeui.cpp
+1776878544 source:d:\cs163_visualizer\src\gui\edgeui.cpp
 	"EdgeUI.h"
 	"Easing.h"
 	<cmath>
@@ -786,7 +787,7 @@
 	<functional>
 	<string>
 
-1776857348 source:d:\cs163_visualizer\src\datastructures\heap.cpp
+1776857519 source:d:\cs163_visualizer\src\datastructures\heap.cpp
 	"Heap.h"
 	"TreeLayoutUtils.h"
 	"Theme.h"
@@ -875,7 +876,7 @@
 	"Squircle.h"
 	"Spring.h"
 
-1776785980 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
+1776877885 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
 	"StructurePanel.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -898,7 +899,7 @@
 1774022419 d:\cs163_visualizer\include\utils\graphics\wraptext.h
 	<SFML/Graphics.hpp>
 
-1776854965 d:\cs163_visualizer\include\core\timelinemanager.h
+1776860013 d:\cs163_visualizer\include\core\timelinemanager.h
 	<vector>
 	<memory>
 	<algorithm>
@@ -907,7 +908,7 @@
 	"Smoothing.h"
 	<iostream>
 
-1774767152 d:\cs163_visualizer\include\core\snapshot.h
+1776860616 d:\cs163_visualizer\include\core\snapshot.h
 	<vector>
 	<map>
 	<string>
@@ -1086,4 +1087,19 @@
 	"Easing.h"
 	"ResourceManager.h"
 	<iostream>
+
+1776878298 source:d:\cs163_visualizer\src\datastructures\avltree.cpp
+	"AVLTree.h"
+	<algorithm>
+	<string>
+
+1776878164 d:\cs163_visualizer\include\datastructures\avltree.h
+	"DataStructure.h"
+	"TimelineManager.h"
+	"Snapshot.h"
+	"Command.h"
+	<vector>
+	<string>
+	<memory>
+	<map>
 

@@ -66,6 +66,7 @@
 		<Unit filename="include/Core/Interpolator.h" />
 		<Unit filename="include/Core/Snapshot.h" />
 		<Unit filename="include/Core/TimelineManager.h" />
+		<Unit filename="include/DataStructures/AVLTree.h" />
 		<Unit filename="include/DataStructures/Command.h" />
 		<Unit filename="include/DataStructures/DataStructure.h" />
 		<Unit filename="include/DataStructures/Heap.h" />
@@ -119,6 +120,7 @@
 		<Unit filename="include/Utils/System/FileUtils.h" />
 		<Unit filename="include/Utils/System/WindowConfig.h" />
 		<Unit filename="src/Application.cpp" />
+		<Unit filename="src/DataStructures/AVLTree.cpp" />
 		<Unit filename="src/DataStructures/Heap.cpp" />
 		<Unit filename="src/GUI/Button.cpp" />
 		<Unit filename="src/GUI/DynamicIsland.cpp" />

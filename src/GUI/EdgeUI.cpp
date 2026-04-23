@@ -223,7 +223,7 @@ namespace GUI
         sf::Vector2f controlPoint = anchorPoint + normal * m_offsetSpring.position;
 //        sf::Vector2f controlPoint = midPoint + normal * m_offsetSpring.position;
 
-        int segments = 1;
+        int segments = 3;
         m_vertices.resize((segments + 1) * 2);
 
         sf::Vector2f prevP = startPos;

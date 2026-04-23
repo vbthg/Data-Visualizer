@@ -15,6 +15,7 @@
 #include <DataStructure.h>
 //#include <SinglyLinkedList.h>
 #include <Heap.h>
+#include "AVLTree.h"
 #include <cassert>
 
 namespace Theme = Utils::Graphics::Theme;
@@ -622,7 +623,7 @@ void MenuState::handleInput(sf::Event& event)
             std::cout << "START ALGO ID: " << algoID << std::endl;
             // TODO: Chuyển Scene sang VisualizeState tại đây
 
-            states.push(new VisualizerState(window, states, new DS::Heap(true)));  ///**************************
+            states.push(new VisualizerState(window, states, new DS::AVLTree()));  ///**************************
         };
 
         auto onBack = [this]() {
