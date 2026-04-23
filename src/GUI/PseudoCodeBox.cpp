@@ -66,7 +66,7 @@ namespace GUI
         {
             // Trạng thái BẢNG MỞ
             float targetW = 400.0f;
-            float targetH = 500.0f;
+            float targetH = 800.0f;
             m_wSpring.target = targetW;
             m_hSpring.target = targetH;
             m_xSpring.target = m_windowWidth - targetW - 20.0f;
@@ -199,7 +199,7 @@ namespace GUI
             // Chiều rộng bằng khung trừ đi 2 bên lề (20px * 2)
             float hlWidth = m_wSpring.position - 40.0f;
             // Chiều cao bao trọn dòng chữ (lineSpacing + padding)
-            float hlHeight = 28.0f + 8.0f;
+            float hlHeight = 28.0f + 8.0f - 8.f;
 
             m_highlighter.setSize({std::max(0.0f, hlWidth), hlHeight});
 
@@ -312,6 +312,8 @@ namespace GUI
 
     void PseudoCodeBox::loadCode(const std::string& title, const std::vector<std::string>& codeLines)
     {
+        if(m_titleText.getString() == title) return;
+
         // Cập nhật tiêu đề cửa sổ
         m_titleText.setFont(m_font);
         m_titleText.setString(title);

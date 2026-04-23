@@ -2,6 +2,7 @@
 #include "ViewHandler.h"
 #include "Theme.h"
 #include <cctype> // Để dùng std::isdigit
+#include <iostream>
 
 namespace GUI
 {
@@ -157,6 +158,7 @@ namespace GUI
 
     bool InputField::isValidInput(sf::Uint32 unicode)
     {
+//        std::cout << (inputType == Type::Integer ? "Integer only\n" : "string allowed!\n");
         if (inputType == Type::Integer)
         {
             // Cho phép dấu âm ở đầu

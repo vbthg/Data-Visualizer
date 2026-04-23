@@ -30,6 +30,8 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
     m_historyBoard = new GUI::HistoryBoard();
     std::cout << "3. HistoryBoard Created" << std::endl;
 
+    m_timeline->syncCodeBox(pseudoBox);
+
     // Sửa lỗi lambda capture tham chiếu rác, chuyển từ [&] sang [this]
     m_historyBoard->setOnJumpCallback([this](int targetIdx) {
         m_timeline->seek(targetIdx);

@@ -545,7 +545,7 @@
 	"wrapText.h"
 	"Utils/Graphics/Theme.h"
 
-1776859363 source:d:\cs163_visualizer\src\states\menustate.cpp
+1776879965 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -563,6 +563,7 @@
 	<DataStructure.h>
 	<Heap.h>
 	"AVLTree.h"
+	"Trie.h"
 	<cassert>
 
 1774084395 d:\cs163_visualizer\include\states\menustate.h
@@ -658,7 +659,7 @@
 	<functional>
 	<SFML/System/String.hpp>
 
-1776760607 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
+1776916288 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
 	"VisualizerState.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -703,11 +704,12 @@
 	"Smoothing.h"
 	<iostream>
 
-1774719526 source:d:\cs163_visualizer\src\gui\inputfield.cpp
+1776913805 source:d:\cs163_visualizer\src\gui\inputfield.cpp
 	"InputField.h"
 	"ViewHandler.h"
 	"Theme.h"
 	<cctype>
+	<iostream>
 
 1774718411 d:\cs163_visualizer\include\gui\inputfield.h
 	<SFML/Graphics.hpp>
@@ -740,7 +742,7 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1774514001 source:d:\cs163_visualizer\src\gui\pseudocodebox.cpp
+1776923117 source:d:\cs163_visualizer\src\gui\pseudocodebox.cpp
 	"PseudoCodeBox.h"
 	"ViewHandler.h"
 	<iostream>
@@ -899,13 +901,15 @@
 1774022419 d:\cs163_visualizer\include\utils\graphics\wraptext.h
 	<SFML/Graphics.hpp>
 
-1776860013 d:\cs163_visualizer\include\core\timelinemanager.h
+1776917175 d:\cs163_visualizer\include\core\timelinemanager.h
 	<vector>
 	<memory>
 	<algorithm>
 	"ISnapshot.h"
 	"Interpolator.h"
 	"Smoothing.h"
+	"PseudoCodeBox.h"
+	"PseudoCodeRegistry.h"
 	<iostream>
 
 1776860616 d:\cs163_visualizer\include\core\snapshot.h
@@ -1053,7 +1057,7 @@
 	"Squircle.h"
 	"Spring.h"
 
-1774886614 d:\cs163_visualizer\include\core\isnapshot.h
+1776915887 d:\cs163_visualizer\include\core\isnapshot.h
 	<vector>
 	<string>
 	"AnimationMetadata.h"
@@ -1088,7 +1092,7 @@
 	"ResourceManager.h"
 	<iostream>
 
-1776878298 source:d:\cs163_visualizer\src\datastructures\avltree.cpp
+1776878757 source:d:\cs163_visualizer\src\datastructures\avltree.cpp
 	"AVLTree.h"
 	<algorithm>
 	<string>
@@ -1102,4 +1106,19 @@
 	<string>
 	<memory>
 	<map>
+
+1776917027 source:d:\cs163_visualizer\src\datastructures\trie.cpp
+	"Trie.h"
+	<algorithm>
+
+1776916728 d:\cs163_visualizer\include\datastructures\trie.h
+	"DataStructure.h"
+	<map>
+	<string>
+	<vector>
+
+1776914869 d:\cs163_visualizer\include\datastructures\pseudocoderegistry.h
+	<map>
+	<vector>
+	<string>
 

@@ -23,7 +23,12 @@ namespace Core
         std::string operationName; // VD: "AVL Insertion"
         std::string logMessage;    // VD: "Comparing 50 with 30..."
 //        StatusType status;         // Màu sắc của Notch lúc đó
+
+        std::string macroKey; // Lưu key như "trie_insert", "trie_search"
         int pseudoCodeLine;        // Dòng code cần highlight trong PseudoCodeBox
+
+        // Thêm vào class ISnapshot
+        std::vector<std::pair<std::string, std::string>> variableStates;
 
         // --- DỮ LIỆU LIÊN KẾT (Cái để quản lý) ---
         int snapshotIndex;         // Vị trí của chính nó trong Timeline

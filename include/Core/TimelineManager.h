@@ -5,6 +5,8 @@
 #include "ISnapshot.h"
 #include "Interpolator.h"
 #include "Smoothing.h"
+#include "PseudoCodeBox.h"
+#include "PseudoCodeRegistry.h"
 #include <iostream>
 
 namespace Core
@@ -18,11 +20,15 @@ namespace Core
         float m_playbackSpeed;
         bool m_isPlaying;
         bool m_isReviewing; // Bật khi người dùng tương tác với HistoryBoard
+        std::string m_lastLoadedMacroKey = "";
+        GUI::PseudoCodeBox* codeBox = nullptr;
 
     public:
         TimelineManager() : m_cursor(0.0f), m_targetCursor(0.f), m_playbackSpeed(1.f), m_isPlaying(false), m_isReviewing(false) {}
 
         // --- QUẢN LÝ DỮ LIỆU (History Logic) ---
+
+        void syncCodeBox(GUI::PseudoCodeBox* box) { codeBox = box; }
 
         void setReviewMode(bool reviewing) { m_isReviewing = reviewing; }
 
@@ -86,6 +92,8 @@ namespace Core
                 m_cursor = maxIdx;
                 m_isPlaying = false;
             }
+
+            syncUI(codeBox);
 
 //            std::cout << "[M_CURSOR]: " << m_cursor << "\n";
         }
@@ -199,7 +207,35 @@ namespace Core
         void play()  { m_isPlaying = true; }
         void pause() { m_isPlaying = false; }
         bool isPlaying() const { return m_isPlaying; }
+
+
+        void syncUI(GUI::PseudoCodeBox* codeBox)
+        {
+            if(m_snapshots.empty()) return;
+
+            // Lấy snapshot tại vị trí con trỏ hiện tại (phần nguyên)
+            auto currentSnap = m_snapshots[getCurrentIdx()];
+
+            // 1. Kiểm tra nếu Macro thay đổi thì mới nạp lại bộ code (Tránh nạp lại mỗi frame)
+            if(currentSnap->macroKey != m_lastLoadedMacroKey)
+            {
+                m_lastLoadedMacroKey = currentSnap->macroKey;
+
+                // Lấy Resource từ Registry mà chúng ta đã làm ở bước trước
+                if(Resources::PseudoCodeRegistry.count(m_lastLoadedMacroKey))
+                {
+                    codeBox->loadCode(currentSnap->operationName,
+                                     Resources::PseudoCodeRegistry.at(m_lastLoadedMacroKey));
+                }
+            }
+
+            // 2. Luôn cập nhật dòng highlighter và giá trị biến
+            codeBox->updateStep(currentSnap->pseudoCodeLine, currentSnap->variableStates);
+        }
     };
+
+
+
 }
 
 
