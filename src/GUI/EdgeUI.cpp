@@ -2,6 +2,7 @@
 #include "Easing.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 namespace GUI
 {
@@ -73,6 +74,8 @@ namespace GUI
         m_fillColor = state.fillColor;
         m_fillFromStart = state.fillFromStart;
 
+//        setExactColor(state.targetColor);
+
         m_opacity = state.opacity;
     }
 
@@ -92,6 +95,16 @@ namespace GUI
             m_targetThickness = 4.0f;
             m_targetColor = sf::Color(80, 80, 80, 60); // Xám tối và trong suốt
         }
+    }
+
+    void EdgeUI::setTargetColor(sf::Color color)
+    {
+        m_targetColor = color;
+    }
+
+    void EdgeUI::setExactColor(sf::Color color)
+    {
+        m_currentColor = m_targetColor = color;
     }
 
     void EdgeUI::setMousePosition(sf::Vector2f pos)
@@ -223,7 +236,7 @@ namespace GUI
         sf::Vector2f controlPoint = anchorPoint + normal * m_offsetSpring.position;
 //        sf::Vector2f controlPoint = midPoint + normal * m_offsetSpring.position;
 
-        int segments = 3;
+        int segments = (m_isColorFilling || m_isPulsing ? 10 : 2);
         m_vertices.resize((segments + 1) * 2);
 
         sf::Vector2f prevP = startPos;
@@ -289,6 +302,7 @@ namespace GUI
 
             if(m_isPulsing)
             {
+                std::cout << "[PULSE PROGRESS]: " << m_pulseProgress << "\n";
                 float dist = std::abs(t - m_pulseProgress);
                 float pulseWidth = 0.2f; // Độ rộng của vệt sáng (20% chiều dài dây)
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <iostream>
 #include "AnimationMetadata.h"
 #include "Easing.h"
 
@@ -116,19 +117,33 @@ namespace Math
             result.startNodeId = start.startNodeId;
             result.endNodeId = start.endNodeId;
 
-            result.fillProgress = Easing::lerp(start.fillProgress, end.fillProgress, alpha);
-            result.pulseProgress = Easing::lerp(start.pulseProgress, end.pulseProgress, alpha);
-//            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
-            result.opacity = end.opacity;
+            // 1. Nội suy tiến trình đổ màu (Dòng chảy phải mượt)
+//            result.fillProgress = Easing::lerp(start.fillProgress, end.fillProgress, alpha);
+            result.fillProgress = start.fillProgress + Utils::Math::Easing::easeOutCubic(alpha) * (end.fillProgress - start.fillProgress);
 
-            result.fillFromStart = start.fillFromStart;
+            // 2. Nội suy độ mờ (Cần mượt để hiện lên/biến mất sang trọng)
+            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
 
-            result.isPulsing = start.isPulsing || end.isPulsing;
-            result.isFocused = alpha < 0.5f ? start.isFocused : end.isFocused;
+            // 3. Giữ nguyên các cờ trạng thái
+            result.fillFromStart = end.fillFromStart;
+            result.isPulsing = end.isPulsing;
+            result.isFocused = (alpha < 0.5f) ? start.isFocused : end.isFocused;
 
-            result.baseFillColor = Easing::lerpColor(start.baseFillColor, end.baseFillColor, alpha);
-            result.fillColor = Easing::lerpColor(start.fillColor, end.fillColor, alpha);
-            result.pulseColor = Easing::lerpColor(start.pulseColor, end.pulseColor, alpha);
+            // 4. COLOR SNAP LOGIC: Không dùng lerp cho màu sắc trạng thái
+            // Nếu bắt đầu chuyển sang frame mới, dùng luôn màu của frame đích
+            // để cái "dòng chảy" fillProgress mang đúng màu sắc của trạng thái tiếp theo.
+            if(alpha > 0.01f)
+            {
+                result.baseFillColor = end.baseFillColor;
+                result.fillColor = end.fillColor;
+                result.pulseColor = end.pulseColor;
+            }
+            else
+            {
+                result.baseFillColor = start.baseFillColor;
+                result.fillColor = start.fillColor;
+                result.pulseColor = start.pulseColor;
+            }
 
             return result;
         }

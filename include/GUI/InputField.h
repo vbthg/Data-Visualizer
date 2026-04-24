@@ -54,6 +54,8 @@ namespace GUI
         bool isFocused() const { return focused; }
         void setFocus(bool focus);
 
+        void setType(Type type);
+
         // Thêm hàm này để đồng bộ Glassmorphism nếu cần
         void setBackgroundTexture(const sf::Texture* tex, sf::Vector2f res = {1920.f, 1080.f})
         {

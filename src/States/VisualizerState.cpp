@@ -120,6 +120,7 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
     {
         if (!popover->isOpen())
         {
+            popover->setInputType(cmd.inputType);
             popover->open(btnPos, cmd);
         }
     };

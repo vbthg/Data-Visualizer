@@ -28,6 +28,8 @@ namespace GUI
         void open(sf::Vector2f startPos, const DS::Command& cmd);
         void close();
 
+        void setInputType(DS::InputType inputType);
+
         void handleEvent(const sf::Event& event, sf::RenderWindow& window);
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);

@@ -70,6 +70,7 @@
 		<Unit filename="include/DataStructures/Command.h" />
 		<Unit filename="include/DataStructures/DataStructure.h" />
 		<Unit filename="include/DataStructures/Heap.h" />
+		<Unit filename="include/DataStructures/MST.h" />
 		<Unit filename="include/DataStructures/PseudoCodeRegistry.h" />
 		<Unit filename="include/DataStructures/Trie.h" />
 		<Unit filename="include/GUI/Button.h" />
@@ -124,6 +125,7 @@
 		<Unit filename="src/Application.cpp" />
 		<Unit filename="src/DataStructures/AVLTree.cpp" />
 		<Unit filename="src/DataStructures/Heap.cpp" />
+		<Unit filename="src/DataStructures/MST.cpp" />
 		<Unit filename="src/DataStructures/Trie.cpp" />
 		<Unit filename="src/GUI/Button.cpp" />
 		<Unit filename="src/GUI/DynamicIsland.cpp" />

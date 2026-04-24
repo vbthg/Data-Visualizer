@@ -50,6 +50,8 @@ namespace Core
         float pulseProgress = 0.0f;
         sf::Color pulseColor = sf::Color::Yellow;
 
+        sf::Color targetColor = sf::Color(150, 150, 150);
+
         // Trạng thái hiển thị cơ bản
         bool isFocused = true;
         float opacity = 1.0f;

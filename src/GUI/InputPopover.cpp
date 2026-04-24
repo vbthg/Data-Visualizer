@@ -134,6 +134,20 @@ namespace GUI
         rSpring.target = 16.0f;
     }
 
+    void InputPopover::setInputType(DS::InputType inputType)
+    {
+        if(inputType == DS::InputType::Integer || inputType == DS::InputType::TwoIntegers)
+        {
+            input1->setType(GUI::InputField::Type::Integer);
+            input2->setType(GUI::InputField::Type::Integer);
+        }
+        else
+        {
+            input1->setType(GUI::InputField::Type::String);
+            input2->setType(GUI::InputField::Type::String);
+        }
+    }
+
     void InputPopover::submitData()
     {
         // Kiểm tra dữ liệu rỗng

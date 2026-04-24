@@ -160,7 +160,8 @@ namespace Core
                 {
                     Core::EdgeState endEdge = edgeA;
                     endEdge.opacity = 0.0f;
-                    frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(edgeA, endEdge, alpha));
+                    float disappearAlpha = std::min(1.0f, alpha / 0.3f);
+                    frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(edgeA, endEdge, disappearAlpha));
                 }
             }
 
@@ -171,13 +172,17 @@ namespace Core
                 auto itA = std::find_if(snapA->edgeStates.begin(), snapA->edgeStates.end(),
                                        [&](const auto& e) { return e.startNodeId == edgeB.startNodeId && e.endNodeId == edgeB.endNodeId; });
 
-                if (itA != snapA->edgeStates.end()) {
+                if (itA != snapA->edgeStates.end())
+                {
                     frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(*itA, edgeB, alpha));
-                } else {
+                }
+                else
+                {
                     // Cạnh mới xuất hiện
                     Core::EdgeState startEdge = edgeB;
                     startEdge.opacity = 0.0f;
-                    frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(startEdge, edgeB, alpha));
+                    float appearAlpha = std::min(1.0f, alpha / 0.3f);
+                    frame.edges.push_back(Utils::Math::Interpolator::interpolateEdge(startEdge, edgeB, appearAlpha));
                 }
             }
 

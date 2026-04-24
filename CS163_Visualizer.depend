@@ -545,7 +545,7 @@
 	"wrapText.h"
 	"Utils/Graphics/Theme.h"
 
-1776879965 source:d:\cs163_visualizer\src\states\menustate.cpp
+1776943769 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -564,6 +564,7 @@
 	<Heap.h>
 	"AVLTree.h"
 	"Trie.h"
+	"MST.h"
 	<cassert>
 
 1774084395 d:\cs163_visualizer\include\states\menustate.h
@@ -659,7 +660,7 @@
 	<functional>
 	<SFML/System/String.hpp>
 
-1776916288 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
+1776964150 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
 	"VisualizerState.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -704,25 +705,25 @@
 	"Smoothing.h"
 	<iostream>
 
-1776913805 source:d:\cs163_visualizer\src\gui\inputfield.cpp
+1776963233 source:d:\cs163_visualizer\src\gui\inputfield.cpp
 	"InputField.h"
 	"ViewHandler.h"
 	"Theme.h"
 	<cctype>
 	<iostream>
 
-1774718411 d:\cs163_visualizer\include\gui\inputfield.h
+1776963367 d:\cs163_visualizer\include\gui\inputfield.h
 	<SFML/Graphics.hpp>
 	<string>
 	"Squircle.h"
 	"Spring.h"
 
-1774688369 source:d:\cs163_visualizer\src\gui\inputpopover.cpp
+1776964632 source:d:\cs163_visualizer\src\gui\inputpopover.cpp
 	"InputPopover.h"
 	"Theme.h"
 	<iostream>
 
-1773854362 d:\cs163_visualizer\include\gui\inputpopover.h
+1776964204 d:\cs163_visualizer\include\gui\inputpopover.h
 	<SFML/Graphics.hpp>
 	<string>
 	"Squircle.h"
@@ -757,13 +758,14 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1776878544 source:d:\cs163_visualizer\src\gui\edgeui.cpp
+1777055299 source:d:\cs163_visualizer\src\gui\edgeui.cpp
 	"EdgeUI.h"
 	"Easing.h"
 	<cmath>
 	<algorithm>
+	<iostream>
 
-1776842435 d:\cs163_visualizer\include\gui\edgeui.h
+1777053806 d:\cs163_visualizer\include\gui\edgeui.h
 	<SFML/Graphics.hpp>
 	"NodeUI.h"
 	"Spring.h"
@@ -901,7 +903,7 @@
 1774022419 d:\cs163_visualizer\include\utils\graphics\wraptext.h
 	<SFML/Graphics.hpp>
 
-1776917175 d:\cs163_visualizer\include\core\timelinemanager.h
+1777057423 d:\cs163_visualizer\include\core\timelinemanager.h
 	<vector>
 	<memory>
 	<algorithm>
@@ -919,14 +921,15 @@
 	"AnimationMetadata.h"
 	"ISnapshot.h"
 
-1776842487 d:\cs163_visualizer\include\core\animationmetadata.h
+1777055137 d:\cs163_visualizer\include\core\animationmetadata.h
 	<SFML/Graphics.hpp>
 	<string>
 	<vector>
 
-1776842187 d:\cs163_visualizer\include\core\interpolator.h
+1777058025 d:\cs163_visualizer\include\core\interpolator.h
 	<SFML/Graphics.hpp>
 	<cmath>
+	<iostream>
 	"AnimationMetadata.h"
 	"Easing.h"
 
@@ -1107,7 +1110,7 @@
 	<memory>
 	<map>
 
-1776917027 source:d:\cs163_visualizer\src\datastructures\trie.cpp
+1776924195 source:d:\cs163_visualizer\src\datastructures\trie.cpp
 	"Trie.h"
 	<algorithm>
 
@@ -1117,8 +1120,20 @@
 	<string>
 	<vector>
 
-1776914869 d:\cs163_visualizer\include\datastructures\pseudocoderegistry.h
+1776943229 d:\cs163_visualizer\include\datastructures\pseudocoderegistry.h
 	<map>
 	<vector>
 	<string>
+
+1777057262 source:d:\cs163_visualizer\src\datastructures\mst.cpp
+	"MST.h"
+	<algorithm>
+	<sstream>
+
+1777056988 d:\cs163_visualizer\include\datastructures\mst.h
+	"DataStructure.h"
+	"ISnapshot.h"
+	<vector>
+	<string>
+	<map>
 

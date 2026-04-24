@@ -67,7 +67,7 @@ namespace Resources
             "{",
             "    perform rotations",
             "}"
-        }}
+        }},
 
 
         { "kruskal_mst", {

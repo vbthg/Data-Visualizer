@@ -63,6 +63,8 @@ namespace GUI
 
         // --- CÁC HÀM TƯƠNG TÁC ---
         void setMousePosition(sf::Vector2f pos); // Liên tục nạp vị trí chuột vào đây
+        void setTargetColor(sf::Color color);
+        void setExactColor(sf::Color color);
 
         // Kích hoạt hạt sáng chạy trên dây (truyền t từ AnimationManager)
         void setPulse(float progress, sf::Color color = sf::Color::Yellow);

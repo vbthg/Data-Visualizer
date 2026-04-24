@@ -17,6 +17,7 @@
 #include <Heap.h>
 #include "AVLTree.h"
 #include "Trie.h"
+#include "MST.h"
 #include <cassert>
 
 namespace Theme = Utils::Graphics::Theme;
@@ -624,7 +625,7 @@ void MenuState::handleInput(sf::Event& event)
             std::cout << "START ALGO ID: " << algoID << std::endl;
             // TODO: Chuyển Scene sang VisualizeState tại đây
 
-            states.push(new VisualizerState(window, states, new DS::Trie()));  ///**************************
+            states.push(new VisualizerState(window, states, new DS::MST()));  ///**************************
         };
 
         auto onBack = [this]() {

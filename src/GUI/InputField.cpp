@@ -57,6 +57,11 @@ namespace GUI
         updateTextLayout();
     }
 
+    void InputField::setType(Type type)
+    {
+        inputType = type;
+    }
+
     void InputField::setPlaceholder(const std::string& text)
     {
         placeholderText.setString(text);
