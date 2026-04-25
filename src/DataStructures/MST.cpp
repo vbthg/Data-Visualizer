@@ -158,6 +158,18 @@ namespace DS
         createSnapshot(GUI::Scenario::Success, "MST Construction Complete", 15, mstEdgeIds);
     }
 
+    void MST::updateNodePosition(int id, sf::Vector2f newPos)
+    {
+        for(auto& n : m_nodes)
+        {
+            if(n.id == id)
+            {
+                n.pos = newPos;
+                break;
+            }
+        }
+    }
+
     void MST::createSnapshot(GUI::Scenario scenario,
                          const std::string& message,
                          int lineIdx,
@@ -194,6 +206,7 @@ namespace DS
             ns.value = std::to_string(n.id);
             ns.fillColor = sf::Color::White;
             ns.outlineColor = sf::Color(200, 200, 200);
+            ns.isDraggable = true;
             snap->nodeStates.push_back(ns);
         }
 

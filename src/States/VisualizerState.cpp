@@ -160,6 +160,9 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
     GUI::NotchManager::getInstance().pushNotification(GUI::Scenario::Initial);
     onResize(window.getSize().x, window.getSize().y);
 
+    structurePanel->syncTimeline(m_timeline);
+    structurePanel->syncDataStructure(currentDS);
+
     std::cout << "5. End Constructor" << std::endl;
 
 

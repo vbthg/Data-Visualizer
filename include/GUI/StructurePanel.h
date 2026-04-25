@@ -75,6 +75,8 @@ namespace GUI
 //        float m_autoFitTimer = 0.f;
 
         GUI::Button* resetBtn;
+        Core::TimelineManager* m_timeline = nullptr;
+        DS::DataStructure* m_dataStructure = nullptr;
 
 
 
@@ -89,6 +91,9 @@ namespace GUI
 
         // Hàm phụ trợ để đồng bộ dữ liệu
         void syncGraphObjects(const Core::RenderFrame& frame, float dt);
+
+        void syncTimeline(Core::TimelineManager* timeline);
+        void syncDataStructure(DS::DataStructure* dsa);
 
         // --- HÀM QUAN TRỌNG CHO PAN/ZOOM ---
 

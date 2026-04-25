@@ -80,6 +80,8 @@ namespace DS
         void runKruskal();
         void clear();
 
+        void updateNodePosition(int id, sf::Vector2f newPos);
+
     private:
         /**
          * @brief Chụp trạng thái hiện tại, đóng gói cho Notch và CodeBox.

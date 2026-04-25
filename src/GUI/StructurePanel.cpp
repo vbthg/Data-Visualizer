@@ -188,6 +188,16 @@ void main() {
         return viewTopLeft + (localOffset * worldUnitsPerPixel);
     }
 
+    void StructurePanel::syncTimeline(Core::TimelineManager* timeline)
+    {
+        m_timeline = timeline;
+    }
+
+    void StructurePanel::syncDataStructure(DS::DataStructure* dsa)
+    {
+        m_dataStructure = dsa;
+    }
+
     void StructurePanel::update(float dt, sf::RenderWindow& window)
     {
         resetBtn->update(window, dt);
@@ -223,6 +233,13 @@ void main() {
         m_alphaSpring.update(dt);
 
 
+//        // TÍNH TOÁN VỊ TRÍ CHUỘT TRONG WORLD CỦA PANEL
+//        sf::Vector2i mousePosI = sf::Mouse::getPosition(window);
+//        sf::Vector2f mouseWorldPos = mapPanelPixelToWorld(mousePosI, window);
+
+
+
+
 
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::FloatRect bounds = getGlobalBounds();
@@ -234,8 +251,38 @@ void main() {
         }
         else
         {
+            // NẾU RA NGOÀI BIÊN:
+            // 1. Ép tất cả các Node đang dragging phải dừng lại (Release)
+            for(auto& pair : m_nodeUIMap)
+            {
+                if(pair.second->isDragging())
+                {
+                    pair.second->forceRelease();
+
+                    // Đồng bộ lại lịch sử và logic ngay khi bị ép thả
+                    int nodeId = pair.first;
+                    sf::Vector2f finalPos = pair.second->getCurrentPosition();
+                    m_timeline->updateNodePositionInHistory(nodeId, finalPos);
+                    if(m_dataStructure) m_dataStructure->updateNodePosition(nodeId, finalPos);
+                }
+            }
+
             // Nếu chuột văng ra ngoài panel, set một tọa độ cực xa để các Edge không bị hút
             m_mouseWorldPos = sf::Vector2f(-99999.0f, -99999.0f);
+        }
+
+
+        // 2. Cập nhật TẤT CẢ các Node đang có trong Map
+        for(auto& pair : m_nodeUIMap)
+        {
+            // Truyền window vào để Node tự lấy vị trí chuột nếu đang Drag
+            pair.second->update(dt, m_mouseWorldPos);
+        }
+
+        // 3. Cập nhật TẤT CẢ các Edge
+        for(auto& pair : m_edgeUIMap)
+        {
+            pair.second->update(dt);
         }
 
 
@@ -308,6 +355,46 @@ void main() {
         resetBtn->handleEvent(event, window);
 
         if(m_nodeUIMap.empty()) return;
+
+        // TÍNH TOÁN VỊ TRÍ CHUỘT TRONG WORLD CỦA PANEL
+//        sf::Vector2i mousePosI = sf::Mouse::getPosition(window);
+//        sf::Vector2f mouseWorldPos = mapPanelPixelToWorld(mousePosI, window);
+
+        bool eventHandled = false;
+
+        // Duyệt qua các node (Nên duyệt ngược để node nào vẽ sau/nằm trên sẽ được ưu tiên)
+        for(auto& pair : m_nodeUIMap)
+        {
+            bool wasDragging = pair.second->isDragging();
+
+            if(event.type == sf::Event::MouseButtonPressed)
+            {
+                // Nếu sự kiện chưa bị ai "nuốt", mới cho node tiếp theo thử
+                if(!eventHandled)
+                {
+                    if(pair.second->handleEvent(event, m_mouseWorldPos))
+                    {
+                        eventHandled = true;
+                        m_isAutoFollow = false;
+                    }
+                }
+            }
+            else
+            {
+                // Các sự kiện khác như Released cần được gửi cho tất cả
+                // để đảm bảo các node đang drag đều được thả ra
+                pair.second->handleEvent(event, m_mouseWorldPos);
+            }
+
+            // Đồng bộ dữ liệu khi thả chuột
+            if(wasDragging && !pair.second->isDragging())
+            {
+                int nodeId = pair.first;
+                sf::Vector2f finalPos = pair.second->getCurrentPosition();
+                m_timeline->updateNodePositionInHistory(nodeId, finalPos);
+                if(m_dataStructure) m_dataStructure->updateNodePosition(nodeId, finalPos);
+            }
+        }
 
         if(event.type == sf::Event::MouseWheelScrolled || m_isPanning)
         {
@@ -417,8 +504,17 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         }
 
         auto& nodeUI = m_nodeUIMap[nodeState.id];
-        nodeUI->applyState(nodeState);
-        nodeUI->update(dt);
+        // CHỈ applyState nếu Node KHÔNG ở trạng thái đang bị kéo
+        if(!nodeUI->isDragging())
+        {
+            nodeUI->applyState(nodeState);
+        }
+        else
+        {
+            // TÙY CHỌN: Nếu bạn muốn Core biết vị trí mới của Node sau khi kéo,
+            // bạn có thể gửi tọa độ nodeUI->getCurrentPosition() ngược lại cho Core tại đây.
+        }
+//        nodeUI->update(dt);
 
         // Kiểm tra vận tốc: chỉ cần kiểm tra trị tuyệt đối
         sf::Vector2f vel = nodeUI->getVelocity();

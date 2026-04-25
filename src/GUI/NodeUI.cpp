@@ -31,6 +31,10 @@ namespace GUI
         // Khởi tạo tỷ lệ scale là 1.0 (Kích thước thật)
         m_scaleSpring.position = 1.0f;
         m_scaleSpring.target = 1.0f;
+
+        m_isDraggable = false; // Mặc định tắt
+        m_isDragging = false;
+        m_dragOffset = {0.0f, 0.0f};
     }
 
     // Implement 2 hàm get/set:
@@ -42,6 +46,30 @@ namespace GUI
     sf::Vector2f NodeUI::getArcOffset() const
     {
         return m_arcOffset;
+    }
+
+    void NodeUI::setDraggable(bool enabled)
+    {
+        m_isDraggable = enabled;
+        if(!enabled)
+        {
+            m_isDragging = false; // Nếu tắt tính năng khi đang kéo thì dừng ngay
+        }
+    }
+
+    bool NodeUI::isDraggable() const
+    {
+        return m_isDraggable;
+    }
+
+    bool NodeUI::isDragging() const
+    {
+        return m_isDragging;
+    }
+
+    void NodeUI::forceRelease()
+    {
+        m_isDragging = false;
     }
 
     void NodeUI::applyState(const Core::NodeState& state)
@@ -64,6 +92,8 @@ namespace GUI
 
         // Cập nhật arcOffset nếu cần cho việc vẽ cây
         m_arcOffset = state.arcPivot;
+
+        m_isDraggable = state.isDraggable;
     }
 
     void NodeUI::setValue(const std::string& val)
@@ -139,8 +169,43 @@ namespace GUI
 //        return sf::Vector2f(m_xSpring.target, m_ySpring.target);
     }
 
-    void NodeUI::update(float dt)
+    bool NodeUI::handleEvent(const sf::Event& event, sf::Vector2f worldPos)
     {
+        if(!m_isDraggable) return false;
+
+        if(event.type == sf::Event::MouseButtonPressed)
+        {
+            if(event.mouseButton.button == sf::Mouse::Left)
+            {
+                float dx = worldPos.x - m_currentPosition.x;
+                float dy = worldPos.y - m_currentPosition.y;
+                float radius = m_shape.getRadius();
+
+                if((dx * dx + dy * dy) <= (radius * radius))
+                {
+                    m_isDragging = true;
+                    m_dragOffset = m_currentPosition - worldPos;
+                    return true; // Báo cáo: "Tôi đã nhận Node này, đừng đưa cho ai khác!"
+                }
+            }
+        }
+        else if(event.type == sf::Event::MouseButtonReleased)
+        {
+            if(event.mouseButton.button == sf::Mouse::Left)
+            {
+                m_isDragging = false;
+            }
+        }
+        return false;
+    }
+
+    void NodeUI::update(float dt, sf::Vector2f worldPos)
+    {
+        if(m_isDragging)
+        {
+            m_currentPosition = worldPos + m_dragOffset;
+        }
+
         // 1. TÍNH TOÁN VẬN TỐC (Cực kỳ quan trọng cho EdgeUI)
         if(dt > 0.0001f)
         {

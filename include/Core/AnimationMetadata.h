@@ -21,6 +21,8 @@ namespace Core
         // MỚI THÊM: Điểm tựa để xoay (Dùng riêng cho ArcSwing)
         sf::Vector2f arcPivot;
 
+        bool isDraggable = false;
+
         // THÊM DÒNG NÀY: Để mỗi Node biết mình nên bay kiểu gì (Linear, Orbital, ...)
         TransitionType transition = TransitionType::Linear;
 

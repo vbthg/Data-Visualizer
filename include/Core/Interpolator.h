@@ -99,12 +99,14 @@ namespace Math
                 result.fillColor = end.fillColor;
                 result.outlineColor = end.outlineColor;
                 result.textColor = end.textColor;
+                result.isDraggable = end.isDraggable;
             }
             else
             {
                 result.fillColor = start.fillColor;
                 result.outlineColor = start.outlineColor;
                 result.textColor = start.textColor;
+                result.isDraggable = start.isDraggable;
             }
 
             return result;

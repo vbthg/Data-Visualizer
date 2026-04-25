@@ -37,6 +37,10 @@ namespace GUI
         sf::Color m_currentOutlineColor;
         sf::Color m_targetOutlineColor;
 
+        bool m_isDraggable;   // Cờ cho phép/không cho phép kéo
+        bool m_isDragging;    // Trạng thái đang được kéo bởi chuột
+        sf::Vector2f m_dragOffset; // Khoảng cách từ tâm Node đến điểm click chuột
+
     public:
         // Khởi tạo Node với font chữ và bán kính mặc định là 25.0f
         NodeUI(sf::Font* font, float radius = 25.0f);
@@ -69,11 +73,19 @@ namespace GUI
         sf::Vector2f getTargetPosition() const;
 
         // --- VÒNG LẶP CHÍNH ---
-        void update(float dt);                   // Tính toán vật lý và nội suy màu sắc (Gọi 60 lần/giây)
+        bool handleEvent(const sf::Event& event, sf::Vector2f worldPos);
+        void update(float dt, sf::Vector2f worldPos);                   // Tính toán vật lý và nội suy màu sắc (Gọi 60 lần/giây)
         void draw(sf::RenderTarget& target) const; // Vẽ ra màn hình
 
         // Thêm vào phần public của NodeUI.h:
         void setArcOffset(sf::Vector2f offset);
         sf::Vector2f getArcOffset() const;
+
+        // Thêm vào phần public của NodeUI.h
+        void setDraggable(bool enabled);
+        bool isDraggable() const;
+        bool isDragging() const;
+        void forceRelease();
+
     };
 }

@@ -237,6 +237,32 @@ namespace Core
             // 2. Luôn cập nhật dòng highlighter và giá trị biến
             codeBox->updateStep(currentSnap->pseudoCodeLine, currentSnap->variableStates);
         }
+
+        // TimelineManager.h hoặc .cpp
+        void updateNodePositionInHistory(int nodeId, sf::Vector2f newPos)
+        {
+            if(m_snapshots.empty()) return;
+
+            // Bắt đầu từ snapshot hiện tại mà người dùng đang nhìn thấy
+//            int startIdx = getCurrentIdx();
+            int startIdx = 0;
+
+            for(size_t i = startIdx; i < m_snapshots.size(); ++i)
+            {
+                // Tìm node trong snapshot thứ i
+                auto& nodes = m_snapshots[i]->nodeStates;
+                auto it = std::find_if(nodes.begin(), nodes.end(),
+                    [&](const Core::NodeState& n){ return n.id == nodeId; });
+
+                if(it != nodes.end())
+                {
+                    it->position = newPos;
+
+                    // Nếu đây là ArcSwing, có thể bạn cần tính toán lại arcPivot
+                    // nhưng tạm thời hãy cứ cập nhật position trước.
+                }
+            }
+        }
     };
 
 

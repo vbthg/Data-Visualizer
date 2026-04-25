@@ -22,6 +22,8 @@ namespace DS
             if(m_timeline) m_timeline->clear();
         }
 
+        virtual void updateNodePosition(int id, sf::Vector2f newPos) { };
+
         // BẮT BUỘC: Lớp con phải trả về danh sách các lệnh (Insert, Delete,...) để UI tạo nút bấm
         virtual std::vector<Command> getCommands() = 0;
 
