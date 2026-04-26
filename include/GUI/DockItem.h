@@ -11,7 +11,7 @@ namespace GUI
         // Bắt buộc phải có để Dock gọi vòng lặp
         virtual void update(sf::RenderWindow& window, float dt) = 0;
         virtual void draw(sf::RenderTarget& target) = 0;
-        virtual void handleEvent(const sf::Event& event, sf::RenderWindow& window) = 0;
+        virtual bool handleEvent(const sf::Event& event, sf::RenderWindow& window) = 0;
 
         // Bắt buộc phải có để Dock sắp xếp vị trí
         virtual void setPosition(const sf::Vector2f pos) = 0;

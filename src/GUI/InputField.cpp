@@ -196,65 +196,63 @@ namespace GUI
         return false;
     }
 
-    void InputField::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    bool InputField::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     {
         // 1. Xử lý Click chuột để Focus
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
-//            sf::Vector2f mPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
             sf::Vector2i mPos = {event.mouseButton.x, event.mouseButton.y};
-
-            // Do Shape origin ở giữa, tính bounds bằng Transform
             sf::FloatRect hitbox(position.x - size.x / 2.0f, position.y - size.y / 2.0f, size.x, size.y);
 
-//            setFocus(hitbox.contains(mPos));
-            setFocus(Utils::ViewHandler::isMouseInFrame(mPos, window, hitbox));
+            bool inside = Utils::ViewHandler::isMouseInFrame(mPos, window, hitbox);
+            setFocus(inside);
+
+            if(inside) return true; // Click vào ô nhập thì nuốt sự kiện
         }
 
         // 2. Xử lý Gõ phím
-        if (focused && event.type == sf::Event::TextEntered)
+        if(focused && event.type == sf::Event::TextEntered)
         {
-            // Phím Backspace (Mã ASCII 8)
-            if (event.text.unicode == 8)
+            // Phím Backspace
+            if(event.text.unicode == 8)
             {
-                if (!rawString.empty())
+                if(!rawString.empty())
                 {
                     rawString.pop_back();
                     updateTextLayout();
                 }
             }
-            // Các ký tự in được (Mã ASCII > 31 và không phải Delete 127)
-            else if (event.text.unicode > 31 && event.text.unicode < 127)
+            // Các ký tự in được
+            else if(event.text.unicode > 31 && event.text.unicode < 127)
             {
-                // Kiểm tra ký tự có hợp lệ không (VD: nhập chữ vào ô số)
-                if (!isValidInput(event.text.unicode))
+                if(!isValidInput(event.text.unicode))
                 {
                     triggerErrorShake();
-                    return;
+                    return true; // Vẫn nuốt sự kiện dù nhập sai để tránh phím tắt hệ thống
                 }
 
                 char addedChar = static_cast<char>(event.text.unicode);
                 std::string testString = rawString + addedChar;
 
-                // Kiểm tra giới hạn Int
-                if (inputType == Type::Integer && wouldOverflowInt(testString))
+                if(inputType == Type::Integer && wouldOverflowInt(testString))
                 {
                     triggerErrorShake();
-                    return;
+                    return true;
                 }
 
-                // Kiểm tra giới hạn String (Tối đa 25 ký tự cho đẹp giao diện)
-                if (inputType == Type::String && testString.length() > 25)
+                if(inputType == Type::String && testString.length() > 25)
                 {
                     triggerErrorShake();
-                    return;
+                    return true;
                 }
 
-                // Hợp lệ -> Thêm vào chuỗi
                 rawString += addedChar;
                 updateTextLayout();
             }
+            return true; // Đang focus và gõ chữ thì nuốt toàn bộ phím
         }
+
+        return false;
     }
 
     void InputField::updateTextLayout()

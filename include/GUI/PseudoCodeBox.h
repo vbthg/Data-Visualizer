@@ -31,7 +31,7 @@ namespace GUI
         void loadCode(const std::string& title, const std::vector<std::string>& codeLines);
         void updateStep(int currentLineIndex, const std::vector<std::pair<std::string, std::string>>& variables);
 
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+        bool handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void update(float dt);
         void draw(sf::RenderWindow& window);
         void onResize(float windowWidth, float windowHeight);

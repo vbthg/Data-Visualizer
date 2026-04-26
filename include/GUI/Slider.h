@@ -34,7 +34,7 @@ namespace GUI
         std::function<void(float)> onValueChanged;
 
         // --- Core ---
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+        bool handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void update(const sf::RenderWindow& window, float dt); // Cần window để tính vị trí chuột thực
         void draw(sf::RenderTarget& target);
 

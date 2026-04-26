@@ -87,6 +87,61 @@ namespace Resources
             "    }",
             "}",
             "Return MST"
+        }},
+
+        { "dijkstra_shortest_path", {
+            "dist[all] = ∞, dist[source] = 0",
+            "PQ.push({0, source})",
+            "while PQ is not empty",
+            "{",
+            "    (d, u) = PQ.pop_min()",
+            "    if d > dist[u] then continue",
+            "    Mark u as Finalized",
+            "    for each neighbor v of u",
+            "    {",
+            "        if dist[u] + w(u, v) < dist[v]",
+            "        {",
+            "            dist[v] = dist[u] + w(u, v)",
+            "            parent[v] = u",
+            "            PQ.push({dist[v], v})",
+            "        }",
+            "    }",
+            "}"
+        }},
+
+        // Thêm vào trong PseudoCodeRegistry ở file tương ứng
+        { "sll_push_front", {
+            "newNode = new Node(value)",
+            "newNode.next = head",
+            "head = newNode",
+            "update positions"
+        }},
+
+        { "sll_insert", {
+            "newNode = new Node(value)",
+            "curr = head, i = 0",
+            "while i < index - 1",
+            "{",
+            "    curr = curr.next",
+            "    i++",
+            "}",
+            "newNode.next = curr.next",
+            "curr.next = newNode",
+            "update positions"
+        }},
+
+        { "sll_remove", {
+            "if index == 0 then head = head.next",
+            "curr = head, i = 0",
+            "while i < index - 1",
+            "{",
+            "    curr = curr.next",
+            "    i++",
+            "}",
+            "temp = curr.next",
+            "curr.next = temp.next",
+            "delete temp",
+            "update positions"
         }}
     };
 }

@@ -45,6 +45,8 @@ namespace GUI
 
 
         float m_opacity;
+        // Thêm vào phần private
+        sf::Text m_weightText;
 
 
         void recalculateVertices();

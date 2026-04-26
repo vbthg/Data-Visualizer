@@ -13,11 +13,12 @@
 #include <random>    // Để dùng std::random_device, std::mt19937
 #include <VisualizerState.h>
 #include <DataStructure.h>
-//#include <SinglyLinkedList.h>
+#include <SinglyLinkedList.h>
 #include <Heap.h>
 #include "AVLTree.h"
 #include "Trie.h"
 #include "MST.h"
+#include "ShortestPath.h"
 #include <cassert>
 
 namespace Theme = Utils::Graphics::Theme;
@@ -625,7 +626,7 @@ void MenuState::handleInput(sf::Event& event)
             std::cout << "START ALGO ID: " << algoID << std::endl;
             // TODO: Chuyển Scene sang VisualizeState tại đây
 
-            states.push(new VisualizerState(window, states, new DS::MST()));  ///**************************
+            states.push(new VisualizerState(window, states, new DS::SinglyLinkedList()));  ///**************************
         };
 
         auto onBack = [this]() {

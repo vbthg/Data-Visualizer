@@ -29,8 +29,9 @@ namespace GUI
         target.draw(m_line);
     }
 
-    void Separator::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+    bool Separator::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
+        return false;
         // Vạch ngăn không nhận tương tác chuột
     }
 

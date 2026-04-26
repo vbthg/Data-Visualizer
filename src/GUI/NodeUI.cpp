@@ -1,41 +1,90 @@
 #include "NodeUI.h"
 #include <string>
+#include <iostream>
 
 namespace GUI
 {
-    NodeUI::NodeUI(sf::Font* font, float radius)
+    NodeUI::NodeUI(sf::Font* font, float radius, const Core::NodeState* initialState)
     {
         m_font = font;
-
-        // Trong Constructor của NodeUI.cpp, khởi tạo bằng 0:
         m_arcOffset = {0.0f, 0.0f};
 
-        // Cài đặt hình dáng cơ bản
+        // 1. THIẾT LẬP CƠ BẢN (SHAPE & TEXT CONFIG)
         m_shape.setRadius(radius);
-        m_shape.setOrigin(radius, radius); // Đặt tâm gốc (Origin) vào chính giữa hình tròn
+        m_shape.setOrigin(radius, radius);
         m_shape.setOutlineThickness(2.0f);
 
-        // Cài đặt chữ
         m_valueText.setFont(*m_font);
         m_valueText.setCharacterSize(20);
 
-        // Khởi tạo màu sắc mặc định (Trắng viền xám, chữ đen)
-        m_currentColor = m_targetColor = sf::Color::White;
-        m_currentTextColor = m_targetTextColor = sf::Color::Black;
-        m_currentOutlineColor = m_targetOutlineColor = sf::Color(200, 200, 200);
+        m_subText.setFont(*m_font);
+        m_subText.setCharacterSize(14);
 
-        m_shape.setFillColor(m_currentColor);
-        m_shape.setOutlineColor(m_currentOutlineColor);
-        m_valueText.setFillColor(m_currentTextColor);
+        // 2. LOGIC KHỞI TẠO TRẠNG THÁI (TRÁNH FLICKER)
+        if(initialState)
+        {
+            // Đồng bộ dữ liệu logic
+            m_currentPosition = initialState->position;
+            m_lastPosition = m_currentPosition; // Vận tốc ban đầu = 0
+            m_opacity = initialState->opacity;
 
-        // Khởi tạo tỷ lệ scale là 1.0 (Kích thước thật)
-        m_scaleSpring.position = 1.0f;
-        m_scaleSpring.target = 1.0f;
+            // Tận dụng hàm setValue để căn giữa text chính
+            setValue(initialState->value);
 
-        m_isDraggable = false; // Mặc định tắt
+            // Đồng bộ subText
+            m_subText.setString(initialState->subText);
+            sf::FloatRect sBounds = m_subText.getLocalBounds();
+            m_subText.setOrigin(sBounds.left + sBounds.width / 2.0f, sBounds.top + sBounds.height / 2.0f);
+
+            // Ép vật lý lò xo về đúng giá trị snapshot
+            m_scaleSpring.snapTo(initialState->scale);
+
+            // Thiết lập màu sắc (Gán thẳng currentColor để không bị lerp từ trắng sang)
+            m_currentColor = m_targetColor = initialState->fillColor;
+            m_currentTextColor = m_targetTextColor = initialState->textColor;
+            m_currentOutlineColor = m_targetOutlineColor = initialState->outlineColor;
+
+            m_isDraggable = initialState->isDraggable;
+
+            // ĐỒNG BỘ TRỰC TIẾP LÊN SFML OBJECTS
+            // Quan trọng: Phải set trước khi hàm draw() đầu tiên có cơ hội chạy
+            m_shape.setPosition(m_currentPosition);
+            m_shape.setScale(m_scaleSpring.position, m_scaleSpring.position);
+
+            m_valueText.setPosition(m_currentPosition);
+            m_valueText.setScale(m_scaleSpring.position, m_scaleSpring.position);
+
+            m_subText.setPosition(m_currentPosition.x, m_currentPosition.y - radius - 20.f);
+
+            m_shape.setFillColor(applyAlpha(m_currentColor, m_opacity));
+            m_shape.setOutlineColor(applyAlpha(m_currentOutlineColor, m_opacity));
+            m_valueText.setFillColor(applyAlpha(m_currentTextColor, m_opacity));
+            m_subText.setFillColor(applyAlpha(m_currentTextColor, m_opacity));
+        }
+        else
+        {
+            // Trạng thái mặc định nếu không có initialState truyền vào
+            m_currentPosition = {0.0f, 0.0f};
+            m_lastPosition = {0.0f, 0.0f};
+            m_opacity = 1.0f;
+            m_scaleSpring.snapTo(1.0f);
+
+            m_currentColor = m_targetColor = sf::Color::White;
+            m_currentTextColor = m_targetTextColor = sf::Color::Black;
+            m_currentOutlineColor = m_targetOutlineColor = sf::Color(200, 200, 200);
+
+            m_shape.setFillColor(m_currentColor);
+            m_shape.setOutlineColor(m_currentOutlineColor);
+            m_valueText.setFillColor(m_currentTextColor);
+            m_subText.setFillColor(applyAlpha(m_currentTextColor, 0.6f));
+
+            m_isDraggable = false;
+        }
+
         m_isDragging = false;
         m_dragOffset = {0.0f, 0.0f};
     }
+
 
     // Implement 2 hàm get/set:
     void NodeUI::setArcOffset(sf::Vector2f offset)
@@ -74,26 +123,26 @@ namespace GUI
 
     void NodeUI::applyState(const Core::NodeState& state)
     {
-        // 1. Áp dụng ngay lập tức vị trí hoàn hảo từ Timeline
         m_currentPosition = state.position;
         m_shape.setPosition(m_currentPosition);
         m_valueText.setPosition(m_currentPosition);
 
-        // 2. Cập nhật các trạng thái màu sắc và Text
-//        setValue(std::to_string(state.value));
         setValue(state.value);
 
-        m_scaleSpring.target = state.scale;
-//        m_targetColor = state.fillColor;
-//        m_targetOutlineColor = state.outlineColor;
-//        m_targetTextColor = state.textColor;
+        // XỬ LÝ SUBTEXT
+        m_subText.setString(state.subText);
+        sf::FloatRect sBounds = m_subText.getLocalBounds();
+        m_subText.setOrigin(sBounds.left + sBounds.width / 2.0f, sBounds.top + sBounds.height / 2.0f);
+        // Đặt subText cách tâm Node một khoảng (radius + 20px) lên phía trên
+        m_subText.setPosition(m_currentPosition.x, m_currentPosition.y - m_shape.getRadius() - 20.f);
 
+//        m_scaleSpring.target = state.scale;
+        m_scaleSpring.snapTo(state.scale);
         setTargetColor(state.fillColor, state.textColor, state.outlineColor);
 
-        // Cập nhật arcOffset nếu cần cho việc vẽ cây
         m_arcOffset = state.arcPivot;
-
         m_isDraggable = state.isDraggable;
+        m_opacity = state.opacity; // Áp dụng opacity từ state
     }
 
     void NodeUI::setValue(const std::string& val)
@@ -199,6 +248,13 @@ namespace GUI
         return false;
     }
 
+    sf::Color NodeUI::applyAlpha(const sf::Color& color, float alphaMult)
+    {
+        sf::Color res = color;
+        res.a = color.a * alphaMult;
+        return res;
+    }
+
     void NodeUI::update(float dt, sf::Vector2f worldPos)
     {
         if(m_isDragging)
@@ -222,6 +278,9 @@ namespace GUI
         // 2. Áp dụng tọa độ mới vào hình khối và chữ
 //        m_shape.setPosition(m_xSpring.position, m_ySpring.position);
 //        m_valueText.setPosition(m_xSpring.position, m_ySpring.position);
+
+        m_subText.setPosition(m_currentPosition.x, m_currentPosition.y - m_shape.getRadius() - 20.f);
+
         m_shape.setPosition(m_currentPosition);
         m_valueText.setPosition(m_currentPosition);
 
@@ -229,19 +288,30 @@ namespace GUI
         m_valueText.setScale(m_scaleSpring.position, m_scaleSpring.position);
 
         // 3. Tính toán nội suy màu sắc mượt mà (Hệ số 10.0f * dt là tốc độ chuyển màu)
+        sf::Uint8 alpha = static_cast<sf::Uint8>(m_opacity * 255.f);
         m_currentColor = Utils::Math::Easing::lerpColor(m_currentColor, m_targetColor, 10.0f * dt);
         m_currentTextColor = Utils::Math::Easing::lerpColor(m_currentTextColor, m_targetTextColor, 10.0f * dt);
         m_currentOutlineColor = Utils::Math::Easing::lerpColor(m_currentOutlineColor, m_targetOutlineColor, 10.0f * dt);
 
         // 4. Áp dụng màu sắc mới vào hình khối và chữ
-        m_shape.setFillColor(m_currentColor);
-        m_valueText.setFillColor(m_currentTextColor);
-        m_shape.setOutlineColor(m_currentOutlineColor);
+        m_shape.setFillColor(applyAlpha(m_currentColor, m_opacity));
+        m_valueText.setFillColor(applyAlpha(m_currentTextColor, m_opacity));
+        m_shape.setOutlineColor(applyAlpha(m_currentOutlineColor, m_opacity));
+        m_subText.setFillColor(applyAlpha(m_currentTextColor, m_opacity));
     }
 
     void NodeUI::draw(sf::RenderTarget& target) const
     {
+//        sf::String s = m_valueText.getString();
+//        std::string ss = s.toAnsiString();
+//
+//        if(s == "3") std::cout << ss << " " << m_shape.getScale().x << " " << m_shape.getScale().y << "\n";
+
         target.draw(m_shape);
         target.draw(m_valueText);
+        if(!m_subText.getString().isEmpty())
+        {
+            target.draw(m_subText);
+        }
     }
 }

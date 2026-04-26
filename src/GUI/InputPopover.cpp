@@ -187,32 +187,40 @@ namespace GUI
         }
     }
 
-    void InputPopover::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+    bool InputPopover::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
-        if (currentState != State::Open && currentState != State::Opening) return;
+        // Nếu không mở thì không nhận bất cứ sự kiện nào
+        if (currentState != State::Open && currentState != State::Opening) return false;
 
-        // Bắt sự kiện phím Enter để Submit cho nhanh
+        // Bắt sự kiện phím Enter
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter)
         {
             submitData();
-            return;
+            return true; // Đã xử lý, không cho phím Enter trôi xuống dưới
         }
 
-        // Bắt sự kiện ESC để hủy
+        // Bắt sự kiện ESC
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
         {
             close();
-            return;
+            return true;
         }
 
-        input1->handleEvent(event, window);
+        bool handled = false;
+
+        // Chuyển sự kiện cho các input và button con
+        // Nếu bất kỳ thằng con nào nhận (handled = true), Popover cũng báo là đã nhận
+        if (input1->handleEvent(event, window)) handled = true;
+
         if (currentCommand.inputType == DS::InputType::TwoIntegers)
         {
-            input2->handleEvent(event, window);
+            if (input2->handleEvent(event, window)) handled = true;
         }
 
-        btnConfirm->handleEvent(event, window);
-        btnCancel->handleEvent(event, window);
+        if (btnConfirm->handleEvent(event, window)) handled = true;
+        if (btnCancel->handleEvent(event, window)) handled = true;
+
+        return handled;
     }
 
     void InputPopover::updateLayout()

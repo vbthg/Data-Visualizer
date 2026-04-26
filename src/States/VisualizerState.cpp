@@ -81,7 +81,7 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
     dock->addItem(btnPlay);
 
     // "Ngôi sao" của chúng ta: SpeedController
-    GUI::SpeedController* speedCtrl = new GUI::SpeedController(font);
+    GUI::SpeedController* speedCtrl = new GUI::SpeedController(font, m_timeline);
     dock->addItem(speedCtrl);
 
     // 5. Thêm vạch ngăn cuối
@@ -103,7 +103,7 @@ VisualizerState::VisualizerState(sf::RenderWindow& win, std::stack<State*>& st, 
         dock->setCommands(currentDS->getCommands(), ResourceManager::getInstance().getFont("assets/fonts/Phosphor.ttf"));
 
         dock->addItem(new GUI::Separator(Theme::Style::DockHeight));
-        GUI::SpeedController* speedCtrl = new GUI::SpeedController(font);
+        GUI::SpeedController* speedCtrl = new GUI::SpeedController(font, m_timeline);
         dock->addItem(speedCtrl);
     }
 
@@ -241,119 +241,117 @@ void VisualizerState::updateNotchLogic()
 
 void VisualizerState::handleInput(sf::Event& event)
 {
-//    return;
-
     if(event.type == sf::Event::Resized)
     {
         Utils::System::updateCustomView(m_camera, event.size.width, event.size.height);
+        // Resize thường là sự kiện hệ thống, không nên chặn
     }
 
-//    // 1. ZOOM: Phóng to / Thu nhỏ tại tâm chuột
-//    if(event.type == sf::Event::MouseWheelScrolled)
-//    {
-//        sf::Vector2i mousePos(event.mouseWheelScroll.x, event.mouseWheelScroll.y);
-//        sf::FloatRect frameBounds = structurePanel->getGlobalBounds();
-//
-//        if(Utils::ViewHandler::isMouseInFrame(mousePos, window, frameBounds))
-//        {
-//            sf::Vector2f mouseWorldBefore = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-//
-//            float zoomFactor = (event.mouseWheelScroll.delta > 0) ? 0.9f : 1.1f;
-//            m_camera.zoom(zoomFactor);
-//
-//            sf::Vector2f mouseWorldAfter = Utils::ViewHandler::mapPixelToWorld(mousePos, window, frameBounds, m_camera);
-//
-//            m_camera.move(mouseWorldBefore - mouseWorldAfter);
-//        }
-//    }
-//
-//    // 2. PAN
-//    if(event.type == sf::Event::MouseButtonPressed)
-//    {
-//        bool isPanKey = (event.mouseButton.button == sf::Mouse::Right ||
-//                         event.mouseButton.button == sf::Mouse::Middle ||
-//                        (event.mouseButton.button == sf::Mouse::Left && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)));
-//
-//        if(isPanKey)
-//        {
-//            m_isDragging = true;
-//            m_lastMousePos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
-//        }
-//    }
-//
-//    // 3. PAN - Đang di chuyển
-//    if(event.type == sf::Event::MouseMoved && m_isDragging)
-//    {
-//        sf::Vector2i currentMousePos(event.mouseMove.x, event.mouseMove.y);
-//
-//        sf::Vector2f worldLastPos = window.mapPixelToCoords(m_lastMousePos, m_camera);
-//        sf::Vector2f worldCurrentPos = window.mapPixelToCoords(currentMousePos, m_camera);
-//
-//        m_camera.move(worldLastPos - worldCurrentPos);
-//        m_lastMousePos = currentMousePos;
-//    }
-//
-//    // 4. PAN - Kết thúc kéo
-//    if(event.type == sf::Event::MouseButtonReleased)
-//    {
-//        m_isDragging = false;
-//    }
-
-    int targetIdx = m_historyBoard->handleEvent(event, window);
-    if (targetIdx != -1)
-    {
-        m_timeline->seek(targetIdx);
-        m_timeline->pause();
-    }
-
+    // 1. Ưu tiên cao nhất: Các cửa sổ nổi (Popover/Dialog)
     if(popover && popover->isOpen())
     {
-        popover->handleEvent(event, window);
-    }
-    else
-    {
-        if(dock) dock->handleEvent(event, window);
+        if(popover->handleEvent(event, window)) return;
     }
 
-    if(pseudoBox)
+    // 2. Tiếp theo: History Board (Vì nó nằm đè lên Panel)
+    // Giả sử em sửa handleEvent của HistoryBoard trả về bool
+    int targetIdx = m_historyBoard->handleEvent(event, window);
+    if(targetIdx != -1)
     {
-        pseudoBox->handleEvent(event, window);
+        // Nếu click trúng một node trong lịch sử, ta dừng luôn
+        m_timeline->seek(targetIdx);
+        m_timeline->pause();
+        return;
     }
 
+    // 3. Các thành phần UI cố định (Dock, PseudoBox)
+    if(dock && dock->handleEvent(event, window)) return;
+
+    if(pseudoBox && pseudoBox->handleEvent(event, window)) return;
+
+    // 4. Phím tắt toàn cục (Global Shortcuts)
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::C)
     {
         if(pseudoBox)
         {
             pseudoBox->toggleState();
-            bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
-            structurePanel->updateLayout(1920.f, 1080.f, isCodeOpen);
+            structurePanel->updateLayout(1920.f, 1080.f, pseudoBox->isOpen());
         }
-
-//        this->createMockTest();
+        return;
     }
 
-    static int testLine = 0;
-    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down)
+    // 5. Lớp dưới cùng: StructurePanel (Nơi vẽ đồ thị)
+    // Panel chỉ nhận sự kiện khi tất cả UI phía trên đã từ chối
+    if(structurePanel)
     {
-        testLine++;
-        if(pseudoBox)
-        {
-            pseudoBox->updateStep(testLine, {
-                {"cur", "Node(" + std::to_string(testLine * 10) + ")"},
-                {"min_idx", std::to_string(testLine)}
-            });
-        }
+        structurePanel->handleEvent(event, window);
     }
-
-    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up)
-    {
-        testLine = std::max(0, testLine - 1);
-        if(pseudoBox) pseudoBox->updateStep(testLine, {});
-    }
-
-    testSlider->handleEvent(event, window);
-    if(structurePanel) structurePanel->handleEvent(event, window);
 }
+
+//void VisualizerState::handleInput(sf::Event& event)
+//{
+////    return;
+//
+//    if(event.type == sf::Event::Resized)
+//    {
+//        Utils::System::updateCustomView(m_camera, event.size.width, event.size.height);
+//    }
+////
+//    int targetIdx = m_historyBoard->handleEvent(event, window);
+//    if (targetIdx != -1)
+//    {
+//        m_timeline->seek(targetIdx);
+//        m_timeline->pause();
+//    }
+////
+//    if(popover && popover->isOpen())
+//    {
+//        popover->handleEvent(event, window);
+//    }
+//    else
+//    {
+//        if(dock) dock->handleEvent(event, window);
+//    }
+//
+//    if(pseudoBox)
+//    {
+//        pseudoBox->handleEvent(event, window);
+//    }
+//
+//    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::C)
+//    {
+//        if(pseudoBox)
+//        {
+//            pseudoBox->toggleState();
+//            bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
+//            structurePanel->updateLayout(1920.f, 1080.f, isCodeOpen);
+//        }
+//
+////        this->createMockTest();
+//    }
+//
+////    static int testLine = 0;
+////    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down)
+////    {
+////        testLine++;
+////        if(pseudoBox)
+////        {
+////            pseudoBox->updateStep(testLine, {
+////                {"cur", "Node(" + std::to_string(testLine * 10) + ")"},
+////                {"min_idx", std::to_string(testLine)}
+////            });
+////        }
+////    }
+////
+////    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up)
+////    {
+////        testLine = std::max(0, testLine - 1);
+////        if(pseudoBox) pseudoBox->updateStep(testLine, {});
+////    }
+//
+////    testSlider->handleEvent(event, window);
+//    if(structurePanel) structurePanel->handleEvent(event, window);
+//}
 
 void VisualizerState::update(float dt)
 {
@@ -376,9 +374,9 @@ void VisualizerState::update(float dt)
             );
 
             GUI::NotchManager::getInstance().updateStep(
-                currentIdx + 1,
+                m_timeline->getCurrentIdx(),
                 m_timeline->getCount(),
-                0.5f
+                1.f / m_timeline->getPlaybackSpeed()
             );
         }
         m_lastSyncIdx = currentIdx;

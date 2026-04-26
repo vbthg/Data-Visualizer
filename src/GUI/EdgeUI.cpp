@@ -1,5 +1,6 @@
 #include "EdgeUI.h"
 #include "Easing.h"
+#include "ResourceManager.h"
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -46,6 +47,12 @@ namespace GUI
         m_tSpring.snapTo(0.5f);
 
         m_vertices.setPrimitiveType(sf::TriangleStrip);
+        m_weightText.setFont(ResourceManager::getInstance().getFont("assets/fonts/SFProText-Regular.ttf"));
+        m_weightText.setCharacterSize(15);
+        m_weightText.setFillColor(sf::Color::White);
+        // Tạo viền đen mỏng cho chữ để dễ đọc trên mọi nền
+        m_weightText.setOutlineColor(sf::Color::Black);
+        m_weightText.setOutlineThickness(1.0f);
     }
 
     NodeUI* EdgeUI::getStartNode() const
@@ -60,10 +67,11 @@ namespace GUI
 
     void EdgeUI::applyState(const Core::EdgeState& state)
     {
-        // Cập nhật trạng thái Focus (để kích hoạt lerp m_targetThickness/Color trong update)
         setFocusState(state.isFocused);
 
-        // Cập nhật các biến logic từ Timeline
+        // Cập nhật độ dày mục tiêu từ State
+        m_targetThickness = state.thickness;
+
         m_isPulsing = state.isPulsing;
         m_pulseProgress = state.pulseProgress;
         m_pulseColor = state.pulseColor;
@@ -74,9 +82,12 @@ namespace GUI
         m_fillColor = state.fillColor;
         m_fillFromStart = state.fillFromStart;
 
-//        setExactColor(state.targetColor);
-
         m_opacity = state.opacity;
+
+        // CẬP NHẬT TRỌNG SỐ (SUBTEXT)
+        m_weightText.setString(state.subText);
+        sf::FloatRect wBounds = m_weightText.getLocalBounds();
+        m_weightText.setOrigin(wBounds.left + wBounds.width / 2.0f, wBounds.top + wBounds.height / 2.0f);
     }
 
     void EdgeUI::setFocusState(bool isFocused)
@@ -143,7 +154,8 @@ namespace GUI
     {
         // 1. NỘI SUY (LERP) ĐỘ DÀY VÀ MÀU SẮC
         float lerpSpeed = 10.0f; // Tốc độ chuyển đổi (càng cao càng nhanh)
-        m_currentThickness += (m_targetThickness - m_currentThickness) * (lerpSpeed * dt);
+        m_currentThickness = m_targetThickness;
+//        m_currentThickness += (m_targetThickness - m_currentThickness) * (lerpSpeed * dt);
 
         // Lerp từng kênh màu (R, G, B, A) một cách thủ công để an toàn
         float r = m_currentColor.r + (m_targetColor.r - m_currentColor.r) * (lerpSpeed * dt);
@@ -203,7 +215,26 @@ namespace GUI
                     targetT = t; // Khi chuột vào vùng, dời điểm uốn tới vị trí chuột
                 }
             }
+
+            sf::Vector2f anchorPoint = p1 + dir * m_tSpring.position;
+            sf::Vector2f controlPoint = anchorPoint + normal * m_offsetSpring.position;
+
+            // Công thức Bezier tại t = 0.5: P = 0.25*P1 + 0.5*CP + 0.25*P2
+            sf::Vector2f midPath = 0.25f * p1 + 0.5f * controlPoint + 0.25f * p2;
+
+            // Đẩy chữ lên trên dây một chút để không bị đè
+            m_weightText.setPosition(midPath + normal * 15.f);
         }
+
+        // Cập nhật độ mờ cho chữ
+        sf::Color wCol = m_weightText.getFillColor();
+        wCol.a = static_cast<sf::Uint8>(m_opacity * 255.f);
+        m_weightText.setFillColor(wCol);
+
+        sf::Color wOutCol = m_weightText.getOutlineColor();
+        wOutCol.a = wCol.a;
+        m_weightText.setOutlineColor(wOutCol);
+
 
         // Cập nhật lò xo đàn hồi
         m_offsetSpring.target = targetOffset;
@@ -236,7 +267,11 @@ namespace GUI
         sf::Vector2f controlPoint = anchorPoint + normal * m_offsetSpring.position;
 //        sf::Vector2f controlPoint = midPoint + normal * m_offsetSpring.position;
 
-        int segments = (m_isColorFilling || m_isPulsing ? 10 : 2);
+        int segments = 1;
+        if(m_isColorFilling || m_isPulsing)
+        {
+            segments = static_cast<int>(std::clamp(len / 30.0f, 15.0f, 100.0f));
+        }
         m_vertices.resize((segments + 1) * 2);
 
         sf::Vector2f prevP = startPos;
@@ -269,7 +304,7 @@ namespace GUI
                 float normalizedT = m_fillFromStart ? t : (1.0f - t);
 
                 // Độ rộng của rìa mềm (20% chiều dài dây)
-                float softEdgeWidth = 0.2f;
+                float softEdgeWidth = std::clamp(40.0f / len, 0.01f, 0.5f);
 
                 if (normalizedT <= m_fillProgress - softEdgeWidth)
                 {
@@ -302,9 +337,10 @@ namespace GUI
 
             if(m_isPulsing)
             {
-                std::cout << "[PULSE PROGRESS]: " << m_pulseProgress << "\n";
+//                std::cout << "[PULSE PROGRESS]: " << m_pulseProgress << "\n";
                 float dist = std::abs(t - m_pulseProgress);
-                float pulseWidth = 0.2f; // Độ rộng của vệt sáng (20% chiều dài dây)
+                float pulsePixelWidth = 60.0f; // Độ rộng vệt sáng cố định 60px
+                float pulseWidth = pulsePixelWidth / len;
 
                 if(dist < pulseWidth)
                 {
@@ -329,5 +365,9 @@ namespace GUI
     void EdgeUI::draw(sf::RenderTarget& target) const
     {
         target.draw(m_vertices);
+        if(!m_weightText.getString().isEmpty() && m_opacity > 0.1f)
+        {
+            target.draw(m_weightText);
+        }
     }
 }

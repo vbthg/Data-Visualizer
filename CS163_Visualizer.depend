@@ -462,7 +462,7 @@
 	<SFML/Graphics.hpp>
 	"Button.h"
 
-1776757492 d:\cs163_visualizer\include\gui\button.h
+1777122662 d:\cs163_visualizer\include\gui\button.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -478,7 +478,7 @@
 	<SFML/Graphics.hpp>
 	<algorithm>
 
-1776757506 source:d:\cs163_visualizer\src\gui\button.cpp
+1777190130 source:d:\cs163_visualizer\src\gui\button.cpp
 	"Button.h"
 	"Easing.h"
 	"ViewHandler.h"
@@ -545,7 +545,7 @@
 	"wrapText.h"
 	"Utils/Graphics/Theme.h"
 
-1776943769 source:d:\cs163_visualizer\src\states\menustate.cpp
+1777179144 source:d:\cs163_visualizer\src\states\menustate.cpp
 	"MenuState.h"
 	"MenuCard.h"
 	"ResourceManager.h"
@@ -561,10 +561,12 @@
 	<random>
 	<VisualizerState.h>
 	<DataStructure.h>
+	<SinglyLinkedList.h>
 	<Heap.h>
 	"AVLTree.h"
 	"Trie.h"
 	"MST.h"
+	"ShortestPath.h"
 	<cassert>
 
 1774084395 d:\cs163_visualizer\include\states\menustate.h
@@ -637,17 +639,15 @@
 	<iostream>
 	<cmath>
 
-1773462052 source:d:\cs163_visualizer\src\datastructures\singlylinkedlist.cpp
+1777188928 source:d:\cs163_visualizer\src\datastructures\singlylinkedlist.cpp
 	"SinglyLinkedList.h"
-	"ResourceManager.h"
 	<iostream>
+	<sstream>
 
-1773854820 d:\cs163_visualizer\include\datastructures\singlylinkedlist.h
+1777185489 d:\cs163_visualizer\include\datastructures\singlylinkedlist.h
 	"DataStructure.h"
-	"Squircle.h"
-	"Theme.h"
-	"Spring.h"
 	<vector>
+	<string>
 
 1777061513 d:\cs163_visualizer\include\datastructures\datastructure.h
 	<vector>
@@ -660,7 +660,7 @@
 	<functional>
 	<SFML/System/String.hpp>
 
-1777061320 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
+1777192095 source:d:\cs163_visualizer\src\states\visualizerstate.cpp
 	"VisualizerState.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -687,7 +687,7 @@
 	"TimelineManager.h"
 	<stack>
 
-1773926609 d:\cs163_visualizer\include\gui\floatingdock.h
+1777122537 d:\cs163_visualizer\include\gui\floatingdock.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<functional>
@@ -698,32 +698,32 @@
 	"Squircle.h"
 	"Spring.h"
 
-1776759507 source:d:\cs163_visualizer\src\gui\floatingdock.cpp
+1777124638 source:d:\cs163_visualizer\src\gui\floatingdock.cpp
 	"FloatingDock.h"
 	"ResourceManager.h"
 	"Theme.h"
 	"Smoothing.h"
 	<iostream>
 
-1776963233 source:d:\cs163_visualizer\src\gui\inputfield.cpp
+1777122708 source:d:\cs163_visualizer\src\gui\inputfield.cpp
 	"InputField.h"
 	"ViewHandler.h"
 	"Theme.h"
 	<cctype>
 	<iostream>
 
-1776963367 d:\cs163_visualizer\include\gui\inputfield.h
+1777122724 d:\cs163_visualizer\include\gui\inputfield.h
 	<SFML/Graphics.hpp>
 	<string>
 	"Squircle.h"
 	"Spring.h"
 
-1776964632 source:d:\cs163_visualizer\src\gui\inputpopover.cpp
+1777122478 source:d:\cs163_visualizer\src\gui\inputpopover.cpp
 	"InputPopover.h"
 	"Theme.h"
 	<iostream>
 
-1776964204 d:\cs163_visualizer\include\gui\inputpopover.h
+1777122491 d:\cs163_visualizer\include\gui\inputpopover.h
 	<SFML/Graphics.hpp>
 	<string>
 	"Squircle.h"
@@ -743,13 +743,13 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1776923117 source:d:\cs163_visualizer\src\gui\pseudocodebox.cpp
+1777122708 source:d:\cs163_visualizer\src\gui\pseudocodebox.cpp
 	"PseudoCodeBox.h"
 	"ViewHandler.h"
 	<iostream>
 	<algorithm>
 
-1773986455 d:\cs163_visualizer\include\gui\pseudocodebox.h
+1777122708 d:\cs163_visualizer\include\gui\pseudocodebox.h
 	<SFML/Graphics.hpp>
 	<SFML/OpenGL.hpp>
 	<vector>
@@ -758,29 +758,31 @@
 	"RoundedRectangleShape.h"
 	"Spring.h"
 
-1777055299 source:d:\cs163_visualizer\src\gui\edgeui.cpp
+1777135334 source:d:\cs163_visualizer\src\gui\edgeui.cpp
 	"EdgeUI.h"
 	"Easing.h"
+	"ResourceManager.h"
 	<cmath>
 	<algorithm>
 	<iostream>
 
-1777053806 d:\cs163_visualizer\include\gui\edgeui.h
+1777098702 d:\cs163_visualizer\include\gui\edgeui.h
 	<SFML/Graphics.hpp>
 	"NodeUI.h"
 	"Spring.h"
 	"AnimationMetadata.h"
 
-1777062845 d:\cs163_visualizer\include\gui\nodeui.h
+1777120592 d:\cs163_visualizer\include\gui\nodeui.h
 	<SFML/Graphics.hpp>
 	<string>
 	"Spring.h"
 	"Easing.h"
 	"AnimationMetadata.h"
 
-1777062845 source:d:\cs163_visualizer\src\gui\nodeui.cpp
+1777121444 source:d:\cs163_visualizer\src\gui\nodeui.cpp
 	"NodeUI.h"
 	<string>
+	<iostream>
 
 1774112430 source:d:\cs163_visualizer\src\utils\graphics\animationmanager.cpp
 	"AnimationManager.h"
@@ -821,7 +823,7 @@
 	<algorithm>
 	<SFML/Graphics.hpp>
 
-1776757617 d:\cs163_visualizer\include\gui\slider.h
+1777122905 d:\cs163_visualizer\include\gui\slider.h
 	<SFML/Graphics.hpp>
 	<functional>
 	<string>
@@ -831,18 +833,18 @@
 	"Spring.h"
 	"ResourceManager.h"
 
-1776757642 source:d:\cs163_visualizer\src\gui\slider.cpp
+1777122905 source:d:\cs163_visualizer\src\gui\slider.cpp
 	"Slider.h"
 	"ResourceManager.h"
 
-1776757542 d:\cs163_visualizer\include\gui\dockitem.h
+1777123633 d:\cs163_visualizer\include\gui\dockitem.h
 	<SFML/Graphics.hpp>
 
-1776757549 d:\cs163_visualizer\include\gui\separator.h
+1777122735 d:\cs163_visualizer\include\gui\separator.h
 	<SFML/Graphics.hpp>
 	"DockItem.h"
 
-1776757570 source:d:\cs163_visualizer\src\gui\separator.cpp
+1777124784 source:d:\cs163_visualizer\src\gui\separator.cpp
 	"Separator.h"
 	"Theme.h"
 
@@ -853,12 +855,12 @@
 	<SFML/Graphics.hpp>
 	"Squircle.h"
 
-1776757597 source:d:\cs163_visualizer\src\gui\speedcontroller.cpp
+1777190854 source:d:\cs163_visualizer\src\gui\speedcontroller.cpp
 	"SpeedController.h"
 	"ViewHandler.h"
 	<iostream>
 
-1776757580 d:\cs163_visualizer\include\gui\speedcontroller.h
+1777190501 d:\cs163_visualizer\include\gui\speedcontroller.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<string>
@@ -866,6 +868,7 @@
 	"Button.h"
 	"Slider.h"
 	"Spring.h"
+	"TimelineManager.h"
 
 1774513970 d:\cs163_visualizer\include\utils\graphics\viewhandler.h
 	<SFML/Graphics.hpp>
@@ -880,7 +883,7 @@
 	"Squircle.h"
 	"Spring.h"
 
-1777062845 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
+1777121626 source:d:\cs163_visualizer\src\gui\structurepanel.cpp
 	"StructurePanel.h"
 	"ResourceManager.h"
 	"Theme.h"
@@ -903,7 +906,7 @@
 1774022419 d:\cs163_visualizer\include\utils\graphics\wraptext.h
 	<SFML/Graphics.hpp>
 
-1777060203 d:\cs163_visualizer\include\core\timelinemanager.h
+1777190283 d:\cs163_visualizer\include\core\timelinemanager.h
 	<vector>
 	<memory>
 	<algorithm>
@@ -921,12 +924,12 @@
 	"AnimationMetadata.h"
 	"ISnapshot.h"
 
-1777058788 d:\cs163_visualizer\include\core\animationmetadata.h
+1777098957 d:\cs163_visualizer\include\core\animationmetadata.h
 	<SFML/Graphics.hpp>
 	<string>
 	<vector>
 
-1777058854 d:\cs163_visualizer\include\core\interpolator.h
+1777121437 d:\cs163_visualizer\include\core\interpolator.h
 	<SFML/Graphics.hpp>
 	<cmath>
 	<iostream>
@@ -1120,7 +1123,7 @@
 	<string>
 	<vector>
 
-1776943229 d:\cs163_visualizer\include\datastructures\pseudocoderegistry.h
+1777184273 d:\cs163_visualizer\include\datastructures\pseudocoderegistry.h
 	<map>
 	<vector>
 	<string>
@@ -1136,4 +1139,17 @@
 	<vector>
 	<string>
 	<map>
+
+1777135474 source:d:\cs163_visualizer\src\datastructures\shortestpath.cpp
+	"ShortestPath.h"
+	<algorithm>
+	<sstream>
+
+1777134686 d:\cs163_visualizer\include\datastructures\shortestpath.h
+	"DataStructure.h"
+	"NotchEnums.h"
+	<vector>
+	<string>
+	<queue>
+	<limits>
 

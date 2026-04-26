@@ -112,59 +112,64 @@ namespace GUI
         return std::clamp(snapped, minValue, maxValue);
     }
 
-    void Slider::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    bool Slider::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     {
-        // Bỏ qua tương tác nếu component đang tàng hình (opacity quá thấp)
-        if (opacityFactor < 0.1f) return;
+        // 1. Nếu tàng hình thì coi như không tồn tại, trả về false để lớp dưới xử lý
+        if(opacityFactor < 0.1f) return false;
 
         sf::Vector2i mousePixelPos = sf::Mouse::getPosition(window);
         sf::Vector2f mousePos = window.mapPixelToCoords(mousePixelPos);
-
-        // Chuyển tọa độ chuột toàn cục sang tọa độ cục bộ của Slider
         sf::Vector2f localMousePos = mousePos - position;
-
-        // Hitbox giờ bao trọn cái viên thuốc này
         sf::FloatRect hitbox(0.0f, -trackHeight / 2.0f, trackWidth, trackHeight);
 
-        // 1. Hover Logic (Trạng thái trỏ chuột)
-        if (event.type == sf::Event::MouseMoved)
+        // 2. Logic Di chuyển chuột
+        if(event.type == sf::Event::MouseMoved)
         {
             isHovered = hitbox.contains(localMousePos);
 
-            if (isDragging)
+            if(isDragging)
             {
-                // Nếu đang kéo, tính toán tỷ lệ vị trí X của chuột so với track Width
                 float ratio = localMousePos.x / trackWidth;
                 ratio = std::clamp(ratio, 0.0f, 1.0f);
-
                 float rawValue = minValue + ratio * (maxValue - minValue);
 
-                if (currentValue != rawValue)
+                if(currentValue != rawValue)
                 {
-                    setValue(rawValue, true); // Đồng bộ 1:1 với tọa độ chuột
+                    setValue(rawValue, true);
                 }
+                // Trả về true vì Slider đang "nuốt" chuyển động chuột để cập nhật giá trị
+                return true;
             }
+            // Trả về false khi chỉ lướt qua (hover) để các thành phần dưới vẫn nhận diện được chuột
+            return false;
         }
 
-        // 2. Click Logic (Nhấn chuột)
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        // 3. Logic Nhấn chuột
+        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
-            if (isHovered)
+            if(isHovered)
             {
                 isDragging = true;
                 float ratio = localMousePos.x / trackWidth;
                 ratio = std::clamp(ratio, 0.0f, 1.0f);
                 float rawValue = minValue + ratio * (maxValue - minValue);
 
-                setValue(rawValue, false); // Click tới đâu, thumb nhảy chính xác tới đó
+                setValue(rawValue, false);
+                return true; // Click trúng Slider -> Nuốt sự kiện
             }
         }
 
-        // 3. Release Logic (Nhả chuột)
-        if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+        // 4. Logic Nhả chuột
+        if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
         {
-            isDragging = false;
+            if(isDragging)
+            {
+                isDragging = false;
+                return true; // Nhả chuột sau khi kéo Slider -> Nuốt sự kiện
+            }
         }
+
+        return false;
     }
 
     void Slider::update(const sf::RenderWindow& window, float dt)

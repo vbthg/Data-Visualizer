@@ -41,9 +41,16 @@ namespace GUI
         bool m_isDragging;    // Trạng thái đang được kéo bởi chuột
         sf::Vector2f m_dragOffset; // Khoảng cách từ tâm Node đến điểm click chuột
 
+        // Thêm vào phần private
+        sf::Text m_subText;
+        float m_opacity; // Lưu độ mờ từ State
+
+        sf::Color applyAlpha(const sf::Color& color, float alphaMult);
+
     public:
         // Khởi tạo Node với font chữ và bán kính mặc định là 25.0f
-        NodeUI(sf::Font* font, float radius = 25.0f);
+        // Thêm include nếu cần
+        NodeUI(sf::Font* font, float radius, const Core::NodeState* initialState = nullptr);
 
         void applyState(const Core::NodeState& state);
 

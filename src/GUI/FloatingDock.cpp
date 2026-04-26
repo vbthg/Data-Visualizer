@@ -161,23 +161,24 @@ namespace GUI
         position.y = startY;
     }
 
-    void FloatingDock::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+    bool FloatingDock::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
+        bool handled = false;
         bool isHoveringAny = false;
 
         for(auto item : m_items)
         {
-            item->handleEvent(event, window);
+            // Chuyển sự kiện cho từng item trong Dock
+            if(item->handleEvent(event, window)) handled = true;
 
-            if(item->isHovering())
-            {
-                isHoveringAny = true;
-                targetHighlightAlpha = Theme::Color::HighlightActiveAlpha;
-
-                // Highlighter trượt mượt mà bám theo Item đang hover
-                highlightX.target = item->getPosition().x - position.x;
-                highlightWidth.target = item->getWidth(); // Highlighter tự co dãn theo component
-            }
+//            if(item->isHovering())
+//            {
+//                isHoveringAny = true;
+//                targetHighlightAlpha = Theme::Color::HighlightActiveAlpha;
+//
+//                highlightX.target = item->getPosition().x - position.x;
+//                highlightWidth.target = item->getWidth();
+//            }
         }
 
         if(!isHoveringAny)
@@ -185,6 +186,9 @@ namespace GUI
             targetHighlightAlpha = Theme::Color::HighlightIdleAlpha;
             highlightWidth.target = Theme::Style::HighlightIdleWidth;
         }
+
+        // Trả về true nếu người dùng tương tác với bất kỳ item nào trên Dock
+        return handled;
     }
 
     void FloatingDock::update(float dt, sf::RenderWindow& window)

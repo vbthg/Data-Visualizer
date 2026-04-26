@@ -6,18 +6,20 @@ namespace GUI
 {
     namespace Theme = Utils::Graphics::Theme;
 
-    SpeedController::SpeedController(const sf::Font& font)
+    SpeedController::SpeedController(const sf::Font& font, Core::TimelineManager* timeline)
         : m_mainButton(font, "1x", {50.f, 50.f}), // Kích thước nút mặc định
-          m_slider(Theme::Style::SpeedSliderWidth)                         // Chiều dài track của slider
+          m_slider(Theme::Style::SpeedSliderWidth),                         // Chiều dài track của slider
+          m_timeline(timeline)
     {
         m_isExpanded = false;
         m_isPressing = false;
         m_pressTimer = 0.0f;
 
         m_mainButton.setMaxScale(1.1f);
+        m_mainButton.setCornerRadius(20.f);
 
         // Khởi tạo các mốc tốc độ nhanh
-        m_quickSpeeds = {0.25f, 1.0f, 2.0f};
+        m_quickSpeeds = {0.25f, 1.0f, 2.0f, 4.0f};
         m_currentSpeedIdx = 1; // Mặc định là 1.0x
 
         // Thiết lập kích thước
@@ -32,29 +34,55 @@ namespace GUI
         m_widthSpring.damping = Theme::Animation::MorphDamping;
 
         // Cấu hình Slider
-        m_slider.setRange(0.25f, 2.0f, 0.25f);
+        m_slider.setRange(0.1f, 4.0f, 0.1f);
         m_slider.setValue(1.0f, true); // Đặt giá trị ngay lập tức
         m_slider.setOpacity(0.0f);     // Ẩn ban đầu
 
         // Liên kết dữ liệu Slider -> Text của Button
         m_slider.onValueChanged = [this](float val)
         {
-            // Cắt chuỗi để hiển thị đẹp (VD: 1.25x)
+            // 1. Hiển thị text lên Button (luôn đồng bộ dù đang thu gọn hay mở rộng)
             std::string text = std::to_string(val);
             text.erase(text.find_last_not_of('0') + 1, std::string::npos);
             if(text.back() == '.') text.pop_back();
-
             m_mainButton.setText(text + "x");
-
             m_mainButton.triggerTextPop();
+
+            // 2. Đồng bộ trực tiếp với Timeline
+            if(m_timeline)
+            {
+                m_timeline->setPlaybackSpeed(val * 1.5f);
+            }
         };
     }
 
     void SpeedController::cycleSpeed()
     {
-        m_currentSpeedIdx = (m_currentSpeedIdx + 1) % m_quickSpeeds.size();
-        float newSpeed = m_quickSpeeds[m_currentSpeedIdx];
-        m_slider.setValue(newSpeed); // Slider sẽ kích hoạt onValueChanged để đổi text
+        float currentVal = m_slider.getValue();
+        int nextIdx = 0;
+
+        // Tìm index của mốc quickSpeed lớn nhất mà vẫn <= currentVal
+        // Anh duyệt ngược từ cuối mảng để tìm mốc cao nhất thỏa mãn
+        for(int i = (int)m_quickSpeeds.size() - 1; i >= 0; --i)
+        {
+            if(currentVal >= m_quickSpeeds[i])
+            {
+                // Mốc tiếp theo sẽ là index hiện tại + 1 (vòng lặp %)
+                nextIdx = (i + 1) % m_quickSpeeds.size();
+                break;
+            }
+
+            // Trường hợp đặc biệt: nếu currentVal nhỏ hơn cả mốc nhỏ nhất (0.1x < 0.25x)
+            if(i == 0 && currentVal < m_quickSpeeds[0])
+            {
+                nextIdx = 0;
+            }
+        }
+
+        float newSpeed = m_quickSpeeds[nextIdx];
+
+        // Slider.setValue sẽ tự động gọi callback onValueChanged để cập nhật UI & Timeline
+        m_slider.setValue(newSpeed);
     }
 
     void SpeedController::collapse()
@@ -65,55 +93,59 @@ namespace GUI
         m_mainButton.setScaleTarget(1.f);
     }
 
-    void SpeedController::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+    bool SpeedController::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
+        bool handled = false;
+
         // 1. Nếu đang mở, ưu tiên cho Slider bắt sự kiện
         if(m_isExpanded)
         {
-            m_slider.handleEvent(event, window);
+            if(m_slider.handleEvent(event, window)) handled = true;
 
             // Logic Click Outside để đóng
             if(event.type == sf::Event::MouseButtonPressed)
             {
-//                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 sf::Vector2i mousePos = {event.mouseButton.x, event.mouseButton.y};
-//                sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
 
-                // Trượt một vùng hcn ảo bao quanh SpeedController
+                // Vùng hcn ảo bao quanh SpeedController
                 sf::FloatRect bounds(m_position.x - m_widthSpring.position / 2.0f,
                                      m_position.y - 25.0f,
                                      m_widthSpring.position, 50.0f);
 
-//                if(!bounds.contains(worldPos))
                 if(!Utils::ViewHandler::isMouseInFrame(mousePos, window, bounds))
                 {
                     collapse();
+                    // Trả về true vì cú click này đã dùng để đóng controller,
+                    // không nên cho phép click trúng Node phía dưới.
+                    handled = true;
                 }
             }
         }
 
         // 2. Button luôn được phép bắt sự kiện hover/click
-        m_mainButton.handleEvent(event, window);
+        if(m_mainButton.handleEvent(event, window)) handled = true;
 
         // 3. Cỗ máy trạng thái Nhấn giữ (Hold)
-        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        if(event.type == sf::Event::MouseButtonPressed)
         {
-            if(m_mainButton.isHovering())
+            if(event.mouseButton.button == sf::Mouse::Left)
             {
-                m_isPressing = true;
-                m_pressTimer = 0.0f;
-
-                // ÉP LÒ XO BUNG MẠNH RA 1.2x
-//                m_mainButton.setScaleTarget(1.1f);
+                if(m_mainButton.isHovering())
+                {
+                    m_isPressing = true;
+                    m_pressTimer = 0.0f;
+                    handled = true;
+                }
             }
-        }
-        else if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right)
-        {
-            // Bấm chuột phải để thao tác nhanh Expand/Collapse
-            if(m_mainButton.isHovering())
+            else if(event.mouseButton.button == sf::Mouse::Right)
             {
-                m_isExpanded = !m_isExpanded;
-                m_widthSpring.target = m_isExpanded ? m_expandedWidth : m_collapsedWidth;
+                // Bấm chuột phải để thao tác nhanh Expand/Collapse
+                if(m_mainButton.isHovering())
+                {
+                    m_isExpanded = !m_isExpanded;
+                    m_widthSpring.target = m_isExpanded ? m_expandedWidth : m_collapsedWidth;
+                    handled = true;
+                }
             }
         }
         else if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
@@ -121,16 +153,17 @@ namespace GUI
             if(m_isPressing)
             {
                 m_isPressing = false;
-                // NHẢ LÒ XO VỀ LẠI 1.0x
-//                m_mainButton.setScaleTarget(1.0f);
 
                 // Nếu thả chuột ra nhanh (dưới 0.5s) và đang không mở rộng -> Đổi tốc độ
                 if(m_pressTimer < Theme::Animation::HoldDelay && !m_isExpanded && m_mainButton.isHovering())
                 {
                     cycleSpeed();
                 }
+                handled = true; // Kết thúc chu kỳ nhấn chuột trên component
             }
         }
+
+        return handled;
     }
 
     void SpeedController::update(sf::RenderWindow& window, float dt)

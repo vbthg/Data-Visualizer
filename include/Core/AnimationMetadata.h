@@ -17,13 +17,8 @@ namespace Core
     {
         int id;
         sf::Vector2f position;
-
-        // MỚI THÊM: Điểm tựa để xoay (Dùng riêng cho ArcSwing)
         sf::Vector2f arcPivot;
-
         bool isDraggable = false;
-
-        // THÊM DÒNG NÀY: Để mỗi Node biết mình nên bay kiểu gì (Linear, Orbital, ...)
         TransitionType transition = TransitionType::Linear;
 
         sf::Color fillColor = sf::Color::White;
@@ -31,10 +26,10 @@ namespace Core
         sf::Color textColor = sf::Color::Black;
 
         float scale = 1.0f;
-        float opacity = 255.0f;
+        float opacity = 1.0f;
 
         std::string value;
-        std::string subText; // Hiển thị Balance Factor, Index, v.v.
+        std::string subText; // MinDist, Balance Factor, v.v.
     };
 
     struct EdgeState
@@ -42,7 +37,6 @@ namespace Core
         int startNodeId;
         int endNodeId;
 
-        // Thông số nội suy cho hiệu ứng lan màu và hạt bay
         float fillProgress = 0.0f;
         bool fillFromStart = true;
         sf::Color baseFillColor = sf::Color(150, 150, 150, 0);
@@ -53,10 +47,12 @@ namespace Core
         sf::Color pulseColor = sf::Color::Yellow;
 
         sf::Color targetColor = sf::Color(150, 150, 150);
-
-        // Trạng thái hiển thị cơ bản
         bool isFocused = true;
         float opacity = 1.0f;
+
+        // BỔ SUNG: Tương đồng với EdgeUI
+        float thickness = 4.0f;
+        std::string subText; // Hiển thị trọng số (Weight)
     };
 
     // THÊM DÒNG NÀY VÀO CUỐI NAMESPACE Core

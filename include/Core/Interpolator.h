@@ -76,23 +76,96 @@ namespace Math
         }
 
         // 2. Hàm nội suy toàn bộ trạng thái Node
+//        static Core::NodeState interpolateNode(const Core::NodeState& start, const Core::NodeState& end, float alpha, Core::TransitionType type)
+//        {
+//            Core::NodeState result;
+//            result.id = start.id;
+//            result.value = end.value;
+//            result.subText = end.subText;
+//
+//            // Cập nhật lại lời gọi hàm calculatePosition
+//            result.position = calculatePosition(start, end, alpha, type);
+//            result.arcPivot = end.arcPivot;
+//
+//            result.scale = Easing::lerp(start.scale, end.scale, alpha);
+//            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
+//
+////            result.fillColor = Easing::lerpColor(start.fillColor, end.fillColor, alpha);
+////            result.outlineColor = Easing::lerpColor(start.outlineColor, end.outlineColor, alpha);
+////            result.textColor = Easing::lerpColor(start.textColor, end.textColor, alpha);
+//
+//            if(alpha > 0.01f)
+//            {
+//                result.fillColor = end.fillColor;
+//                result.outlineColor = end.outlineColor;
+//                result.textColor = end.textColor;
+//                result.isDraggable = end.isDraggable;
+//            }
+//            else
+//            {
+//                result.fillColor = start.fillColor;
+//                result.outlineColor = start.outlineColor;
+//                result.textColor = start.textColor;
+//                result.isDraggable = start.isDraggable;
+//            }
+//
+//            return result;
+//        }
+//
+//        // 3. Hàm nội suy toàn bộ trạng thái Edge
+//        static Core::EdgeState interpolateEdge(const Core::EdgeState& start, const Core::EdgeState& end, float alpha)
+//        {
+//            Core::EdgeState result;
+//            result.startNodeId = start.startNodeId;
+//            result.endNodeId = start.endNodeId;
+//
+//            // 1. Nội suy tiến trình đổ màu (Dòng chảy phải mượt)
+////            result.fillProgress = Easing::lerp(start.fillProgress, end.fillProgress, alpha);
+//            result.fillProgress = start.fillProgress + Utils::Math::Easing::easeOutCubic(alpha) * (end.fillProgress - start.fillProgress);
+//
+//            // 2. Nội suy độ mờ (Cần mượt để hiện lên/biến mất sang trọng)
+//            result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
+//
+//            // 3. Giữ nguyên các cờ trạng thái
+//            result.fillFromStart = end.fillFromStart;
+//            result.isPulsing = end.isPulsing;
+//            result.isFocused = (alpha < 0.5f) ? start.isFocused : end.isFocused;
+//
+//            // 4. COLOR SNAP LOGIC: Không dùng lerp cho màu sắc trạng thái
+//            // Nếu bắt đầu chuyển sang frame mới, dùng luôn màu của frame đích
+//            // để cái "dòng chảy" fillProgress mang đúng màu sắc của trạng thái tiếp theo.
+//            if(alpha > 0.01f)
+//            {
+//                result.baseFillColor = end.baseFillColor;
+//                result.fillColor = end.fillColor;
+//                result.pulseColor = end.pulseColor;
+//            }
+//            else
+//            {
+//                result.baseFillColor = start.baseFillColor;
+//                result.fillColor = start.fillColor;
+//                result.pulseColor = start.pulseColor;
+//            }
+//
+//            return result;
+//        }
+
         static Core::NodeState interpolateNode(const Core::NodeState& start, const Core::NodeState& end, float alpha, Core::TransitionType type)
         {
             Core::NodeState result;
             result.id = start.id;
-            result.value = end.value;
-            result.subText = end.subText;
 
-            // Cập nhật lại lời gọi hàm calculatePosition
+            // Logic Snap cho chuỗi văn bản
+            result.value = (alpha < 0.3f) ? start.value : end.value;
+            result.subText = (alpha < 0.3f) ? start.subText : end.subText;
+
             result.position = calculatePosition(start, end, alpha, type);
             result.arcPivot = end.arcPivot;
 
             result.scale = Easing::lerp(start.scale, end.scale, alpha);
             result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
 
-//            result.fillColor = Easing::lerpColor(start.fillColor, end.fillColor, alpha);
-//            result.outlineColor = Easing::lerpColor(start.outlineColor, end.outlineColor, alpha);
-//            result.textColor = Easing::lerpColor(start.textColor, end.textColor, alpha);
+//            std::cout << "[RESULT ID & SCALE]: " << result.id << " " << result.scale << "\n";
 
             if(alpha > 0.01f)
             {
@@ -112,28 +185,25 @@ namespace Math
             return result;
         }
 
-        // 3. Hàm nội suy toàn bộ trạng thái Edge
         static Core::EdgeState interpolateEdge(const Core::EdgeState& start, const Core::EdgeState& end, float alpha)
         {
             Core::EdgeState result;
             result.startNodeId = start.startNodeId;
             result.endNodeId = start.endNodeId;
 
-            // 1. Nội suy tiến trình đổ màu (Dòng chảy phải mượt)
-//            result.fillProgress = Easing::lerp(start.fillProgress, end.fillProgress, alpha);
-            result.fillProgress = start.fillProgress + Utils::Math::Easing::easeOutCubic(alpha) * (end.fillProgress - start.fillProgress);
-
-            // 2. Nội suy độ mờ (Cần mượt để hiện lên/biến mất sang trọng)
+            // Nội suy các giá trị số (Float)
+            result.fillProgress = start.fillProgress + Easing::easeOutCubic(alpha) * (end.fillProgress - start.fillProgress);
             result.opacity = Easing::lerp(start.opacity, end.opacity, alpha);
+            result.thickness = Easing::lerp(start.thickness, end.thickness, alpha);
 
-            // 3. Giữ nguyên các cờ trạng thái
+            // Snap cho subText của cạnh (Trọng số)
+            result.subText = (alpha < 0.5f) ? start.subText : end.subText;
+
+            // Giữ nguyên các cờ trạng thái và màu sắc (Color Snap Logic)
             result.fillFromStart = end.fillFromStart;
             result.isPulsing = end.isPulsing;
             result.isFocused = (alpha < 0.5f) ? start.isFocused : end.isFocused;
 
-            // 4. COLOR SNAP LOGIC: Không dùng lerp cho màu sắc trạng thái
-            // Nếu bắt đầu chuyển sang frame mới, dùng luôn màu của frame đích
-            // để cái "dòng chảy" fillProgress mang đúng màu sắc của trạng thái tiếp theo.
             if(alpha > 0.01f)
             {
                 result.baseFillColor = end.baseFillColor;

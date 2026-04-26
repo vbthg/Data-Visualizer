@@ -18,7 +18,7 @@ namespace GUI
 
         void update(sf::RenderWindow& window, float dt) override;
         void draw(sf::RenderTarget& target) override;
-        void handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
+        bool handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
 
         void setPosition(const sf::Vector2f pos) override;
         sf::Vector2f getPosition() const override;

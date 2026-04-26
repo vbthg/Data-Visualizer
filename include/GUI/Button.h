@@ -63,7 +63,7 @@ namespace GUI
         // --- CORE ---
         // Bỏ chữ 'const' ở sf::RenderWindow để khớp với DockItem
         void update(sf::RenderWindow& window, float dt) override;
-        void handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
+        bool handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
         void draw(sf::RenderTarget& target) override;
 
         // Getters

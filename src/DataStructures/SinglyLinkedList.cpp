@@ -1,274 +1,240 @@
 #include "SinglyLinkedList.h"
-#include "ResourceManager.h" // Singleton Resource
 #include <iostream>
+#include <sstream>
 
-namespace DS {
-
-// --- Node Implementation ---
-
-SinglyLinkedList::Node::Node(int val, const sf::Font& fontRes)
-    : value(val), next(nullptr)
+namespace DS
 {
-    // 1. Setup Visual
-    shape.setSize({80.0f, 50.0f});
-    shape.setRadius(15.0f);
-    shape.setFillColor(sf::Color::White); // Trắng sứ
-
-    // Viền mỏng (Hairline) dùng hàm bạn mới thêm
-    shape.setOutlineThickness(-1.0f);
-    shape.setOutlineColor(sf::Color(200, 200, 200));
-
-    // 2. Setup Text (Oversampling trick)
-    label.setFont(fontRes);
-    label.setString(std::to_string(val));
-    label.setCharacterSize(40); // Render to
-    label.setScale(0.5f, 0.5f); // Scale nhỏ
-    label.setFillColor(Utils::Graphics::Theme::Color::TextPrimary); // Đen đậm
-
-    // Căn giữa text sơ bộ (sẽ chỉnh lại trong update)
-    sf::FloatRect b = label.getLocalBounds();
-    label.setOrigin(b.left + b.width/2.0f, b.top + b.height/2.0f);
-
-    // 3. Setup Physics (Lò xo mềm hơn Button một chút để di chuyển mượt)
-    xSpring.stiffness = 200.0f;
-    xSpring.damping = 20.0f;
-
-    ySpring.stiffness = 200.0f;
-    ySpring.damping = 20.0f;
-}
-
-void SinglyLinkedList::Node::snapTo(sf::Vector2f pos)
-{
-    xSpring.snapTo(pos.x);
-    ySpring.snapTo(pos.y);
-    shape.setPosition(pos);
-}
-
-void SinglyLinkedList::Node::moveTo(sf::Vector2f target)
-{
-    xSpring.target = target.x;
-    ySpring.target = target.y;
-}
-
-void SinglyLinkedList::Node::update(float dt)
-{
-    // Update lò xo
-    xSpring.update(dt);
-    ySpring.update(dt);
-
-    float curX = xSpring.position;
-    float curY = ySpring.position;
-
-    // Apply vào Graphics
-    shape.setPosition(curX, curY);
-
-    // Text luôn ở tâm Shape
-    // getSize() trả về Vector2f
-    sf::Vector2f size = shape.getSize();
-    label.setPosition(curX + size.x / 2.0f, curY + size.y / 2.0f - 2.0f); // -2.0f để căn chỉnh mắt nhìn
-}
-
-sf::Vector2f SinglyLinkedList::Node::getPosition() const {
-    return shape.getPosition();
-}
-
-sf::Vector2f SinglyLinkedList::Node::getSize() const {
-    return shape.getSize();
-}
-
-void SinglyLinkedList::Node::draw(sf::RenderWindow& window) {
-    window.draw(shape);
-    window.draw(label);
-}
-
-// --- SinglyLinkedList Implementation ---
-
-SinglyLinkedList::SinglyLinkedList()
-    : head(nullptr),
-      // Lấy font từ ResourceManager
-      font(ResourceManager::getInstance().getFont("assets/fonts/Inter-Bold.ttf"))
-{
-}
-
-SinglyLinkedList::~SinglyLinkedList()
-{
-    clear();
-}
-
-std::string SinglyLinkedList::getName() const
-{
-    return "Singly Linked List";
-}
-
-std::vector<DS::Command> SinglyLinkedList::getCommands()
-{
-    std::vector<DS::Command> cmds;
-
-    // Add Head
-    cmds.push_back(DS::Command("Add Head", DS::InputType::Integer, [this](DS::InputArgs args){
-        this->insertHead(args.iVal1);
-    }));
-
-    // Add Tail
-    cmds.push_back(DS::Command("Add Tail", DS::InputType::Integer, [this](DS::InputArgs args){
-        this->insertTail(args.iVal1);
-    }));
-
-    // Del Head
-    cmds.push_back(DS::Command("Del Head", DS::InputType::None, [this](DS::InputArgs){
-        this->deleteHead();
-    }));
-
-    // Clear
-    cmds.push_back(DS::Command("Clear", DS::InputType::None, [this](DS::InputArgs){
-        this->clear();
-    }));
-
-    return cmds;
-}
-
-void SinglyLinkedList::update(float dt)
-{
-    Node* curr = head;
-    while(curr)
+    SinglyLinkedList::SinglyLinkedList()
     {
-        curr->update(dt);
-        curr = curr->next;
-    }
-}
+        m_headId = -1;
+        m_nextNodeId = 0;
 
-void SinglyLinkedList::draw(sf::RenderTarget& target)
-{
-    // Vẽ Layer 1: Mũi tên (Dưới cùng)
-    drawArrows(target);
-
-    // Vẽ Layer 2: Node (Trên cùng)
-    Node* curr = head;
-    while(curr)
-    {
-        curr->draw(target);
-        curr = curr->next;
-    }
-}
-
-// --- LOGIC ---
-
-void SinglyLinkedList::insertHead(int val)
-{
-    if (onLog) onLog("Khoi tao Node moi voi gia tri: " + std::to_string(val));
-
-    Node* newNode = new Node(val, font);
-    newNode->next = head;
-    head = newNode;
-
-    // Animation: Bay từ trên cao xuống
-    // Giả định màn hình rộng ~1200, ta cho nó xuất hiện ở giữa
-    newNode->snapTo({100.0f, -100.0f});
-
-    realignNodes();
-
-    if (onLog) onLog("Da chen thanh cong!");
-}
-
-void SinglyLinkedList::insertTail(int val)
-{
-    Node* newNode = new Node(val, font);
-
-    if(!head)
-    {
-        head = newNode;
-        newNode->snapTo({100.0f, -100.0f});
-    }
-    else
-    {
-        Node* temp = head;
-        while(temp->next) temp = temp->next;
-        temp->next = newNode;
-
-        // Node mới xuất hiện ngay tại vị trí node cuối (hiệu ứng nảy ra)
-        newNode->snapTo(temp->getPosition());
+        // Khởi tạo danh sách trống với duy nhất một Node NULL
+        createSnapshot(GUI::Scenario::Initial, "Khởi tạo danh sách liên kết trống", 0);
     }
 
-    realignNodes();
-}
-
-void SinglyLinkedList::deleteHead()
-{
-    if(!head) return;
-    Node* temp = head;
-    head = head->next;
-    delete temp;
-
-    realignNodes();
-}
-
-void SinglyLinkedList::clear()
-{
-    while(head) deleteHead();
-}
-
-void SinglyLinkedList::realignNodes()
-{
-    Node* curr = head;
-    float startX = 150.0f; // Padding trái
-    float startY = 300.0f; // Giữa màn hình (theo chiều dọc)
-    float gap = 140.0f;    // Khoảng cách rộng ra cho mũi tên
-
-    int index = 0;
-    while(curr)
+    SinglyLinkedList::~SinglyLinkedList()
     {
-        // Chỉ set target, lò xo sẽ tự lo phần di chuyển
-        curr->moveTo({startX + index * gap, startY});
-
-        curr = curr->next;
-        index++;
     }
-}
 
-void SinglyLinkedList::drawArrows(sf::RenderWindow& window)
-{
-    Node* curr = head;
-    while(curr && curr->next)
+    void SinglyLinkedList::recomputePositions()
     {
-        // 1. Lấy tọa độ mép phải node hiện tại
-        sf::Vector2f start = curr->getPosition();
-        start.x += curr->getSize().x; // Mép phải
-        start.y += curr->getSize().y / 2.0f; // Giữa theo chiều dọc
-
-        // 2. Lấy tọa độ mép trái node tiếp theo
-        sf::Vector2f end = curr->next->getPosition();
-        end.y += curr->next->getSize().y / 2.0f;
-
-        // 3. Vẽ BEZIER CURVE (Đơn giản hóa bằng VertexArray)
-        // Logic: 2 điểm điều khiển tạo hình chữ S mềm mại
-        sf::Vector2f cp1 = start + sf::Vector2f(30.0f, 0.0f); // Kéo sang phải
-        sf::Vector2f cp2 = end - sf::Vector2f(30.0f, 0.0f);   // Kéo sang trái
-
-        sf::VertexArray curve(sf::LineStrip);
-
-        // Chia đường cong thành 20 đoạn
-        int segments = 20;
-        for(int i = 0; i <= segments; ++i)
+        // Tính toán lại vị trí X cho từng Node dựa trên thứ tự trong vector
+        // Node thứ i sẽ có x = i * 200
+        for(size_t i = 0; i < m_nodes.size(); ++i)
         {
-            float t = (float)i / segments;
+            m_nodes[i].pos.x = i * NODE_DISTANCE;
+            m_nodes[i].pos.y = Y_LEVEL;
+        }
+    }
 
-            // Công thức Bezier bậc 3
-            float u = 1.0f - t;
-            float tt = t * t;
-            float uu = u * u;
-            float uuu = uu * u;
-            float ttt = tt * t;
+void SinglyLinkedList::pushFront(int value)
+    {
+        m_timeline->onNewMacroStarted();
 
-            sf::Vector2f p = uuu * start + 3 * uu * t * cp1 + 3 * u * tt * cp2 + ttt * end;
+        // 1. Prepare logic
+        int newId = m_nextNodeId++;
+        Node newNode = {newId, value, {0.0f, Y_LEVEL}}; // Target position is (0, Y)
 
-            // Màu mũi tên: Xám nhạt
-            curve.append(sf::Vertex(p, sf::Color(180, 180, 180)));
+        // 2. Insert and Recompute IMMEDIATELY
+        m_nodes.insert(m_nodes.begin(), newNode);
+        m_headId = newId;
+        recomputePositions();
+
+        // 3. To create the "Gap" effect, we manually lift the new node up for the first snapshot
+        // but since recomputePositions was called, all other nodes already have their new X targets.
+        m_nodes[0].pos.y -= 150.0f;
+
+        // Snapshot 1: Old nodes slide right, New node appears high at x=0
+        createSnapshot(GUI::Scenario::Processing,
+                      "Creating new node and shifting list to create space", 0, newId,
+                      {{"newNode", "Node(" + std::to_string(value) + ")"}, {"head", "Node(" + std::to_string(m_nodes[1].value) + ")"}});
+
+        // Snapshot 2: Node settles down and connections stabilize
+        m_nodes[0].pos.y += 150.0f;
+        createSnapshot(GUI::Scenario::Success, "Updating head pointer and finalizing insertion", 3, newId);
+    }
+
+    void SinglyLinkedList::pushBack(int value)
+    {
+        m_timeline->onNewMacroStarted();
+
+        int newId = m_nextNodeId++;
+        // Tạo Node mới ở cuối (trước Node NULL)
+        Node newNode = {newId, value, {static_cast<float>(m_nodes.size()) * NODE_DISTANCE, Y_LEVEL - 150.0f}};
+
+        m_nodes.push_back(newNode);
+        if(m_nodes.size() == 1) m_headId = newId;
+
+        createSnapshot(GUI::Scenario::Processing, "Thêm Node vào cuối danh sách", 1, newId);
+
+        recomputePositions();
+        createSnapshot(GUI::Scenario::Success, "Nối dây vào Node mới", 2);
+    }
+
+void SinglyLinkedList::insert(int index, int value)
+    {
+        if(index < 0 || index > (int)m_nodes.size()) return;
+        if(index == 0)
+        {
+            pushFront(value);
+            return;
         }
 
-        window.draw(curve);
+        m_timeline->onNewMacroStarted();
 
-        curr = curr->next;
+        // 1. Traverse with yellow highlight
+        for(int i = 0; i < index; ++i)
+        {
+            createSnapshot(GUI::Scenario::Processing, "Traversing to index " + std::to_string(index), 2, m_nodes[i].id,
+                          {{"i", std::to_string(i)}, {"curr", "Node(" + std::to_string(m_nodes[i].value) + ")"}});
+        }
+
+        // 2. Insert and create gap immediately
+        int newId = m_nextNodeId++;
+        Node newNode = {newId, value, {index * NODE_DISTANCE, Y_LEVEL}};
+        m_nodes.insert(m_nodes.begin() + index, newNode);
+        recomputePositions();
+
+        // Lift for animation
+        m_nodes[index].pos.y -= 150.0f;
+
+        createSnapshot(GUI::Scenario::Processing, "Creating space and linking new node", 7, newId,
+                      {{"newNode", "Node(" + std::to_string(value) + ")"}, {"prev", "Node(" + std::to_string(m_nodes[index-1].value) + ")"}});
+
+        // 3. Settle
+        m_nodes[index].pos.y += 150.0f;
+        createSnapshot(GUI::Scenario::Success, "Insertion completed", 8, newId);
     }
-}
+
+    void SinglyLinkedList::remove(int index)
+    {
+        if(index < 0 || index >= (int)m_nodes.size()) return;
+        m_timeline->onNewMacroStarted();
+
+        // 1. Traverse
+        for(int i = 0; i <= index; ++i)
+        {
+            GUI::Scenario sc = (i == index) ? GUI::Scenario::Warning : GUI::Scenario::Processing;
+            std::string msg = (i == index) ? "Target node identified" : "Searching for node...";
+
+            createSnapshot(sc, msg, 2, m_nodes[i].id,
+                          {{"i", std::to_string(i)}, {"target", std::to_string(index)}});
+        }
+
+        // 2. Remove logic
+        m_nodes.erase(m_nodes.begin() + index);
+        if(index == 0) m_headId = m_nodes.empty() ? -1 : m_nodes[0].id;
+
+        // 3. Shift back immediately
+        recomputePositions();
+        createSnapshot(GUI::Scenario::Success, "Bypassing node and shifting list to fill the gap", 9);
+    }
+
+    // Hàm createSnapshot nâng cấp để nhận thêm biến cục bộ
+    void SinglyLinkedList::createSnapshot(GUI::Scenario scenario,
+                                         const std::string& message,
+                                         int lineIdx,
+                                         int highlightNodeId,
+                                         std::vector<std::pair<std::string, std::string>> vars,
+                                         float customNullX)
+    {
+        auto snap = std::make_shared<Core::ISnapshot>();
+        snap->scenario = scenario;
+        snap->logMessage = message;
+        snap->operationName = "SINGLY LINKED LIST";
+        snap->macroKey = "singly_linked_list";
+        snap->pseudoCodeLine = lineIdx;
+        snap->variableStates = vars; // Đưa biến cục bộ vào đây để CodeBox hiển thị
+
+        // 1. Snapshot các Node dữ liệu
+        for(size_t i = 0; i < m_nodes.size(); ++i)
+        {
+            Core::NodeState ns;
+            ns.id = m_nodes[i].id;
+            ns.position = m_nodes[i].pos;
+            ns.value = std::to_string(m_nodes[i].value);
+            ns.isDraggable = false; // Khóa kéo thả theo yêu cầu của em
+
+            // Hiển thị nhãn HEAD ở Node đầu tiên
+            if(ns.id == m_headId)
+            {
+                ns.subText = "HEAD";
+            }
+
+            // Màu sắc highlight khi đang duyệt
+            if(ns.id == highlightNodeId)
+            {
+                ns.fillColor = sf::Color(255, 212, 59); // Màu Vàng Focus
+                ns.scale = 1.2f;
+            }
+
+            snap->nodeStates.push_back(ns);
+        }
+
+        // 2. Thêm Ghost Node NULL ở cuối đoàn tàu
+        Core::NodeState nullSnap;
+        nullSnap.id = GHOST_NULL_ID;
+        nullSnap.value = "NULL";
+        // Nếu customNullX < 0, mặc định tính theo vị trí Node cuối cùng hiện tại
+        if(customNullX < 0)
+        {
+            nullSnap.position = {static_cast<float>(m_nodes.size()) * NODE_DISTANCE, Y_LEVEL};
+        }
+        else
+        {
+            nullSnap.position = {customNullX, Y_LEVEL};
+        }
+        nullSnap.fillColor = sf::Color(60, 60, 60);
+        nullSnap.textColor = sf::Color::White;
+        nullSnap.opacity = 0.7f;
+        nullSnap.isDraggable = false;
+        snap->nodeStates.push_back(nullSnap);
+
+        // 3. Snapshot các cạnh (Edges)
+        // Nối từ Node i sang Node i+1
+        for(size_t i = 0; i < m_nodes.size(); ++i)
+        {
+            Core::EdgeState es;
+            es.startNodeId = m_nodes[i].id;
+            // Nếu là Node cuối thì nối tới Ghost NULL, ngược lại nối tới Node sau
+            es.endNodeId = (i == m_nodes.size() - 1) ? GHOST_NULL_ID : m_nodes[i+1].id;
+
+            es.thickness = 4.0f;
+            es.fillProgress = 1.0f; // Luôn hiện dây
+            snap->edgeStates.push_back(es);
+        }
+
+        if(m_timeline) m_timeline->addSnapshot(snap);
+    }
+
+    std::vector<Command> SinglyLinkedList::getCommands()
+    {
+        std::vector<Command> cmds;
+        cmds.push_back(Command("Push Front", InputType::Integer, [this](InputArgs args) {
+            this->pushFront(args.iVal1);
+        }));
+        cmds.push_back(Command("Push Back", InputType::Integer, [this](InputArgs args) {
+            this->pushBack(args.iVal1);
+        }));
+        cmds.push_back(Command("Insert (idx, val)", InputType::TwoIntegers, [this](InputArgs args) {
+            this->insert(args.iVal1, args.iVal2);
+        }));
+        cmds.push_back(Command("Remove (idx)", InputType::Integer, [this](InputArgs args) {
+            this->remove(args.iVal1);
+        }));
+        cmds.push_back(Command("Clear", InputType::None, [this](InputArgs args) {
+            this->m_nodes.clear();
+            this->m_headId = -1;
+            this->m_timeline->onNewMacroStarted();
+            this->createSnapshot(GUI::Scenario::Success, "Đã xóa toàn bộ danh sách", 0);
+        }));
+        return cmds;
+    }
+
+    void SinglyLinkedList::updateNodePosition(int id, sf::Vector2f newPos)
+    {
+        // Vì isDraggable = false nên hàm này có thể để trống hoặc chỉ dùng cho nội bộ
+    }
 
 } // namespace DS

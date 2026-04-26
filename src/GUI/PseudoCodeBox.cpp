@@ -96,19 +96,20 @@ namespace GUI
         toggleState();
     }
 
-    void PseudoCodeBox::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    bool PseudoCodeBox::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     {
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
             sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
 
-            // Nếu click trúng viên thuốc hoặc bảng thì bật/tắt
-//            if (m_background.getGlobalBounds().contains(mousePos))
+            // Kiểm tra xem cú click có nằm trong vùng của bảng/viên thuốc không
             if (Utils::ViewHandler::isMouseInFrame(mousePos, window, m_background.getGlobalBounds()))
             {
                 toggleState();
+                return true; // Nuốt sự kiện click này, không cho StructurePanel nhận
             }
         }
+        return false; // Click trượt ra ngoài, cho phép các lớp dưới nhận sự kiện
     }
 
     void PseudoCodeBox::update(float dt)

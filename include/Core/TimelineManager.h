@@ -24,7 +24,7 @@ namespace Core
         GUI::PseudoCodeBox* codeBox = nullptr;
 
     public:
-        TimelineManager() : m_cursor(0.0f), m_targetCursor(0.f), m_playbackSpeed(1.f), m_isPlaying(false), m_isReviewing(false) {}
+        TimelineManager() : m_cursor(0.0f), m_targetCursor(0.f), m_playbackSpeed(1.4f), m_isPlaying(false), m_isReviewing(false) {}
 
         // --- QUẢN LÝ DỮ LIỆU (History Logic) ---
 
@@ -107,6 +107,7 @@ namespace Core
             auto snapA = m_snapshots[getCurrentIdx()];
             auto snapB = m_snapshots[getNextIdx()];
             float alpha = getAlpha();
+            alpha = std::min(1.0f, alpha / 0.6f);
 
             // 1. Nội suy Nodes
             for (const auto& nodeB : snapB->nodeStates)
@@ -192,6 +193,16 @@ namespace Core
         void seek(int index) { m_cursor = (float)std::clamp(index, 0, (int)m_snapshots.size() - 1); }
 
         // --- TRUY XUẤT (Getters) ---
+
+        void setPlaybackSpeed(float speed)
+        {
+            m_playbackSpeed = speed;
+        }
+
+        float getPlaybackSpeed() const
+        {
+            return m_playbackSpeed;
+        }
 
         int getCurrentIdx() const { return (int)m_cursor; }
         int getNextIdx() const    { return std::min((int)m_cursor + 1, (int)m_snapshots.size() - 1); }

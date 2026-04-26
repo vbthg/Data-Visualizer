@@ -58,7 +58,7 @@ namespace GUI
         void setTargetY(float targetY);
         void snapToY(float startY);
 
-        void handleEvent(const sf::Event& event, sf::RenderWindow& window);
+        bool handleEvent(const sf::Event& event, sf::RenderWindow& window);
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);
     };

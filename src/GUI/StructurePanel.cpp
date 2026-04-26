@@ -134,6 +134,10 @@ void main() {
         m_emptyMessage.setFillColor(sf::Color(255, 255, 255, 130)); // Trắng mờ (Muted)
         m_emptyMessage.setOutlineThickness(0.5f);
         m_emptyMessage.setOutlineColor(sf::Color(0, 0, 0, 50));
+
+        m_isAutoFollow = true; // Thêm dòng này để Camera tự động chạy từ đầu
+        m_isPanning = false;
+//        m_needsReposition = true; // Cho phép tính toán ngay frame đầu tiên
     }
 
     StructurePanel::~StructurePanel()
@@ -497,10 +501,13 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
             float defaultRadius = 25.0f;
             m_nodeUIMap[nodeState.id] = std::make_unique<NodeUI>(
                 &ResourceManager::getInstance().getFont("assets/fonts/SFProtext-regular.ttf"),
-                defaultRadius);
+                defaultRadius,
+                &nodeState);
 
             // Có node mới -> Cần tính lại vị trí
             m_needsReposition = true;
+
+            std::cout << "[NODE ID]: " << nodeState.id << "\n";
         }
 
         auto& nodeUI = m_nodeUIMap[nodeState.id];
@@ -535,6 +542,8 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
             NodeUI* startNode = m_nodeUIMap[edgeState.startNodeId].get();
             NodeUI* endNode = m_nodeUIMap[edgeState.endNodeId].get();
             m_edgeUIMap[edgeKey] = std::make_unique<EdgeUI>(startNode, endNode);
+
+            m_needsReposition = true;
         }
 
         auto& edgeUI = m_edgeUIMap[edgeKey];
@@ -558,12 +567,18 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
     // Xóa Edge cũ
     for(auto it = m_edgeUIMap.begin(); it != m_edgeUIMap.end();)
     {
-        if(currentFrameEdges.find(it->first) == currentFrameEdges.end()) {
+        if(currentFrameEdges.find(it->first) == currentFrameEdges.end())
+        {
             it = m_edgeUIMap.erase(it);
-        } else {
+            m_needsReposition = true;
+        }
+        else
+        {
             ++it;
         }
     }
+
+    std::cout << m_isAutoFollow << " " << m_needsReposition << " " << m_isPanning << "\n";
 
     // --- 5. SMART FIT VIEW (Logic Base State) ---
     // Chỉ gọi fitView nếu m_isAutoFollow đang bật và người dùng không can thiệp
@@ -577,6 +592,12 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         {
             m_needsReposition = false;
         }
+
+//        if (std::abs(m_viewCenterSpring.target.x - m_viewCenterSpring.position.x) < 0.1f &&
+//            std::abs(m_viewCenterSpring.target.y - m_viewCenterSpring.position.y) < 0.1f)
+//        {
+//            m_needsReposition = false;
+//        }
     }
 }
 

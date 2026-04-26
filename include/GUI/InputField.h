@@ -47,7 +47,7 @@ namespace GUI
         void clear();
 
         // --- Core ---
-        void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
+        bool handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void update(float dt);
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 

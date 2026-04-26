@@ -6,6 +6,7 @@
 #include "Button.h"
 #include "Slider.h"
 #include "Spring.h"
+#include "TimelineManager.h"
 
 namespace GUI
 {
@@ -34,16 +35,18 @@ namespace GUI
         std::vector<float> m_quickSpeeds;
         int m_currentSpeedIdx;
 
+        Core::TimelineManager* m_timeline;
+
         void cycleSpeed();
         void collapse();
 
     public:
-        SpeedController(const sf::Font& font);
+        SpeedController(const sf::Font& font, Core::TimelineManager* timeline);
         virtual ~SpeedController() = default;
 
         void update(sf::RenderWindow& window, float dt) override;
         void draw(sf::RenderTarget& target) override;
-        void handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
+        bool handleEvent(const sf::Event& event, sf::RenderWindow& window) override;
 
         void setPosition(const sf::Vector2f pos) override;
         sf::Vector2f getPosition() const override;

@@ -30,7 +30,7 @@ namespace GUI
 
         void setInputType(DS::InputType inputType);
 
-        void handleEvent(const sf::Event& event, sf::RenderWindow& window);
+        bool handleEvent(const sf::Event& event, sf::RenderWindow& window);
         void update(float dt, sf::RenderWindow& window);
         void draw(sf::RenderWindow& window);
 

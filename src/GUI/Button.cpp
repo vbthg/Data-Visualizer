@@ -83,7 +83,7 @@ namespace GUI
     void Button::triggerTextPop()
     {
         // Búng lò xo lên 1.3x (Target mặc định của Spring trong struct của bạn đã là 1.0)
-        textScaleSpring.position = 1.3f;
+        textScaleSpring.position = 1.15f;
     }
 
     void Button::setCharacterSize(unsigned int s)
@@ -323,7 +323,7 @@ namespace GUI
 //        }
 //    }
 
-    void Button::handleEvent(const sf::Event& event, sf::RenderWindow& window)
+    bool Button::handleEvent(const sf::Event& event, sf::RenderWindow& window)
     {
         if(event.type == sf::Event::MouseMoved)
         {
@@ -334,6 +334,8 @@ namespace GUI
             {
                 scaleSpring.target = 1.0f;
             }
+            // Trả về false để các lớp dưới vẫn thấy chuột di chuyển (nhường hover)
+            return false;
         }
 
         if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
@@ -343,6 +345,7 @@ namespace GUI
             {
                 isPressed = true;
                 scaleSpring.target = 0.96f;
+                return true; // Đã nhấn trúng nút, nuốt sự kiện
             }
         }
         else if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
@@ -357,8 +360,11 @@ namespace GUI
                 {
                     onClick();
                 }
+                return true; // Nuốt sự kiện release để tránh click xuyên thấu
             }
         }
+
+        return false;
     }
 
     void Button::draw(sf::RenderTarget& target)
