@@ -104,12 +104,12 @@ namespace DS
             bool violation = m_isMaxHeap ? (m_data[curr].value > m_data[p].value)
                                          : (m_data[curr].value < m_data[p].value);
 
-            saveState(macroTitle, "Comparing child with parent", GUI::Scenario::Processing, "heap_insert", 2, curr, p);
+            saveState(macroTitle, "Comparing child with parent", GUI::Scenario::Processing, "heap_insert", 5, curr, p);
 
             if(violation)
             {
                 std::swap(m_data[curr], m_data[p]);
-                saveState(macroTitle, "Swapping to maintain property", GUI::Scenario::Processing, "heap_insert", 4, p, curr);
+                saveState(macroTitle, "Swapping to maintain property", GUI::Scenario::Processing, "heap_insert", 6, p, curr);
                 curr = p;
             }
             else
@@ -130,7 +130,10 @@ namespace DS
             int l = getLeft(curr);
             int r = getRight(curr);
 
-            saveState(macroTitle, "Comparing node with its children", GUI::Scenario::Processing, "heap_extract", 4, curr);
+            int line = 0;
+            if(macroTitle == "Extract Root") line = 7;
+            else line = 3;
+            saveState(macroTitle, "Comparing node with its children", GUI::Scenario::Processing, "heap_extract", line, curr);
 
             if(l < n && (m_isMaxHeap ? m_data[l].value > m_data[best].value : m_data[l].value < m_data[best].value))
                 best = l;
@@ -140,8 +143,12 @@ namespace DS
             if(best != curr)
             {
                 std::swap(m_data[curr], m_data[best]);
+
+                int line = 0;
+                if(macroTitle == "Extract Root") line = 8;
+                else line = 3;
                 saveState(macroTitle, "Swapping with the " + std::string(m_isMaxHeap ? "larger" : "smaller") + " child",
-                          GUI::Scenario::Processing, "heap_extract", 8, best, curr);
+                          GUI::Scenario::Processing, "heap_extract", line, best, curr);
                 curr = best;
             }
             else
@@ -167,7 +174,7 @@ namespace DS
         siftUp(curr, title);
 
         // 3. Base snapshot: Success
-        saveState("Success", "Value " + std::to_string(value) + " has been inserted", GUI::Scenario::Success, "heap_insert", 7);
+        saveState("Success", "Value " + std::to_string(value) + " has been inserted", GUI::Scenario::Success, "heap_insert", 9);
         m_timeline->onMacroFinished();
     }
 
@@ -188,14 +195,14 @@ namespace DS
         {
             m_data[0] = m_data.back();
             m_data.pop_back();
-            saveState(title, "Last element moved to root", GUI::Scenario::Processing, "heap_extract", 2, 0);
+            saveState(title, "Last element moved to root", GUI::Scenario::Processing, "heap_extract", 3, 0);
 
             // 2. Thinking Flow: Sift Down
             siftDown(0, title);
         }
 
         // 3. Base snapshot: Success
-        saveState("Success", "Root has been extracted", GUI::Scenario::Success, "heap_extract", 11);
+        saveState("Success", "Root has been extracted", GUI::Scenario::Success, "heap_extract", 12);
         m_timeline->onMacroFinished();
     }
 
@@ -225,14 +232,14 @@ namespace DS
         m_isMaxHeap = !m_isMaxHeap;
         std::string title = m_isMaxHeap ? "Converting to Max-Heap" : "Converting to Min-Heap";
 
-        saveState(title, "Re-building heap from bottom-up", GUI::Scenario::Processing, "heap_build", 0);
+        saveState(title, "Re-building heap from bottom-up", GUI::Scenario::Processing, "heap_toggle", 0);
 
         for(int i = (int)m_data.size() / 2 - 1; i >= 0; --i)
         {
             siftDown(i, title);
         }
 
-        saveState("Success", "Conversion completed", GUI::Scenario::Success, "heap_build", 12);
+        saveState("Success", "Conversion completed", GUI::Scenario::Success, "heap_toggle", 3);
         m_timeline->onMacroFinished();
     }
 
@@ -261,18 +268,40 @@ namespace DS
         if(m_timeline)
         {
             m_timeline->onNewMacroStarted();
-            saveState("Load & Build Heap", "Building heap from array bottom-up", GUI::Scenario::Processing, "heap_build", 0);
+            saveState("Load & Build Heap", "Building heap from array bottom-up", GUI::Scenario::Processing, "heap_insert", 0);
 
             for(int i = (int)m_data.size() / 2 - 1; i >= 0; --i)
             {
                 siftDown(i, "Build Heap");
             }
 
-            saveState("Success", "Heap loaded and built", GUI::Scenario::Success, "heap_build", 12);
+            saveState("Success", "Heap loaded and built", GUI::Scenario::Success, "heap_insert", 0);
             m_timeline->onMacroFinished();
         }
 
         return true;
+    }
+
+    void Heap::clear()
+    {
+        if(m_timeline)
+        {
+            m_timeline->onNewMacroStarted();
+        }
+
+        // Bước 1: Xóa toàn bộ dữ liệu trong vector
+        m_data.clear();
+
+        // Bước 2: Reset ID để các node sau bắt đầu lại từ 0
+        m_nextId = 0;
+
+        // Bước 3: Chụp snapshot để cập nhật giao diện rỗng
+        saveState("Clear Heap", "All elements have been removed", GUI::Scenario::Success, "heap_clear", 0);
+
+        if(m_timeline)
+        {
+            m_timeline->onMacroFinished();
+        }
     }
 
     std::vector<DS::Command> Heap::getCommands()
@@ -281,7 +310,8 @@ namespace DS
             { L"\uE3D6", "Insert", DS::InputType::Integer, [this](DS::InputArgs args) { this->insert(args.iVal1); }},
             { L"\uE616", "Extract Root", DS::InputType::None, [this](DS::InputArgs args) { this->extractRoot(); }},
 //            { L"\xef\x8b\xad", "Update", DS::InputType::TwoIntegers, [this](DS::InputArgs args) { this->updateNodeValue(args.iVal1, args.iVal2); }},
-            { L"\uE094", "Toggle Type", DS::InputType::None, [this](DS::InputArgs args) { this->toggleHeapType(); }}
+            { L"\uE094", "Toggle Type", DS::InputType::None, [this](DS::InputArgs args) { this->toggleHeapType(); }},
+            { L"\uEC54", "Clear", DS::InputType::None, [this](DS::InputArgs args) { this->clear(); }} // Thêm dòng này
         };
     }
 }

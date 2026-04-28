@@ -26,7 +26,7 @@ VisualizerState::~VisualizerState()
 
 void VisualizerState::init()
 {
-    std::cerr << "[VisualizerState] Safe Init Started..." << std::endl;
+//    std::cerr << "[VisualizerState] Safe Init Started..." << std::endl;
 
     // 1. Lấy tài nguyên Font (Bắt buộc phải có)
     m_iconFont = &ResourceManager::getInstance().getFont("assets/fonts/Phosphor.ttf");
@@ -59,7 +59,7 @@ void VisualizerState::init()
     notch = std::make_unique<GUI::DynamicIsland>(*m_textFont);
     m_historyBoard = std::make_unique<GUI::HistoryBoard>();
     structurePanel = std::make_unique<GUI::StructurePanel>();
-    pseudoBox = std::make_unique<GUI::PseudoCodeBox>(*m_codeFont, (float)window.getSize().x, (float)window.getSize().y);
+    pseudoBox = std::make_unique<GUI::PseudoCodeBox>(*m_codeFont, 1920.f, 1080.f);
 
     bool isCodeOpen = pseudoBox ? pseudoBox->isOpen() : false;
     structurePanel->initIntro(Utils::System::DESIGN_WIDTH, Utils::System::DESIGN_HEIGHT, isCodeOpen);
@@ -186,11 +186,20 @@ void VisualizerState::init()
     // Background
     m_bgOriginal = ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur.png");
     onResize(window.getSize().x, window.getSize().y);
-    std::cerr << "[VisualizerState] Safe Init Completed." << std::endl;
+//    std::cerr << "[VisualizerState] Safe Init Completed." << std::endl;
 }
 
 void VisualizerState::handleInput(sf::Event& event)
 {
+    // F11: Fullscreen Toggle
+    if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F11)
+    {
+//        titleBar->toggleFullscreen();
+        sf::Vector2u size = window.getSize();
+        onResize(size.x, size.y);
+//        Utils::System::applyLetterboxView(window, event.size.width, event.size.height);
+    }
+
     if(event.type == sf::Event::Resized)
     {
         onResize(event.size.width, event.size.height);
@@ -334,7 +343,7 @@ void VisualizerState::draw()
 
 void VisualizerState::onResize(unsigned int width, unsigned int height)
 {
-    Utils::System::updateCustomView(m_camera, width, height);
+//    Utils::System::updateCustomView(m_camera, width, height);
 
     float centerX = Utils::System::DESIGN_WIDTH / 2.0f;
     float targetY = Utils::System::DESIGN_HEIGHT - 70.0f - 40.0f;
@@ -349,6 +358,11 @@ void VisualizerState::onResize(unsigned int width, unsigned int height)
     {
         notch->setX(centerX);
         notch->setTargetY(40.f);
+    }
+
+    if(pseudoBox)
+    {
+        pseudoBox->onResize(width, height);
     }
 
 //    if(structurePanel)

@@ -41,12 +41,12 @@ namespace DS
     bool MST::loadFromFile(const std::string& path)
     {
         m_timeline->onNewMacroStarted();
-        createSnapshot(GUI::Scenario::Processing, "Importing data", "Reading: " + path, -1, {});
+        createSnapshot(GUI::Scenario::Processing, "Importing data", "Reading: " + path, 0, {});
 
         std::ifstream file(path);
         if(!file.is_open())
         {
-            createSnapshot(GUI::Scenario::Error, "Import Failed", "Could not open file", -1, {});
+            createSnapshot(GUI::Scenario::Error, "Import Failed", "Could not open file", 0, {});
             m_timeline->onMacroFinished();
             return false;
         }
@@ -59,7 +59,7 @@ namespace DS
         int n, m;
         if(!(file >> n >> m))
         {
-            createSnapshot(GUI::Scenario::Error, "Import Failed", "Invalid format", -1, {});
+            createSnapshot(GUI::Scenario::Error, "Import Failed", "Invalid format", 0, {});
             m_timeline->onMacroFinished();
             return false;
         }
@@ -81,7 +81,7 @@ namespace DS
         }
         m_nextNodeId = n;
 
-        createSnapshot(GUI::Scenario::Success, "Import Success", "Loaded " + std::to_string(n) + " nodes safely", -1, {});
+        createSnapshot(GUI::Scenario::Success, "Import Success", "Loaded " + std::to_string(n) + " nodes safely", 0, {});
         m_timeline->onMacroFinished();
         return true;
     }
@@ -92,7 +92,7 @@ namespace DS
         m_timeline->onNewMacroStarted();
 
         // --- Snapshot 1: Base (Preparing) ---
-        createSnapshot(GUI::Scenario::Processing, macroTitle, "Finding safe positions for nodes...", -1, {});
+        createSnapshot(GUI::Scenario::Processing, macroTitle, "Finding safe positions for nodes...", 0, {});
 
         auto findNode = [this](int id) -> Node* {
             for(auto& n : m_nodes) if(n.id == id) return &n;
@@ -127,7 +127,7 @@ namespace DS
         m_nextNodeId = std::max({m_nextNodeId, u + 1, v + 1});
 
         // --- Snapshot 2: Hoàn thành (Final) ---
-        createSnapshot(GUI::Scenario::Success, macroTitle, "Edge added. All nodes placed safely.", -1, {});
+        createSnapshot(GUI::Scenario::Success, macroTitle, "Edge added. All nodes placed safely.", 1, {});
 
         m_timeline->onMacroFinished();
     }
@@ -141,7 +141,7 @@ namespace DS
         m_timeline->onNewMacroStarted();
 
         // --- Bước 1: Khởi tạo & Sắp xếp ---
-        createSnapshot(GUI::Scenario::Processing, "KRUSKAL MST", "Step 1: Sorting edges by weight", 0, {});
+        createSnapshot(GUI::Scenario::Processing, "KRUSKAL MST", "Step 1: Sorting edges by weight", 6, {});
 
         std::vector<Edge> sortedEdges = m_edges;
         std::sort(sortedEdges.begin(), sortedEdges.end(), [](const Edge& a, const Edge& b)
@@ -163,17 +163,17 @@ namespace DS
             int rootV = dsu.find(edge.v);
             int sourceNodeId = (dsu.size[rootU] >= dsu.size[rootV]) ? edge.u : edge.v;
 
-            createSnapshot(GUI::Scenario::Processing, "KRUSKAL MST", "Checking edge (" + std::to_string(edge.u) + "," + std::to_string(edge.v) + ")", 4, mstEdgeIds, edge.id, sourceNodeId, -1, vars);
+            createSnapshot(GUI::Scenario::Processing, "KRUSKAL MST", "Checking edge (" + std::to_string(edge.u) + "," + std::to_string(edge.v) + ")", 7, mstEdgeIds, edge.id, sourceNodeId, -1, vars);
 
             if(rootU != rootV)
             {
                 dsu.unite(rootU, rootV);
                 mstEdgeIds.push_back(edge.id);
-                createSnapshot(GUI::Scenario::Success, "KRUSKAL MST", "Accepted! Components connected.", 8, mstEdgeIds, edge.id, sourceNodeId, -1, vars);
+                createSnapshot(GUI::Scenario::Success, "KRUSKAL MST", "Accepted! Components connected.", 10, mstEdgeIds, edge.id, sourceNodeId, -1, vars);
             }
             else
             {
-                createSnapshot(GUI::Scenario::Warning, "KRUSKAL MST", "Rejected! Cycle detected.", 12, mstEdgeIds, -1, sourceNodeId, edge.id, vars);
+                createSnapshot(GUI::Scenario::Warning, "KRUSKAL MST", "Rejected! Cycle detected.", 8, mstEdgeIds, -1, sourceNodeId, edge.id, vars);
             }
         }
 
@@ -183,13 +183,13 @@ namespace DS
 
         if(isConnected)
         {
-            createSnapshot(GUI::Scenario::Success, "MST FOUND", "All nodes connected. Total edges: " + std::to_string(mstEdgeIds.size()), 15, mstEdgeIds);
+            createSnapshot(GUI::Scenario::Success, "MST FOUND", "All nodes connected. Total edges: " + std::to_string(mstEdgeIds.size()), 11, mstEdgeIds);
         }
         else
         {
             // Nếu không đủ cạnh, ta báo lỗi hoặc cảnh báo
             std::string failMsg = "Graph is disconnected! Found " + std::to_string(mstEdgeIds.size()) + " edges instead of " + std::to_string(m_nodes.size() - 1);
-            createSnapshot(GUI::Scenario::Error, "MST NOT FOUND", failMsg, 15, mstEdgeIds);
+            createSnapshot(GUI::Scenario::Error, "MST NOT FOUND", failMsg, 12, mstEdgeIds);
         }
 
         m_timeline->onMacroFinished();
@@ -322,7 +322,7 @@ namespace DS
         m_timeline->onNewMacroStarted();
 
         // Snapshot Base: Bắt đầu dọn dẹp
-        createSnapshot(GUI::Scenario::Processing, "Clear", "Preparing to clear internal data...", -1, {});
+        createSnapshot(GUI::Scenario::Processing, "Clear", "Preparing to clear internal data...", 15, {});
 
         m_nodes.clear();
         m_edges.clear();
@@ -330,7 +330,7 @@ namespace DS
         m_nextEdgeId = 0;
 
         // Snapshot Final: Canvas trống
-        createSnapshot(GUI::Scenario::Success, "Clear", "Internal structure reset. Canvas is blank.", -1, {}, true);
+        createSnapshot(GUI::Scenario::Success, "Clear", "Internal structure reset. Canvas is blank.", 15, {}, true);
 
         m_timeline->onMacroFinished();
     }

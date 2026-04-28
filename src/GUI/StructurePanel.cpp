@@ -507,7 +507,7 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
             // Có node mới -> Cần tính lại vị trí
             m_needsReposition = true;
 
-            std::cout << "[NODE ID]: " << nodeState.id << "\n";
+//            std::cout << "[NODE ID]: " << nodeState.id << "\n";
         }
 
         auto& nodeUI = m_nodeUIMap[nodeState.id];
@@ -756,12 +756,12 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
             {
 
                 sf::Vector2f halfSize(w * 0.5f, h * 0.5f);
-sf::Vector2f innerBound(halfSize.x - 30.f, halfSize.y - 30.f);
+                sf::Vector2f innerBound(halfSize.x - 30.f, halfSize.y - 30.f);
 
-m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
-m_maskShader.setUniform("u_halfSize", halfSize);
-m_maskShader.setUniform("u_innerBound", innerBound);
-m_maskShader.setUniform("u_radius", 30.f);
+                m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
+                m_maskShader.setUniform("u_halfSize", halfSize);
+                m_maskShader.setUniform("u_innerBound", innerBound);
+                m_maskShader.setUniform("u_radius", 30.f);
 //                m_maskShader.setUniform("u_texture", sf::Shader::CurrentTexture);
 //                m_maskShader.setUniform("u_panelSize", sf::Vector2f(w, h));
 //                m_maskShader.setUniform("u_radius", 30.0f);

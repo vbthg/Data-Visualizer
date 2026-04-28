@@ -90,24 +90,24 @@ namespace DS
             std::string sChar(1, c);
             std::vector<std::pair<std::string, std::string>> vars = {{"word", word}, {"c", sChar}, {"index", std::to_string(i)}};
 
-            createSnapshot(GUI::Scenario::Processing, title, "Checking character '" + sChar + "'", "trie_insert", 1, curr->id, vars);
+            createSnapshot(GUI::Scenario::Processing, title, "Checking character '" + sChar + "'", "trie_insert", 2, curr->id, vars);
 
             if (curr->children.find(c) == curr->children.end())
             {
-                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' not found, creating node", "trie_insert", 3, curr->id, vars);
+                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' not found, creating node", "trie_insert", 4, curr->id, vars);
                 curr->children[c] = new Node(c, m_nextId++);
 
-                createSnapshot(GUI::Scenario::Processing, title, "Node created for '" + sChar + "'", "trie_insert", 6, curr->children[c]->id, vars);
+                createSnapshot(GUI::Scenario::Processing, title, "Node created for '" + sChar + "'", "trie_insert", 5, curr->children[c]->id, vars);
             }
             else
             {
-                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' found, moving down", "trie_insert", 8, curr->children[c]->id, vars);
+                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' found, moving down", "trie_insert", 5, curr->children[c]->id, vars);
             }
             curr = curr->children[c];
         }
 
         curr->isEndOfWord = true;
-        createSnapshot(GUI::Scenario::Success, title, "Word '" + word + "' inserted successfully", "trie_insert", 10, curr->id, {{"isEndOfWord", "true"}});
+        createSnapshot(GUI::Scenario::Success, title, "Word '" + word + "' inserted successfully", "trie_insert", 6, curr->id, {{"isEndOfWord", "true"}});
 
         m_timeline->onMacroFinished();
     }
@@ -124,11 +124,11 @@ namespace DS
         {
             char c = word[i];
             std::string sChar(1, c);
-            createSnapshot(GUI::Scenario::Processing, title, "Looking for '" + sChar + "'", "trie_search", 1, curr->id, {{"c", sChar}});
+            createSnapshot(GUI::Scenario::Processing, title, "Looking for '" + sChar + "'", "trie_search", 2, curr->id, {{"c", sChar}});
 
             if (curr->children.find(c) == curr->children.end())
             {
-                createSnapshot(GUI::Scenario::Error, title, "Character '" + sChar + "' not found. Search failed", "trie_search", 5, curr->id);
+                createSnapshot(GUI::Scenario::Error, title, "Character '" + sChar + "' not found. Search failed", "trie_search", 4, curr->id);
                 m_timeline->onMacroFinished();
                 return false;
             }
@@ -138,7 +138,7 @@ namespace DS
         bool found = curr->isEndOfWord;
         createSnapshot(found ? GUI::Scenario::Success : GUI::Scenario::Warning, title,
                        found ? "Word found!" : "Prefix found, but not a complete word",
-                       "trie_search", 10, curr->id, {{"found", found ? "true" : "false"}});
+                       "trie_search", 6, curr->id, {{"found", found ? "true" : "false"}});
 
         m_timeline->onMacroFinished();
         return found;
@@ -156,7 +156,7 @@ namespace DS
         if (deleted)
             createSnapshot(GUI::Scenario::Success, title, "Word '" + word + "' removed", "trie_remove", 10, m_root->id);
         else
-            createSnapshot(GUI::Scenario::Error, title, "Word '" + word + "' not found", "trie_remove", 4, m_root->id);
+            createSnapshot(GUI::Scenario::Error, title, "Word '" + word + "' not found", "trie_remove", 11, m_root->id);
 
         m_timeline->onMacroFinished();
     }
@@ -172,7 +172,7 @@ namespace DS
             {
                 curr->isEndOfWord = false;
                 deleted = true;
-                createSnapshot(GUI::Scenario::Processing, title, "Unmarked EndOfWord", "trie_remove", 9, curr->id);
+                createSnapshot(GUI::Scenario::Processing, title, "Unmarked EndOfWord", "trie_remove", 4, curr->id);
                 return curr->children.empty();
             }
             return false;
@@ -185,7 +185,7 @@ namespace DS
 
         if (shouldDeleteChild)
         {
-            createSnapshot(GUI::Scenario::Processing, title, "Deleting redundant node '" + std::string(1, c) + "'", "trie_remove", 15, curr->children[c]->id);
+            createSnapshot(GUI::Scenario::Processing, title, "Deleting redundant node '" + std::string(1, c) + "'", "trie_remove", 10, curr->children[c]->id);
             delete curr->children[c];
             curr->children.erase(c);
             return curr->children.empty() && !curr->isEndOfWord;
@@ -197,12 +197,15 @@ namespace DS
     bool Trie::loadFromFile(const std::string& path)
     {
         m_timeline->onNewMacroStarted();
-        createSnapshot(GUI::Scenario::Processing, "Importing Data", "Reading: " + path, "trie_insert", -1);
+        clearRecursive(m_root);
+        m_nextId = 0;
+        m_root = new Node('\0', m_nextId++);
+        createSnapshot(GUI::Scenario::Processing, "Importing Data", "Reading: " + path, "trie_insert", 0);
 
         std::ifstream file(path);
         if (!file.is_open())
         {
-            createSnapshot(GUI::Scenario::Error, "Import Failed", "Could not open file", "trie_insert", -1);
+            createSnapshot(GUI::Scenario::Error, "Import Failed", "Could not open file", "trie_insert", 0);
             m_timeline->onMacroFinished();
             return false;
         }
@@ -211,7 +214,7 @@ namespace DS
         int count = 0;
         while (file >> word)
         {
-            // Để tránh quá tải snapshot khi load file lớn, ta chỉ insert logic
+            // Đ ể tránh quá tải snapshot khi load file lớn, ta chỉ insert logic
             // Nếu muốn visualize từng từ khi load, hãy gọi this->insert(word)
             Node* curr = m_root;
             for (char c : word)
@@ -224,7 +227,7 @@ namespace DS
             count++;
         }
 
-        createSnapshot(GUI::Scenario::Success, "Import Success", "Loaded " + std::to_string(count) + " words", "trie_insert", -1);
+        createSnapshot(GUI::Scenario::Success, "Import Success", "Loaded " + std::to_string(count) + " words", "trie_insert", 0);
         m_timeline->onMacroFinished();
         return true;
     }
@@ -285,7 +288,7 @@ namespace DS
         m_nextId = 0;
         m_root = new Node('\0', m_nextId++);
 
-        createSnapshot(GUI::Scenario::Success, "Clear", "Trie has been reset", "trie_insert", -1, m_root->id);
+        createSnapshot(GUI::Scenario::Success, "Clear", "Trie has been reset", "trie_clear", 0, m_root->id);
         m_timeline->onMacroFinished();
     }
 

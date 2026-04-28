@@ -54,5 +54,6 @@ namespace DS
         void extractRoot();
         void updateNodeValue(int index, int newValue);
         void toggleHeapType();
+        void clear();
     };
 }

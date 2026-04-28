@@ -88,8 +88,11 @@ namespace GUI
 
     void PseudoCodeBox::onResize(float windowWidth, float windowHeight)
     {
-        m_windowWidth = windowWidth;
-        m_windowHeight = windowHeight;
+//        m_windowWidth = windowWidth;
+//        m_windowHeight = windowHeight;
+
+        m_windowWidth = 1920.f;
+        m_windowHeight = 1080.f;
 
         // Gọi lại toggleState (giữ nguyên cờ hiện tại) để cập nhật lại Target theo kích thước màn hình mới
         m_isExpanded = !m_isExpanded;
@@ -185,8 +188,8 @@ namespace GUI
             // window.getSize().y trả về chiều cao thực tế của cửa sổ (ví dụ 720 hoặc 1080)
             GLint scissorY = window.getSize().y - bottomRightPx.y;
 
-            glEnable(GL_SCISSOR_TEST);
-            glScissor(scissorX, scissorY, scissorW, scissorH);
+//            glEnable(GL_SCISSOR_TEST);
+//            glScissor(scissorX, scissorY, scissorW, scissorH);
 
             // --- VẼ NỘI DUNG (Mọi thứ ở đây vẫn dùng tọa độ Logic) ---
 
@@ -228,7 +231,7 @@ namespace GUI
                 }
             }
 
-            glDisable(GL_SCISSOR_TEST);
+//            glDisable(GL_SCISSOR_TEST);
 
             // Vẽ Variables (thường nằm ngoài vùng Scissor của Code nên vẽ sau)
             drawVariables(window);

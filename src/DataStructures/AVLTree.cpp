@@ -119,7 +119,7 @@ namespace DS
         createSnapshot(title, "Preparing to insert...", GUI::Scenario::Idle, "avl_insert", 0, {{"val", std::to_string(val)}});
         m_root = insertRecursive(m_root, val, title);
 
-        createSnapshot(title, "Insertion completed!", GUI::Scenario::Success, "avl_insert", 7, {{"val", std::to_string(val)}});
+        createSnapshot(title, "Insertion completed!", GUI::Scenario::Success, "avl_insert", 20, {{"val", std::to_string(val)}});
         m_timeline->onMacroFinished();
     }
 
@@ -129,12 +129,12 @@ namespace DS
 
         if(val < node->data)
         {
-            createSnapshot(title, "Go left: " + std::to_string(val) + " < " + std::to_string(node->data), GUI::Scenario::Processing, "avl_insert", 0, {{"curr", std::to_string(node->data)}}, node->id);
+            createSnapshot(title, "Go left: " + std::to_string(val) + " < " + std::to_string(node->data), GUI::Scenario::Processing, "avl_insert", 4, {{"curr", std::to_string(node->data)}}, node->id);
             node->left = insertRecursive(node->left, val, title);
         }
         else if(val > node->data)
         {
-            createSnapshot(title, "Go right: " + std::to_string(val) + " > " + std::to_string(node->data), GUI::Scenario::Processing, "avl_insert", 0, {{"curr", std::to_string(node->data)}}, node->id);
+            createSnapshot(title, "Go right: " + std::to_string(val) + " > " + std::to_string(node->data), GUI::Scenario::Processing, "avl_insert", 6, {{"curr", std::to_string(node->data)}}, node->id);
             node->right = insertRecursive(node->right, val, title);
         }
         else return node;
@@ -157,7 +157,15 @@ namespace DS
                 if(val > node->right->data) warnings.insert(node->right->right->id);
                 else warnings.insert(node->right->left->id);
             }
-            createSnapshot(title, "Imbalance detected at " + std::to_string(node->data), GUI::Scenario::Warning, "avl_insert", 2, {{"bf", std::to_string(balance)}}, -1, warnings);
+
+            int line = 0;
+
+            if(balance > 1 && val < node->left->data) line = 10;      // LL
+            else if(balance < -1 && val > node->right->data) line = 12; // RR
+            else if(balance > 1 && val > node->left->data) line = 14; // LR
+            else if(balance < -1 && val < node->right->data) line = 17; // RL
+
+            createSnapshot(title, "Imbalance detected at " + std::to_string(node->data), GUI::Scenario::Warning, "avl_insert", line, {{"bf", std::to_string(balance)}}, -1, warnings);
 
             if(balance > 1 && val < node->left->data) return rightRotate(node, title);
             if(balance < -1 && val > node->right->data) return leftRotate(node, title);
@@ -185,7 +193,7 @@ namespace DS
         createSnapshot(title, "Preparing to remove...", GUI::Scenario::Idle, "avl_remove", 0, {{"val", std::to_string(val)}});
         m_root = removeRecursive(m_root, val, title);
 
-        createSnapshot(title, "Removal completed!", GUI::Scenario::Success, "avl_remove", 6, {{"val", std::to_string(val)}});
+        createSnapshot(title, "Removal completed!", GUI::Scenario::Success, "avl_remove", 20, {{"val", std::to_string(val)}});
         m_timeline->onMacroFinished();
     }
 
@@ -195,17 +203,18 @@ namespace DS
 
         if(val < node->data)
         {
-            createSnapshot(title, "Go left to find " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", 1, {{"curr", std::to_string(node->data)}}, node->id);
+            createSnapshot(title, "Go left to find " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", 3, {{"curr", std::to_string(node->data)}}, node->id);
             node->left = removeRecursive(node->left, val, title);
         }
         else if(val > node->data)
         {
-            createSnapshot(title, "Go right to find " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", 1, {{"curr", std::to_string(node->data)}}, node->id);
+            createSnapshot(title, "Go right to find " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", 5, {{"curr", std::to_string(node->data)}}, node->id);
             node->right = removeRecursive(node->right, val, title);
         }
         else
         {
-            createSnapshot(title, "Found node " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", 3, {{"val", std::to_string(val)}}, node->id);
+            int line = ((!node->left || !node->right) ? 6 : 8);
+            createSnapshot(title, "Found node " + std::to_string(val), GUI::Scenario::Processing, "avl_remove", line, {{"val", std::to_string(val)}}, node->id);
             if(!node->left || !node->right)
             {
                 AVLNode* temp = node->left ? node->left : node->right;
@@ -227,7 +236,15 @@ namespace DS
         if(std::abs(balance) >= 2)
         {
             std::set<int> warnings = {node->id};
-            createSnapshot(title, "Re-balancing after removal...", GUI::Scenario::Warning, "avl_remove", 5, {{"bf", std::to_string(balance)}}, -1, warnings);
+
+            int line = 0;
+
+            if(balance > 1 && getBalance(node->left) >= 0) line = 16;      // LL
+            else if(balance < -1 && getBalance(node->right) <= 0) line = 17; // RR
+            else if(balance > 1 && getBalance(node->left) < 0) line = 18;    // LR
+            else if(balance < -1 && getBalance(node->right) > 0) line = 19;  // RL
+
+            createSnapshot(title, "Re-balancing after removal...", GUI::Scenario::Warning, "avl_remove", line, {{"bf", std::to_string(balance)}}, -1, warnings);
 
             if(balance > 1 && getBalance(node->left) >= 0) return rightRotate(node, title);
             if(balance > 1 && getBalance(node->left) < 0)
@@ -253,16 +270,16 @@ namespace DS
         AVLNode* curr = m_root;
         while(curr)
         {
-            createSnapshot(title, "Searching " + std::to_string(curr->data), GUI::Scenario::Processing, "avl_search", 1, {{"val", std::to_string(val)}}, curr->id);
+            createSnapshot(title, "Searching " + std::to_string(curr->data), GUI::Scenario::Processing, "avl_search", 2, {{"val", std::to_string(val)}}, curr->id);
             if(val == curr->data)
             {
-                createSnapshot(title, "Found!", GUI::Scenario::Success, "avl_search", 2, {{"val", std::to_string(val)}}, curr->id);
+                createSnapshot(title, "Found!", GUI::Scenario::Success, "avl_search", 4, {{"val", std::to_string(val)}}, curr->id);
                 m_timeline->onMacroFinished();
                 return;
             }
             curr = (val < curr->data) ? curr->left : curr->right;
         }
-        createSnapshot(title, "Not found", GUI::Scenario::Error, "avl_search", 3, {{"val", std::to_string(val)}});
+        createSnapshot(title, "Not found", GUI::Scenario::Error, "avl_search", 9, {{"val", std::to_string(val)}});
         m_timeline->onMacroFinished();
     }
 
@@ -270,7 +287,7 @@ namespace DS
     {
         m_root = nullptr;
         m_nodeCounter = 0;
-        createSnapshot("Clear", "Tree cleared.", GUI::Scenario::Idle, "", 0, {});
+        createSnapshot("Clear", "Tree cleared.", GUI::Scenario::Idle, "avl_clear", 0, {});
     }
 
     bool AVLTree::loadFromFile(const std::string& path)

@@ -31,6 +31,7 @@ namespace DS
         void pushBack(int value);
         void insert(int index, int value);
         void remove(int index);
+        void search(int value);
 
         void createSnapshot(const std::string& title,
                             GUI::Scenario scenario,

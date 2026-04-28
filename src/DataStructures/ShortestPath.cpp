@@ -27,14 +27,14 @@ namespace DS
     void ShortestPath::addEdge(int u, int v, float weight)
     {
         m_timeline->onNewMacroStarted();
-        createSnapshot(GUI::Scenario::Processing, "Add Edge", "Adding connection between " + std::to_string(u) + " and " + std::to_string(v), -1);
+        createSnapshot(GUI::Scenario::Processing, "Add Edge", "Adding connection between " + std::to_string(u) + " and " + std::to_string(v), 0);
 
         if(!findNode(u)) addNode(u, sf::Vector2f(200.f, 200.f));
         if(!findNode(v)) addNode(v, findBestPosition(findNode(u)->pos));
 
         m_edges.push_back(GraphEdge(m_nextEdgeId++, u, v, weight));
 
-        createSnapshot(GUI::Scenario::Success, "Edge Added", "Weight: " + std::to_string((int)weight), -1);
+        createSnapshot(GUI::Scenario::Success, "Edge Added", "Weight: " + std::to_string((int)weight), 0);
         m_timeline->onMacroFinished();
     }
 
@@ -43,7 +43,7 @@ namespace DS
         if(m_nodes.empty()) return;
         m_timeline->onNewMacroStarted();
 
-        createSnapshot(GUI::Scenario::Processing, "Dijkstra Initializing", "Resetting all nodes to infinity", -1);
+        createSnapshot(GUI::Scenario::Processing, "Dijkstra Initializing", "Resetting all nodes to infinity", 3);
 
         for(auto& n : m_nodes)
         {
@@ -60,13 +60,13 @@ namespace DS
         GraphNode* startNode = findNode(startNodeId);
         if(!startNode)
         {
-            createSnapshot(GUI::Scenario::Error, "Error", "Source node not found!", -1);
+            createSnapshot(GUI::Scenario::Error, "Error", "Source node not found!", 4);
             m_timeline->onMacroFinished();
             return;
         }
 
         startNode->dist = 0;
-        createSnapshot(GUI::Scenario::Processing, "Source Found", "Distance[source] = 0", 0, startNodeId);
+        createSnapshot(GUI::Scenario::Processing, "Source Found", "Distance[source] = 0", 4, startNodeId);
 
         using pii = std::pair<float, int>;
         std::priority_queue<pii, std::vector<pii>, std::greater<pii>> pq;
@@ -81,10 +81,10 @@ namespace DS
             GraphNode* nodeU = findNode(u);
             if(d > nodeU->dist) continue;
 
-            createSnapshot(GUI::Scenario::Processing, "Extract Min", "Considering node " + std::to_string(u), 4, u, -1, -1, {{"u", std::to_string(u)}, {"dist", std::to_string((int)d)}});
+            createSnapshot(GUI::Scenario::Processing, "Extract Min", "Considering node " + std::to_string(u), 7, u, -1, -1, {{"u", std::to_string(u)}, {"dist", std::to_string((int)d)}});
 
             nodeU->finalized = true;
-            createSnapshot(GUI::Scenario::Processing, "Finalize", "Node " + std::to_string(u) + " marked as finalized", 6, u);
+            createSnapshot(GUI::Scenario::Processing, "Finalize", "Node " + std::to_string(u) + " marked as finalized", 7, u);
 
             // FIX FLICKERING: Gom nhóm các cạnh theo đỉnh kề
             std::map<int, GraphEdge*> bestNeighbors;
@@ -110,7 +110,7 @@ namespace DS
                 GraphNode* nodeV = findNode(v);
                 if(nodeV->finalized) continue;
 
-                createSnapshot(GUI::Scenario::Processing, "Relaxing", "Checking path to " + std::to_string(v), 9, u, v, edge->id);
+                createSnapshot(GUI::Scenario::Processing, "Relaxing", "Checking path to " + std::to_string(v), 11, u, v, edge->id);
 
                 float newDist = nodeU->dist + edge->weight;
                 if(newDist < nodeV->dist)
@@ -123,11 +123,11 @@ namespace DS
                     edge->lastFillProgress = 1.0f;
                     edge->lastColor = COLOR_VISITED;
 
-                    createSnapshot(GUI::Scenario::Success, "Relaxed", "Better path found! New dist: " + std::to_string((int)newDist), 11, u, v, edge->id);
+                    createSnapshot(GUI::Scenario::Success, "Relaxed", "Better path found! New dist: " + std::to_string((int)newDist), 14, u, v, edge->id);
                 }
                 else
                 {
-                    createSnapshot(GUI::Scenario::Warning, "Ignored", "Not a better path", 9, u, v, edge->id);
+                    createSnapshot(GUI::Scenario::Warning, "Ignored", "Not a better path", 11, u, v, edge->id);
                 }
             }
         }
@@ -138,7 +138,7 @@ namespace DS
             GraphNode* targetNode = findNode(endNodeId);
             if(targetNode && targetNode->dist != std::numeric_limits<float>::infinity())
             {
-                createSnapshot(GUI::Scenario::Processing, "Traceback", "Reconstructing path from target " + std::to_string(endNodeId), -1);
+                createSnapshot(GUI::Scenario::Processing, "Traceback", "Reconstructing path from target " + std::to_string(endNodeId), 16);
 
                 int curr = endNodeId;
                 while(curr != -1)
@@ -156,7 +156,7 @@ namespace DS
             }
             else
             {
-                createSnapshot(GUI::Scenario::Error, "No Path", "Cannot reach node " + std::to_string(endNodeId), -1);
+                createSnapshot(GUI::Scenario::Error, "No Path", "Cannot reach node " + std::to_string(endNodeId), 16);
             }
         }
         else
@@ -242,13 +242,13 @@ namespace DS
     {
         m_timeline->onNewMacroStarted();
         // Snapshot 1: Thông báo đang đọc dữ liệu
-        createSnapshot(GUI::Scenario::Processing, "Importing data", "Reading file: " + path, -1);
+        createSnapshot(GUI::Scenario::Processing, "Importing data", "Reading file: " + path, 0);
 
         std::ifstream ifs(path);
         if(!ifs.is_open())
         {
             m_lastError = "Could not open file.";
-            createSnapshot(GUI::Scenario::Error, "Load Failed", "File not found: " + path, -1);
+            createSnapshot(GUI::Scenario::Error, "Load Failed", "File not found: " + path, 0);
             m_timeline->onMacroFinished();
             return false;
         }
@@ -285,7 +285,7 @@ namespace DS
 
         // Snapshot 2: Thông báo hoàn tất nạp dữ liệu
         createSnapshot(GUI::Scenario::Success, "Import Success",
-                       "Generated " + std::to_string(m_nodes.size()) + " nodes and " + std::to_string(m_edges.size()) + " edges", -1);
+                       "Generated " + std::to_string(m_nodes.size()) + " nodes and " + std::to_string(m_edges.size()) + " edges", 0);
 
         m_timeline->onMacroFinished();
         return true;
@@ -348,9 +348,9 @@ namespace DS
 
         cmds.push_back(Command(L"\uEC54", "Clear", InputType::None, [this](InputArgs args) {
             this->m_timeline->onNewMacroStarted();
-            createSnapshot(GUI::Scenario::Processing, "Clearing", "Wiping graph data", -1);
+            createSnapshot(GUI::Scenario::Processing, "Clearing", "Wiping graph data", 17);
             this->m_nodes.clear(); this->m_edges.clear();
-            createSnapshot(GUI::Scenario::Success, "Cleared", "Canvas is now empty", -1);
+            createSnapshot(GUI::Scenario::Success, "Cleared", "Canvas is now empty", 17);
             this->m_timeline->onMacroFinished();
         }));
         return cmds;

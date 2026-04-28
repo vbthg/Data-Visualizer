@@ -72,7 +72,7 @@ namespace DS
 
         // Snapshot End: Completed
         recomputePositions();
-        createSnapshot(opTitle, GUI::Scenario::Success, "Completed push back", "sll_push_back", 8);
+        createSnapshot(opTitle, GUI::Scenario::Success, "Completed push back", "sll_insert", 8);
 
         m_timeline->onMacroFinished();
     }
@@ -153,39 +153,6 @@ namespace DS
         // Snapshot End: Completed
         recomputePositions();
         createSnapshot(opTitle, GUI::Scenario::Success, "Completed removal", "sll_remove", line + 2);
-
-        m_timeline->onMacroFinished();
-    }
-
-    void SinglyLinkedList::search(int value)
-    {
-        std::string opTitle = "Search " + std::to_string(value);
-        m_timeline->onNewMacroStarted();
-
-        // Snapshot ban đầu: Chuẩn bị tìm kiếm
-        createSnapshot(opTitle, GUI::Scenario::Idle, "Preparing to search for value: " + std::to_string(value), "sll_search", 0);
-
-        bool found = false;
-        for(int i = 0; i < (int)m_nodes.size(); ++i)
-        {
-            // Snapshot Processing: Highlight node đang xét để người học thấy bước di chuyển
-            createSnapshot(opTitle, GUI::Scenario::Processing, "Checking node at index " + std::to_string(i), "sll_search", 5, m_nodes[i].id,
-                          {{"target", std::to_string(value)}, {"current", std::to_string(m_nodes[i].value)}});
-
-            if(m_nodes[i].value == value)
-            {
-                // Snapshot Success: Tìm thấy giá trị
-                createSnapshot(opTitle, GUI::Scenario::Success, "Found value " + std::to_string(value) + " at index " + std::to_string(i), "sll_search", 4, m_nodes[i].id);
-                found = true;
-                break;
-            }
-        }
-
-        if(!found)
-        {
-            // Snapshot Error/Warning: Đi hết danh sách không thấy
-            createSnapshot(opTitle, GUI::Scenario::Error, "Value " + std::to_string(value) + " not found in list", "sll_search", 6);
-        }
 
         m_timeline->onMacroFinished();
     }
@@ -309,7 +276,6 @@ namespace DS
         cmds.push_back(Command(L"\uE024", "Push Front", InputType::Integer, [this](InputArgs args) { this->pushFront(args.iVal1); }));
         cmds.push_back(Command(L"\uE026", "Push Back", InputType::Integer, [this](InputArgs args) { this->pushBack(args.iVal1); }));
         cmds.push_back(Command(L"\uE3D6", "Insert", InputType::TwoIntegers, [this](InputArgs args) { this->insert(args.iVal1, args.iVal2); }));
-        cmds.push_back(Command(L"\uE30C", "Search", InputType::Integer, [this](InputArgs args) { this->search(args.iVal1); }));
         cmds.push_back(Command(L"\uE32C", "Remove", InputType::Integer, [this](InputArgs args) { this->remove(args.iVal1); }));
         cmds.push_back(Command(L"\uEC54", "Clear", InputType::None, [this](InputArgs args) {
             this->m_nodes.clear();

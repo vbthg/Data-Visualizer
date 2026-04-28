@@ -124,9 +124,9 @@ namespace GUI
         widthSpring.target = totalWidth;
 
         // Cập nhật bóng đổ (Shadow) động theo số lượng items nếu cần
-        auto& res = ResourceManager::getInstance();
-        std::string shadowName = "assets/textures/shadow_" + std::to_string(std::min((int)m_items.size(), 7)) + ".png";
-        shadowSprite.setTexture(res.getTexture(shadowName));
+//        auto& res = ResourceManager::getInstance();
+//        std::string shadowName = "assets/textures/shadow_" + std::to_string(std::min((int)m_items.size(), 7)) + ".png";
+//        shadowSprite.setTexture(res.getTexture(shadowName));
     }
 
     void FloatingDock::repositionChildren(float currentWidth)
