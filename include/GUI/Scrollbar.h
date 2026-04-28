@@ -28,7 +28,7 @@ namespace GUI
         Scrollbar();
 
         void show(); // Gọi khi có sự kiện cuộn
-        void update(float dt, float currentScroll, float contentHeight, float viewportHeight, const sf::Vector2f& localMouse);
+        void update(float dt, float currentScroll, float contentHeight, float viewportHeight, float viewportWidth, const sf::Vector2f& localMouse);
 
 
         // SETTERS

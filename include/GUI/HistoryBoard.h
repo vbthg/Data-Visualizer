@@ -18,10 +18,10 @@ namespace GUI
         GUI::Squircle m_background;
         GUI::Scrollbar m_scrollbar;
 
-        float m_width = 350.f;
-        float m_height = 500.f;
-        float m_rowHeight = 40.f;
-        float m_indentSize = 30.f;
+        float m_width = 275.f;
+        float m_height = 350.f;
+        float m_rowHeight = 30.f;
+        float m_indentSize = 10.f;
         float m_maxScrollY = 0.f;
         float m_totalCalculatedHeight = 0.f; // Fix lỗi 168
 
@@ -38,6 +38,9 @@ namespace GUI
         std::function<void(int)> m_onJumpCallback = nullptr;
 
         sf::Vector2f m_anchorPos; // Vị trí "nhà" của Board khi mở hoàn toàn
+
+        sf::Font* m_iconFont = nullptr;
+        sf::Font* m_textFont = nullptr;
 
     public:
         HistoryBoard();
@@ -58,6 +61,14 @@ namespace GUI
         void setPosition(float x, float y);
         void setPosition(const sf::Vector2f& pos);
 
+        void setFonts(sf::Font& iconF, sf::Font& textF)
+        {
+            m_iconFont = &iconF;
+            m_textFont = &textF;
+        }
+
+        bool containsMouse(const sf::RenderWindow& window) const;
+
     protected:
         virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
@@ -65,7 +76,8 @@ namespace GUI
         // Fix lỗi 370: Thêm isActive vào tham số cuối
         void drawRow(sf::RenderTarget& target, sf::RenderStates states,
                      const std::string& textStr, const sf::String& iconUnicode,
-                     float yPos, bool isHeader, bool isActive, sf::Uint8 alpha, float rotation) const;
+                     float yPos, bool isHeader, bool isActive, sf::Uint8 alpha,
+                     float rotation, const sf::Font& iconF, const sf::Font& textF) const;
 
         void drawHoverEffect(sf::RenderTarget& target, float yPos) const; // Fix lỗi 284
         void drawActiveEffect(sf::RenderTarget& target, float yPos, bool isActive) const; // Fix lỗi 296
@@ -75,6 +87,7 @@ namespace GUI
         void updateTotalHeight();
 //        void updateOpenAnimation(float dt);
         sf::Vector2f getMouseInFrame(sf::RenderWindow& window);
+        bool isOpen() { return m_isOpen; }
 
     };
 }

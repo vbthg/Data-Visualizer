@@ -10,6 +10,7 @@ namespace GUI {
         ProgressBar(sf::Vector2f size);
 
         void setStep(int current, int total, float duration);
+        void setPercent(float p);
         void update(float dt);
         void setSize(sf::Vector2f size);
         void setFillColor(sf::Color color);

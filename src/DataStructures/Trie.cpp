@@ -1,11 +1,13 @@
 #include "Trie.h"
+#include "ResourceManager.h"
+#include <fstream>
+#include <sstream>
 #include <algorithm>
 
 namespace DS
 {
     Trie::Trie() : m_root(nullptr), m_nextId(0)
     {
-        // Root là một node rỗng, không chứa ký tự
         m_root = new Node('\0', m_nextId++);
     }
 
@@ -14,261 +16,295 @@ namespace DS
         clearRecursive(m_root);
     }
 
-    // --- COMMAND SYSTEM ---
-    std::vector<Command> Trie::getCommands()
+    float Trie::calculateSubtreeWidth(Node* node, std::map<int, float>& widthMap)
     {
-        std::vector<Command> cmds;
+        if(!node) return 0.f;
+        if(node->children.empty())
+        {
+            widthMap[node->id] = NODE_GAP;
+            return NODE_GAP;
+        }
 
-        // Thêm từ (Sử dụng icon dấu cộng)
-        cmds.push_back(Command(L"\uE3D6", InputType::String, [this](InputArgs args) {
-            this->insert(args.sVal);
-        }));
+        float totalWidth = 0.f;
+        for(auto const& [c, child] : node->children)
+        {
+            totalWidth += calculateSubtreeWidth(child, widthMap);
+        }
 
-        // Tìm từ (Sử dụng icon kính lúp)
-        cmds.push_back(Command(L"\uE30C", InputType::String, [this](InputArgs args) {
-            this->search(args.sVal);
-        }));
-
-        // Xóa từ (Sử dụng icon thùng rác)
-        cmds.push_back(Command(L"\uE32C", InputType::String, [this](InputArgs args) {
-            this->remove(args.sVal);
-        }));
-
-        // Xóa sạch cây
-        cmds.push_back(Command(L"\uEC54", InputType::None, [this](InputArgs args) {
-            this->clear();
-        }));
-
-        return cmds;
+        widthMap[node->id] = totalWidth;
+        return totalWidth;
     }
 
-    // --- THAO TÁC CHÍNH ---
+    void Trie::createSnapshot(GUI::Scenario scenario, const std::string& title, const std::string& subtitle,
+                               const std::string& macroKey, int lineIdx, int highlightNodeId,
+                               std::vector<std::pair<std::string, std::string>> vars)
+    {
+        auto snap = std::make_shared<Core::ISnapshot>();
+
+        // 1. Tính toán Layout và gán trạng thái Node/Edge
+        computeLayout(m_root, 800.f, m_startY, 1400.f, snap->nodeStates, snap->edgeStates);
+
+        // 2. Notch Context
+        snap->notchData.scenario = scenario;
+        snap->notchData.title = title;
+        snap->notchData.subtitle = subtitle;
+
+        if (scenario == GUI::Scenario::Success) snap->notchData.iconCode = "\xef\x80\x8c";
+        else if (scenario == GUI::Scenario::Error) snap->notchData.iconCode = "\xef\x81\xb1";
+        else snap->notchData.iconCode = "\xef\x84\x9e";
+
+        // 3. Code Context
+        snap->codeData.macroKey = macroKey;
+        snap->codeData.pseudoCodeLine = lineIdx;
+        snap->codeData.variableStates = vars;
+
+        // 4. Highlight logic cho Node đang xét
+        for (auto& node : snap->nodeStates)
+        {
+            node.isDraggable = false; // Bật tính năng kéo thả
+            if (node.id == highlightNodeId)
+            {
+                node.fillColor = (scenario == GUI::Scenario::Error) ? COLOR_ERROR : COLOR_FOCUS;
+                node.scale = 1.2f;
+                node.textColor = (scenario == GUI::Scenario::Error) ? sf::Color::White : sf::Color::Black;
+            }
+        }
+
+        if (m_timeline) m_timeline->addSnapshot(snap);
+    }
 
     void Trie::insert(const std::string& word)
     {
-        if(word.empty()) return;
+        if (word.empty()) return;
         m_timeline->onNewMacroStarted();
-        // Khi bắt đầu insert
 
         Node* curr = m_root;
-        // Dòng 0: Node* curr = root;
-        createSnapshot(curr->id, "Start insert", "trie_insert", "Trie::INSERT", 0, {{"word", word}, {"curr", "Root"}});
+        std::string title = "Insert Word: " + word;
 
-        for(size_t i = 0; i < word.length(); ++i)
+        // Base snapshot
+        createSnapshot(GUI::Scenario::Processing, title, "Initializing search from Root", "trie_insert", 0, curr->id, {{"word", word}});
+
+        for (size_t i = 0; i < word.length(); ++i)
         {
             char c = word[i];
             std::string sChar(1, c);
+            std::vector<std::pair<std::string, std::string>> vars = {{"word", word}, {"c", sChar}, {"index", std::to_string(i)}};
 
-            // Dòng 1: for each char c in word
-            createSnapshot(curr->id, "Processing character: " + sChar, "trie_insert", "Trie::INSERT", 1, {{"word", word}, {"c", sChar}, {"i", std::to_string(i)}});
+            createSnapshot(GUI::Scenario::Processing, title, "Checking character '" + sChar + "'", "trie_insert", 1, curr->id, vars);
 
-            if(curr->children.find(c) == curr->children.end())
+            if (curr->children.find(c) == curr->children.end())
             {
-                // Dòng 2: if(curr->children[c] == null)
-                createSnapshot(curr->id, "Branch '" + sChar + "' not found. Creating...", "trie_insert", "Trie::INSERT", 3, {{"c", sChar}});
-
+                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' not found, creating node", "trie_insert", 3, curr->id, vars);
                 curr->children[c] = new Node(c, m_nextId++);
 
-                // Dòng 3: curr->children[c] = new Node(c);
-                createSnapshot(curr->children[c]->id, "New node created for '" + sChar + "'", "trie_insert", "Trie::INSERT", 5, {{"c", sChar}});
+                createSnapshot(GUI::Scenario::Processing, title, "Node created for '" + sChar + "'", "trie_insert", 6, curr->children[c]->id, vars);
             }
-
+            else
+            {
+                createSnapshot(GUI::Scenario::Processing, title, "Character '" + sChar + "' found, moving down", "trie_insert", 8, curr->children[c]->id, vars);
+            }
             curr = curr->children[c];
-            // Dòng 4: curr = curr->children[c];
-            createSnapshot(curr->id, "Moving to next node", "trie_insert", "Trie::INSERT", 7, {{"curr", sChar}});
         }
 
         curr->isEndOfWord = true;
-        // Dòng 5: curr->isEndOfWord = true;
-        createSnapshot(curr->id, "Insert complete: '" + word + "'", "trie_insert", "Trie::INSERT", 9, {{"word", word}}, false);
+        createSnapshot(GUI::Scenario::Success, title, "Word '" + word + "' inserted successfully", "trie_insert", 10, curr->id, {{"isEndOfWord", "true"}});
+
+        m_timeline->onMacroFinished();
     }
 
     bool Trie::search(const std::string& word)
     {
-        if(word.empty()) return false;
         m_timeline->onNewMacroStarted();
-
         Node* curr = m_root;
-        // Dòng 0: Node* curr = root;
-        createSnapshot(curr->id, "Search start: " + word, "trie_search", "Trie::SEARCH", 0, {{"word", word}, {"curr", "Root"}});
+        std::string title = "Search Word: " + word;
 
-        for(char c : word)
+        createSnapshot(GUI::Scenario::Processing, title, "Starting search from Root", "trie_search", 0, curr->id);
+
+        for (size_t i = 0; i < word.length(); ++i)
         {
+            char c = word[i];
             std::string sChar(1, c);
+            createSnapshot(GUI::Scenario::Processing, title, "Looking for '" + sChar + "'", "trie_search", 1, curr->id, {{"c", sChar}});
 
-            // Dòng 1: for each char c in word
-            createSnapshot(curr->id, "Processing character: " + sChar, "trie_search", "Trie::SEARCH", 1, {{"word", word}, {"c", sChar}});
-
-            if(curr->children.find(c) == curr->children.end())
+            if (curr->children.find(c) == curr->children.end())
             {
-                // Dòng 2: if(child == null) return false;
-                createSnapshot(-1, "Character '" + sChar + "' not found!", "trie_search", "Trie::SEARCH", 5, {{"c", sChar}}, true);
+                createSnapshot(GUI::Scenario::Error, title, "Character '" + sChar + "' not found. Search failed", "trie_search", 5, curr->id);
+                m_timeline->onMacroFinished();
                 return false;
             }
             curr = curr->children[c];
-            // Dòng 3: curr = curr->children[c];
-            createSnapshot(curr->id, "Found '" + sChar + "', continuing...", "trie_search", "Trie::SEARCH", 7, {{"curr", sChar}});
         }
 
-        // Dòng 4: return curr->isEndOfWord;
         bool found = curr->isEndOfWord;
-        createSnapshot(curr->id, found ? "Match found!" : "Path exists but not a word", "trie_search", "Trie::SEARCH", 9, {{"found", found ? "true" : "false"}}, !found);
+        createSnapshot(found ? GUI::Scenario::Success : GUI::Scenario::Warning, title,
+                       found ? "Word found!" : "Prefix found, but not a complete word",
+                       "trie_search", 10, curr->id, {{"found", found ? "true" : "false"}});
 
+        m_timeline->onMacroFinished();
         return found;
     }
 
     void Trie::remove(const std::string& word)
     {
-        if(word.empty()) return;
         m_timeline->onNewMacroStarted();
-
         bool deleted = false;
+        std::string title = "Remove Word: " + word;
+
+        createSnapshot(GUI::Scenario::Processing, title, "Locating word to remove", "trie_remove", 0, m_root->id);
         removeRecursive(m_root, word, 0, deleted);
 
-        if(deleted) createSnapshot(-1, "Removed '" + word + "' from Trie.", "trie_remove", "Trie::REMOVE", 4);
-        else createSnapshot(-1, "Word '" + word + "' does not exist.", "trie_remove", "Trie::REMOVE", 4, {}, true);
+        if (deleted)
+            createSnapshot(GUI::Scenario::Success, title, "Word '" + word + "' removed", "trie_remove", 10, m_root->id);
+        else
+            createSnapshot(GUI::Scenario::Error, title, "Word '" + word + "' not found", "trie_remove", 4, m_root->id);
+
+        m_timeline->onMacroFinished();
+    }
+
+    bool Trie::removeRecursive(Node* curr, const std::string& word, int index, bool& deleted)
+    {
+        if (!curr) return false;
+
+        std::string title = "Remove Word: " + word;
+        if (index == (int)word.length())
+        {
+            if (curr->isEndOfWord)
+            {
+                curr->isEndOfWord = false;
+                deleted = true;
+                createSnapshot(GUI::Scenario::Processing, title, "Unmarked EndOfWord", "trie_remove", 9, curr->id);
+                return curr->children.empty();
+            }
+            return false;
+        }
+
+        char c = word[index];
+        if (curr->children.find(c) == curr->children.end()) return false;
+
+        bool shouldDeleteChild = removeRecursive(curr->children[c], word, index + 1, deleted);
+
+        if (shouldDeleteChild)
+        {
+            createSnapshot(GUI::Scenario::Processing, title, "Deleting redundant node '" + std::string(1, c) + "'", "trie_remove", 15, curr->children[c]->id);
+            delete curr->children[c];
+            curr->children.erase(c);
+            return curr->children.empty() && !curr->isEndOfWord;
+        }
+
+        return false;
+    }
+
+    bool Trie::loadFromFile(const std::string& path)
+    {
+        m_timeline->onNewMacroStarted();
+        createSnapshot(GUI::Scenario::Processing, "Importing Data", "Reading: " + path, "trie_insert", -1);
+
+        std::ifstream file(path);
+        if (!file.is_open())
+        {
+            createSnapshot(GUI::Scenario::Error, "Import Failed", "Could not open file", "trie_insert", -1);
+            m_timeline->onMacroFinished();
+            return false;
+        }
+
+        std::string word;
+        int count = 0;
+        while (file >> word)
+        {
+            // Để tránh quá tải snapshot khi load file lớn, ta chỉ insert logic
+            // Nếu muốn visualize từng từ khi load, hãy gọi this->insert(word)
+            Node* curr = m_root;
+            for (char c : word)
+            {
+                if (curr->children.find(c) == curr->children.end())
+                    curr->children[c] = new Node(c, m_nextId++);
+                curr = curr->children[c];
+            }
+            curr->isEndOfWord = true;
+            count++;
+        }
+
+        createSnapshot(GUI::Scenario::Success, "Import Success", "Loaded " + std::to_string(count) + " words", "trie_insert", -1);
+        m_timeline->onMacroFinished();
+        return true;
+    }
+
+    void Trie::computeLayout(Node* node, float x, float y, float horizontalRange,
+                         std::vector<Core::NodeState>& nodes,
+                         std::vector<Core::EdgeState>& edges)
+    {
+        if(!node) return;
+
+        std::map<int, float> widthMap;
+        calculateSubtreeWidth(m_root, widthMap);
+
+        // Sử dụng một Lambda hoặc hàm helper để đệ quy đặt vị trí
+        std::function<void(Node*, float, float)> placeNodes = [&](Node* curr, float curX, float curY)
+        {
+            Core::NodeState state;
+            state.id = curr->id;
+            state.position = {curX, curY};
+            state.value = (curr == m_root) ? "Root" : std::string(1, curr->character);
+            state.isDraggable = true;
+            state.fillColor = COLOR_DEFAULT;
+            state.outlineColor = curr->isEndOfWord ? COLOR_SUCCESS : sf::Color(200, 200, 200);
+            state.subText = curr->isEndOfWord ? "End" : "";
+            nodes.push_back(state);
+
+            if(curr->children.empty()) return;
+
+            float totalW = widthMap[curr->id];
+            float leftX = curX - totalW / 2.0f;
+            float accumulatedW = 0.f;
+
+            for(auto const& [c, child] : curr->children)
+            {
+                float w = widthMap[child->id];
+                float childX = leftX + accumulatedW + w / 2.0f;
+                float childY = curY + 120.f;
+
+                Core::EdgeState edge;
+                edge.startNodeId = curr->id;
+                edge.endNodeId = child->id;
+                edge.thickness = 3.0f;
+                edge.isFocused = false;
+                edges.push_back(edge);
+
+                placeNodes(child, childX, childY);
+                accumulatedW += w;
+            }
+        };
+
+        placeNodes(m_root, 960.f, m_startY); // 960.f là trung tâm màn hình Full HD
     }
 
     void Trie::clear()
     {
         m_timeline->onNewMacroStarted();
         clearRecursive(m_root);
+        m_nextId = 0;
         m_root = new Node('\0', m_nextId++);
-        createSnapshot(m_root->id, "Trie cleared.", "trie_clear", "Trie::CLEAR", 1);
-    }
 
-    // --- RECURSIVE HELPERS ---
-
-    bool Trie::removeRecursive(Node* curr, const std::string& word, int index, bool& deleted)
-    {
-        if(!curr) return false;
-
-        // Giai đoạn đi xuống (Traversal)
-        createSnapshot(curr->id, "Checking character '" + std::string(1, word[index]) + "'", "trie_remove", "Trie::REMOVE", 11, {{"depth", std::to_string(index)}});
-
-        if(index == word.length())
-        {
-            if(!curr->isEndOfWord) return false;
-
-            deleted = true;
-            curr->isEndOfWord = false;
-            createSnapshot(curr->id, "Unmarked End of Word for '" + word + "'", "trie_remove", "Trie::REMOVE", 9);
-            return curr->children.empty(); // Nếu không có con thì có thể xóa node này
-        }
-
-        char c = word[index];
-        if(curr->children.find(c) == curr->children.end()) return false;
-
-        bool canDeleteChild = removeRecursive(curr->children[c], word, index + 1, deleted);
-
-        if(canDeleteChild)
-        {
-            // Giai đoạn đi lên (Unwinding/Backtracking)
-            // Highlight node sắp bị xóa vĩnh viễn (Orange)
-            createSnapshot(curr->children[c]->id, "Node '" + std::string(1, c) + "' is no longer part of any word. Deleting...", "trie_remove", "Trie::REMOVE", 14, {}, true);
-
-            delete curr->children[c];
-            curr->children.erase(c);
-
-            // Tiếp tục cho phép xóa node cha nếu nó không phải kết thúc từ và không có con khác
-            return !curr->isEndOfWord && curr->children.empty() && curr != m_root;
-        }
-
-        return false;
+        createSnapshot(GUI::Scenario::Success, "Clear", "Trie has been reset", "trie_insert", -1, m_root->id);
+        m_timeline->onMacroFinished();
     }
 
     void Trie::clearRecursive(Node* node)
     {
-        if(!node) return;
-        for(auto& pair : node->children)
-        {
-            clearRecursive(pair.second);
-        }
+        if (!node) return;
+        for (auto& pair : node->children) clearRecursive(pair.second);
         delete node;
     }
 
-    // --- SNAPSHOT SYSTEM ---
-
-    void Trie::createSnapshot(int highlightNodeId, const std::string& message,
-                              const std::string& macroKey, const std::string& opName,
-                              int lineIdx, std::vector<std::pair<std::string, std::string>> vars,
-                              bool isWarning)
+    std::vector<Command> Trie::getCommands()
     {
-        auto snap = std::make_shared<Core::ISnapshot>();
-
-        // 1. Tính toán Layout (Giữ nguyên logic cũ của bạn)
-        computeLayout(m_root, 960.f, m_startY, 1400.f, snap->nodeStates, snap->edgeStates);
-
-        // Gán dữ liệu cho PseudoCodeBox
-        snap->macroKey = macroKey;          // VD: "trie_insert"
-        snap->operationName = opName;       // VD: "TRIE: INSERT"
-        snap->pseudoCodeLine = lineIdx;     // Dòng highlight
-        snap->variableStates = vars;        // Danh sách biến số
-
-        // 2. Highlight Node hiện tại
-        for(auto& node : snap->nodeStates)
-        {
-            if(node.id == highlightNodeId)
-            {
-                if(isWarning)
-                {
-                    node.fillColor = sf::Color(255, 107, 107);
-                    node.scale = 1.3f;
-                }
-                else
-                {
-                    node.fillColor = sf::Color(255, 212, 59);
-                    node.scale = 1.15f;
-                }
-            }
-        }
-
-        // 3. NẠP DỮ LIỆU PSEUDOCODE VÀO ISNAPSHOT
-        snap->logMessage = message;
-        snap->pseudoCodeLine = lineIdx;  // Đây là biến mà PseudoCodeBox sẽ đọc
-
-        // Giả sử bạn đã thêm biến này vào ISnapshot như tôi gợi ý ở trên
-        // snap->variableStates = vars;
-
-        if(m_timeline) m_timeline->addSnapshot(snap);
-    }
-
-    void Trie::computeLayout(Node* node, float x, float y, float horizontalRange,
-                             std::vector<Core::NodeState>& nodes,
-                             std::vector<Core::EdgeState>& edges)
-    {
-        if(!node) return;
-
-        Core::NodeState state;
-        state.id = node->id;
-        state.position = {x, y};
-        state.value = (node == m_root) ? "Root" : std::string(1, node->character);
-
-        // Apple-style: Nếu là điểm kết thúc từ, dùng viền khác biệt
-        if(node->isEndOfWord)
-        {
-            state.outlineColor = sf::Color(52, 199, 89); // Green Apple
-            state.subText = "End";
-        }
-
-        nodes.push_back(state);
-
-        if(node->children.empty()) return;
-
-        // Chia không gian cho các con
-        int numChildren = (int)node->children.size();
-        float childRange = horizontalRange / numChildren;
-        float startX = x - (horizontalRange / 2.0f) + (childRange / 2.0f);
-
-        int i = 0;
-        for(auto const& [c, child] : node->children)
-        {
-            float childX = startX + i * childRange;
-            float childY = y + 120.f; // Khoảng cách dọc cố định 120px
-
-            edges.push_back({node->id, child->id});
-            computeLayout(child, childX, childY, childRange, nodes, edges);
-            i++;
-        }
+        std::vector<Command> cmds;
+        cmds.push_back(Command(L"\uE3D6", "Insert", InputType::String, [this](InputArgs args) { this->insert(args.sVal); }));
+        cmds.push_back(Command(L"\uE30C", "Search", InputType::String, [this](InputArgs args) { this->search(args.sVal); }));
+        cmds.push_back(Command(L"\uE32C", "Remove", InputType::String, [this](InputArgs args) { this->remove(args.sVal); }));
+        cmds.push_back(Command(L"\uEC54", "Clear", InputType::None, [this](InputArgs args) { this->clear(); }));
+        // Thêm lệnh Load File
+//        cmds.push_back(Command(L"\uE24D", "Load File", InputType::String, [this](InputArgs args) { this->loadFromFile(args.sVal); }));
+        return cmds;
     }
 }

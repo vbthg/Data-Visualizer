@@ -20,119 +20,147 @@ namespace GUI
 
         m_scaleSpring.stiffness = 350.f;
         m_scaleSpring.damping = 25.f;
+        m_scaleSpring.snapTo(0.f);
     }
 
-    int HistoryBoard::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    bool HistoryBoard::containsMouse(const sf::RenderWindow& window) const
     {
-        // 1. Chặn tương tác khi Board đang đóng hoặc đang bay nửa chừng
-        if(!m_isOpen || m_animationProgress < 0.5f) return -1;
-
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::FloatRect boardBounds = getTransform().transformRect(m_background.getGlobalBounds());
+        // mapPixelToCoords sẽ tự xử lý sai lệch do Letterbox cho em
+        sf::Vector2f mouseWorld = window.mapPixelToCoords(mousePos);
 
-        // Tính tọa độ chuột trong khung (frame) và trong danh sách (content)
-        sf::View frameView;
-        frameView.setSize(m_width, m_height);
-        frameView.setCenter(m_width / 2.f, m_height / 2.f);
-        sf::Vector2f frameMouse = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, frameView);
+        // getGlobalBounds() kết hợp với getTransform() sẽ cho ra vùng chuẩn của Board
+        // ngay cả khi Origin nằm ở góc phải dưới (vùng tọa độ âm)
+        sf::FloatRect bounds = getTransform().transformRect(m_background.getGlobalBounds());
 
-        sf::View contentView = frameView;
-        contentView.setCenter(m_width / 2.f, m_height / 2.f + m_scrollSpring.position);
-        sf::Vector2f contentMouse = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, contentView);
+        return bounds.contains(mouseWorld);
+    }
 
-        // 2. XỬ LÝ SCROLLBAR (Kéo/Thả)
-        if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+int HistoryBoard::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+{
+    // 1. Chặn tương tác khi Board đang đóng hoặc đang bay nửa chừng
+    if(!m_isOpen || m_animationProgress < 0.5f) return -1;
+
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::FloatRect boardBounds = getTransform().transformRect(m_background.getGlobalBounds());
+
+    // --- SETUP VIEW CHO TỌA ĐỘ ÂM ---
+    // Frame View (Dùng cho Scrollbar)
+    sf::View frameView;
+    frameView.setSize(m_width, m_height);
+    frameView.setCenter(-m_width / 2.f, -m_height / 2.f); // Soi vào vùng âm
+    sf::Vector2f frameMouse = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, frameView);
+
+    // Content View (Dùng cho các dòng chữ)
+    sf::View contentView = frameView;
+    // Soi vào vùng âm và cộng thêm độ cuộn (scroll)
+    contentView.setCenter(-m_width / 2.f, -m_height / 2.f + m_scrollSpring.position);
+    sf::Vector2f contentMouse = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, contentView);
+
+    // 2. XỬ LÝ SCROLLBAR (Kéo/Thả)
+    if(event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+    {
+        m_scrollbar.setDragging(false);
+    }
+
+    if(m_scrollbar.isDragging())
+    {
+        m_scrollbar.show();
+        float thumbH = m_scrollbar.getThumbHeight();
+        float trackSpace = m_height - thumbH;
+
+        if(trackSpace > 0.f)
         {
-            m_scrollbar.setDragging(false);
+            // Chuyển frameMouse.y từ âm sang dương tương đối (0 -> m_height)
+            float relativeY = frameMouse.y + m_height;
+
+            float newThumbY = relativeY - m_scrollbar.getDragOffset();
+            float scrollPercent = std::clamp(newThumbY / trackSpace, 0.f, 1.f);
+            float targetScroll = scrollPercent * std::max(0.f, m_totalCalculatedHeight - m_height);
+
+            m_scrollSpring.target = targetScroll;
+            m_scrollSpring.snapTo(targetScroll);
         }
+        return -1;
+    }
 
-        if(m_scrollbar.isDragging())
+    // Nếu chuột nằm ngoài Board thì thôi
+    if(!Utils::ViewHandler::isMouseInFrame(mousePos, window, boardBounds)) return -1;
+
+    // 3. CUỘN CHUỘT (Mouse Wheel)
+    if(event.type == sf::Event::MouseWheelScrolled)
+    {
+        m_scrollbar.show();
+        float delta = event.mouseWheelScroll.delta * 60.f;
+        m_scrollSpring.target -= delta;
+        return -1;
+    }
+
+    // 4. XỬ LÝ CLICK CHUỘT
+    if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+    {
+        // A. Click trúng Thumb của Scrollbar
+        if(m_scrollbar.isMouseOverThumb(frameMouse))
         {
-            m_scrollbar.show();
-            float thumbH = m_scrollbar.getThumbHeight();
-            float trackSpace = m_height - thumbH;
-
-            if(trackSpace > 0.f)
-            {
-                float newThumbY = frameMouse.y - m_scrollbar.getDragOffset();
-                float scrollPercent = std::clamp(newThumbY / trackSpace, 0.f, 1.f);
-                float targetScroll = scrollPercent * std::max(0.f, m_totalCalculatedHeight - m_height);
-
-                m_scrollSpring.target = targetScroll;
-                m_scrollSpring.snapTo(targetScroll);
-            }
-            return -1; // Đang kéo thanh cuộn thì không trả về index nhảy
-        }
-
-        // Nếu chuột nằm ngoài Board thì thôi
-        if(!Utils::ViewHandler::isMouseInFrame(mousePos, window, boardBounds)) return -1;
-
-        // 3. CUỘN CHUỘT (Mouse Wheel)
-        if(event.type == sf::Event::MouseWheelScrolled)
-        {
-            m_scrollbar.show();
-            float delta = event.mouseWheelScroll.delta * 60.f;
-            m_scrollSpring.target -= delta;
+            m_scrollbar.setDragging(true);
+            // Tính offset dựa trên tọa độ dương tương đối
+            float relativeY = frameMouse.y + m_height;
+            m_scrollbar.setDragOffset(relativeY - m_scrollbar.getThumbY());
             return -1;
         }
 
-        // 4. XỬ LÝ CLICK CHUỘT
-        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        // B. Click vào các Row trong danh sách
+        float currentY = -m_height + 25.f; // Bắt đầu từ đỉnh bảng (Vùng âm)
+
+        // Lề trái của bảng là -m_width, vùng mũi tên rộng 50px
+        const float arrowZoneRightBoundary = -m_width + 50.f;
+
+        for(auto& op : m_uiRecords)
         {
-            // A. Click trúng Thumb của Scrollbar
-            if(m_scrollbar.isMouseOverThumb(frameMouse))
+            float visualT = Utils::Math::Easing::easeInOutQuart(op.expansionProgress);
+            float headerY = currentY;
+
+            // KIỂM TRA CLICK VÀO HEADER (Rect bắt đầu từ -m_width)
+            sf::FloatRect headerRect(-m_width, headerY, m_width, m_rowHeight);
+
+            if(headerRect.contains(contentMouse))
             {
-                m_scrollbar.setDragging(true);
-                m_scrollbar.setDragOffset(frameMouse.y - m_scrollbar.getThumbY());
-                return -1;
+                // Nếu click vào bên trái của Boundary (Vùng mũi tên)
+                if(contentMouse.x < arrowZoneRightBoundary)
+                {
+                    op.isExpanded = !op.isExpanded;
+                    return -1;
+                }
+                else
+                {
+                    return op.finalSnapshotIndex;
+                }
             }
 
-            // B. Click vào các Row trong danh sách
-            float currentY = 25.f;
-            const float arrowZoneWidth = 50.f;
+            currentY += m_rowHeight;
 
-            for(auto& op : m_uiRecords)
+            // KIỂM TRA CLICK VÀO SUB-STEPS
+            for(size_t i = 0; i < op.subSteps.size(); ++i)
             {
-                float visualT = Utils::Math::Easing::easeInOutQuart(op.expansionProgress);
-                float headerY = currentY;
+                float targetOffset = (i + 1) * m_rowHeight;
+                float animatedSubY = headerY + (targetOffset * visualT);
 
-                // KIỂM TRA CLICK VÀO HEADER
-                if(sf::FloatRect(0.f, headerY, m_width, m_rowHeight).contains(contentMouse))
+                // Rect bắt đầu từ lề trái âm (-m_width)
+                sf::FloatRect subRect(-m_width, animatedSubY, m_width, m_rowHeight);
+
+                if(visualT > 0.5f && subRect.contains(contentMouse))
                 {
-                    if(contentMouse.x < arrowZoneWidth)
-                    {
-                        op.isExpanded = !op.isExpanded; // Toggle đóng/mở
-                        return -1;
-                    }
-                    else
-                    {
-                        // Click vào Title -> Nhảy đến snapshot index cuối cùng của Operation đó
-                        return op.finalSnapshotIndex;
-                    }
+                    return op.subSteps[i].snapshotIndex;
                 }
-
-                currentY += m_rowHeight;
-
-                // KIỂM TRA CLICK VÀO SUB-STEPS
-                for(size_t i = 0; i < op.subSteps.size(); ++i)
-                {
-                    float targetOffset = (i + 1) * m_rowHeight;
-                    float animatedSubY = headerY + (targetOffset * visualT);
-
-                    // Chỉ cho phép click nếu sub-step đã hiện ra đủ rõ (visualT > 0.5)
-                    if(visualT > 0.5f && sf::FloatRect(0.f, animatedSubY, m_width, m_rowHeight).contains(contentMouse))
-                    {
-                        return op.subSteps[i].snapshotIndex; // Trả về index để nhảy
-                    }
-                }
-
-                // Tính lại currentY cho Operation tiếp theo dựa trên độ giãn thực tế
-                currentY = headerY + m_rowHeight + (op.subSteps.size() * m_rowHeight * visualT);
             }
+
+            // Tính lại currentY dựa trên độ giãn thực tế
+            currentY = headerY + m_rowHeight + (op.subSteps.size() * m_rowHeight * visualT);
         }
-
-        return -1; // Mặc định không có gì xảy ra
     }
+
+    return -1;
+}
 
     void HistoryBoard::updateScrollPhysics(float dt)
     {
@@ -182,16 +210,14 @@ namespace GUI
 
         if(Utils::ViewHandler::isMouseInFrame(mousePos, window, boardBounds))
         {
-            // View này để check hàng (đã cuộn)
             sf::View contentView;
             contentView.setSize(m_width, m_height);
-            contentView.setCenter(m_width / 2.f, m_height / 2.f + m_scrollSpring.position);
+            contentView.setCenter(-m_width / 2.f, -m_height / 2.f + m_scrollSpring.position);
             sf::Vector2f mouseInContent = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, contentView);
 
-            // View này để check scrollbar (không cuộn)
             sf::View frameView;
             frameView.setSize(m_width, m_height);
-            frameView.setCenter(m_width / 2.f, m_height / 2.f);
+            frameView.setCenter(-m_width / 2.f, -m_height / 2.f);
             sf::Vector2f mouseInFrame = Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, frameView);
 
             if(m_scrollbar.isMouseOverThumb(mouseInFrame) || m_scrollbar.isDragging())
@@ -200,29 +226,28 @@ namespace GUI
             }
             else
             {
-                float checkY = 25.f;
+                // SỬA TẠI ĐÂY: checkY âm
+                float checkY = -m_height + 25.f;
                 int rowCounter = 0;
 
                 for(const auto& op : m_uiRecords)
                 {
                     float visualT = Utils::Math::Easing::easeInOutQuart(op.expansionProgress);
 
-                    // Check Header
-                    if(sf::FloatRect(0.f, checkY, m_width, m_rowHeight).contains(mouseInContent))
+                    if(sf::FloatRect(-m_width, checkY, m_width, m_rowHeight).contains(mouseInContent))
                     {
                         m_hoveredRowIdx = rowCounter;
                         isOverClickable = true;
                     }
                     rowCounter++;
 
-                    // Check Sub-steps
                     float subHeightTotal = op.subSteps.size() * m_rowHeight * visualT;
                     if(visualT > 0.1f && !isOverClickable)
                     {
                         for(size_t i = 0; i < op.subSteps.size(); ++i)
                         {
                             float subY = checkY + m_rowHeight + (i * m_rowHeight * visualT);
-                            if(sf::FloatRect(0.f, subY, m_width, m_rowHeight).contains(mouseInContent))
+                            if(sf::FloatRect(-m_width, subY, m_width, m_rowHeight).contains(mouseInContent))
                             {
                                 m_hoveredRowIdx = rowCounter;
                                 isOverClickable = true;
@@ -258,6 +283,42 @@ namespace GUI
         if(currentManagerIdx != m_activeSnapshotIdx)
         {
             m_activeSnapshotIdx = currentManagerIdx;
+
+            // --- LOGIC TỰ ĐỘNG ĐÓNG CỤM MACRO ---
+            if(!m_uiRecords.empty())
+            {
+                for(size_t i = 0; i < m_uiRecords.size(); ++i)
+                {
+//                    // 1. Nếu là cụm cuối cùng -> Luôn giữ mở
+//                    if(i == m_uiRecords.size() - 1)
+//                    {
+//                        m_uiRecords[i].isExpanded = true;
+//                        continue;
+//                    }
+
+                    // 2. Kiểm tra xem cụm nà++y có chứa snapshot đang active không
+                    bool containsActive = false;
+                    for(const auto& sub : m_uiRecords[i].subSteps)
+                    {
+                        if(sub.snapshotIndex == m_activeSnapshotIdx)
+                        {
+                            containsActive = true;
+                            break;
+                        }
+                    }
+
+                    // 3. Nếu không chứa active và không phải cuối -> Đóng lại
+                    if(!containsActive)
+                    {
+                        m_uiRecords[i].isExpanded = false;
+                    }
+                    else
+                    {
+                        m_uiRecords[i].isExpanded = true;
+                    }
+                }
+            }
+
             autoScrollToActive();
         }
 
@@ -287,7 +348,7 @@ namespace GUI
         // 5. CẬP NHẬT SCROLLBAR
         // Lấy tọa độ chuột local để scrollbar check hover trên chính nó
         sf::Vector2f mouseInFrame = getMouseInFrame(window);
-        m_scrollbar.update(dt, m_scrollSpring.position, m_totalCalculatedHeight, m_height, mouseInFrame);
+        m_scrollbar.update(dt, m_scrollSpring.position, m_totalCalculatedHeight, m_height, m_width, mouseInFrame);
     }
 
     sf::Vector2f HistoryBoard::getMouseInFrame(sf::RenderWindow& window)
@@ -295,23 +356,25 @@ namespace GUI
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::FloatRect boardBounds = getTransform().transformRect(m_background.getGlobalBounds());
 
-        // View này đại diện cho cái khung tĩnh của Board (không bị ảnh hưởng bởi lò xo cuộn)
         sf::View frameView;
         frameView.setSize(m_width, m_height);
-        frameView.setCenter(m_width / 2.f, m_height / 2.f);
+
+        // SỬA TẠI ĐÂY: View phải soi vào vùng âm (-m_width đến 0)
+        // Tâm của vùng từ -m_width đến 0 là -m_width / 2
+        frameView.setCenter(-m_width / 2.f, -m_height / 2.f);
 
         return Utils::ViewHandler::mapPixelToWorld(mousePos, window, boardBounds, frameView);
     }
 
     void HistoryBoard::autoScrollToActive()
     {
-        float currentY = 25.f; // Padding top
+        if(m_scrollbar.isDragging()) return;
+
+        float currentY = -m_height + 25.f; // Bắt đầu từ vùng âm
 
         for(auto& op : m_uiRecords)
         {
             float headerY = currentY;
-
-            // Kiểm tra xem Snapshot active có nằm trong Operation này không
             bool containsActive = false;
             int activeSubIdxInOp = -1;
 
@@ -327,24 +390,19 @@ namespace GUI
 
             if(containsActive)
             {
-                // TỰ ĐỘNG MỞ mục này ra nếu nó đang đóng để người dùng thấy dòng active
                 if(!op.isExpanded) op.isExpanded = true;
-
-                // Tính toán vị trí Y của dòng Sub-step đó
-                // Lưu ý: Dùng expansionProgress thực tế để tính tọa độ chính xác lúc đang trượt
                 float visualT = Utils::Math::Easing::easeInOutQuart(op.expansionProgress);
                 float targetRowY = headerY + m_rowHeight + (activeSubIdxInOp * m_rowHeight * visualT);
 
-                // Căn giữa dòng này vào Viewport
-                float targetY = targetRowY - (m_height / 2.f) + (m_rowHeight / 2.f);
+                // Căn giữa logic: Chuyển targetRowY âm sang hệ dương tương đối để tính Scroll Target
+                float targetRowY_pos = targetRowY + m_height;
+                float targetScroll = targetRowY_pos - (m_height / 2.f) + (m_rowHeight / 2.f);
 
-                // Ép vào biên an toàn
-                m_scrollSpring.target = std::clamp(targetY, 0.f, m_maxScrollY);
+                m_scrollSpring.target = std::clamp(targetScroll, 0.f, m_maxScrollY);
                 m_scrollbar.show();
                 return;
             }
 
-            // Nếu không phải mục này, cộng dồn chiều cao để tìm tiếp mục sau
             float visualT = Utils::Math::Easing::easeInOutQuart(op.expansionProgress);
             currentY += m_rowHeight + (op.subSteps.size() * m_rowHeight * visualT);
         }
@@ -362,46 +420,38 @@ namespace GUI
         setPosition(pos.x, pos.y);
     }
 
+    // Sửa drawRow: Nhận trực tiếp font để không phụ thuộc vào ResourceManager lúc draw
     void HistoryBoard::drawRow(sf::RenderTarget& target, sf::RenderStates states,
                                const std::string& textStr, const sf::String& iconUnicode,
-                               float yPos, bool isHeader, bool isActive, sf::Uint8 alpha, float rotation) const
+                               float yPos, bool isHeader, bool isActive, sf::Uint8 alpha,
+                               float rotation, const sf::Font& iconF, const sf::Font& textF) const
     {
-        auto& res = ResourceManager::getInstance();
         sf::Text icon, label;
 
-        // 1. Thiết lập Font và Size (Đã sửa lại cho đúng loại Font)
-        icon.setFont(res.getFont("assets/fonts/Phosphor.ttf"));
-        label.setFont(res.getFont("assets/fonts/SFProText-Regular.ttf"));
+        icon.setFont(iconF);
+        label.setFont(textF);
 
-        icon.setCharacterSize(isHeader ? 22 : 18);
-        label.setCharacterSize(isHeader ? 16 : 14);
+        icon.setCharacterSize(isHeader ? 20 : 16);
+        label.setCharacterSize(isHeader ? 14 : 12);
 
-        // 2. Thiết lập nội dung
         icon.setString(iconUnicode);
         label.setString(sf::String::fromUtf8(textStr.begin(), textStr.end()));
 
-        // 3. Màu sắc: Nếu Active hoặc là Header thì để màu trắng, ngược lại xám nhẹ
-        // ÁP DỤNG ALPHA VÀO MÀU SẮC
         sf::Color baseColor = (isHeader || isActive) ? sf::Color::White : sf::Color(180, 180, 180);
-        baseColor.a = alpha; // Gán alpha vào kênh màu
+        baseColor.a = alpha;
         icon.setFillColor(baseColor);
         label.setFillColor(baseColor);
 
-        sf::FloatRect bounds = icon.getLocalBounds();
-        icon.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-        icon.setRotation(rotation); // Thêm dòng này
-
-        // 4. Căn chỉnh vị trí (Vertical Centering)
-        float startX = isHeader ? 20.f : 20.f + m_indentSize;
-
-        // Căn giữa icon theo trục dọc của row
-        float iconY = yPos + (m_rowHeight / 2.f);
+        // Origin & Rotation
         sf::FloatRect iconBounds = icon.getLocalBounds();
-//        icon.setOrigin(0.f, iconBounds.top + iconBounds.height / 2.f);
+        icon.setOrigin(iconBounds.left + iconBounds.width / 2.f, iconBounds.top + iconBounds.height / 2.f);
+        icon.setRotation(rotation);
+
+        float startX = isHeader ? 20.f : 20.f + m_indentSize;
+        float iconY = yPos + (m_rowHeight / 2.f);
         icon.setPosition(startX, iconY);
 
-        // Label nằm cách icon một khoảng 15px (nếu icon không rỗng)
-        float labelX = startX + (iconUnicode.isEmpty() ? 0.f : 35.f);
+        float labelX = startX + (iconUnicode.isEmpty() ? 0.f : 25.f);
         sf::FloatRect labelBounds = label.getLocalBounds();
         label.setOrigin(0.f, labelBounds.top + labelBounds.height / 2.f);
         label.setPosition(labelX, iconY);
@@ -438,37 +488,39 @@ namespace GUI
     }
 
 
-    // src\GUI\HistoryBoard.cpp
-
-// src\GUI\HistoryBoard.cpp
 
     void HistoryBoard::syncWithManager(const Core::TimelineManager& manager)
     {
         // 1. Xóa sạch UI cũ
         m_uiRecords.clear();
 
-        for (int i = 0; i < manager.getCount(); ++i)
+        for(int i=0;i<manager.getCount();++i)
         {
             auto snap = manager.getSnapshot(i);
-            if (!snap) continue;
+            if(!snap)
+            {
+                continue;
+            }
 
-            // KIỂM TRA: Snapshot này có thuộc về Operation hiện tại không?
-            // Nếu m_uiRecords rỗng HOẶC tên Operation thay đổi -> Tạo Operation mới (Big Step)
-            if (m_uiRecords.empty() || m_uiRecords.back().name != snap->operationName)
+            // SỬA TẠI ĐÂY: snap->operationName chuyển thành snap->notchData.title
+            // Kiểm tra xem Snapshot này có thuộc về Operation hiện tại không?
+            if(m_uiRecords.empty() || m_uiRecords.back().macroID != snap->macroStepID)
             {
                 Core::HistoryOperation newOp;
-                newOp.name = snap->operationName;
-                newOp.iconCode = ""; // Ông có thể mapping icon tùy theo tên Op ở đây
-                newOp.isExpanded = true;
-                newOp.expansionProgress = 1.0f;
+                newOp.macroID = snap->macroStepID;
+                newOp.name = snap->notchData.title; // Lấy từ notchData
+                newOp.iconCode = snap->notchData.iconCode; // Ông có thể lấy luôn iconCode từ Snapshot
+                newOp.isExpanded = false;
+                newOp.expansionProgress = 0.f;
 
                 m_uiRecords.push_back(newOp);
             }
 
-            // 2. THÊM SUBSTEP (Small Step) vào Operation cuối cùng trong danh sách
+            // 2. THÊM SUBSTEP
             Core::HistorySubStep sub;
-            sub.description = snap->logMessage;
-            sub.snapshotIndex = i; // Lưu lại để click là nhảy đúng frame
+            // SỬA TẠI ĐÂY: snap->logMessage chuyển thành snap->notchData.subtitle
+            sub.description = snap->notchData.subtitle;
+            sub.snapshotIndex = i;
 
             m_uiRecords.back().subSteps.push_back(sub);
 
@@ -476,7 +528,7 @@ namespace GUI
             m_uiRecords.back().finalSnapshotIndex = i;
         }
 
-        // 3. Cập nhật lại layout để Scrollbar tính đúng chiều cao
+        // 3. Cập nhật lại layout
         this->updateTotalHeight();
     }
 
@@ -568,31 +620,34 @@ namespace GUI
 
     void HistoryBoard::draw(sf::RenderTarget& target, sf::RenderStates states) const
     {
-        if(m_animationProgress < 0.01f)
-        {
-            return;
-        }
+        if(m_animationProgress < 0.01f || !m_iconFont || !m_textFont) return;
 
-        // 1. VẼ NỀN (Nền tĩnh)
+        // 1. Vẽ nền Squircle (Sử dụng transform của Board)
         sf::RenderStates boardStates = states;
         boardStates.transform *= getTransform();
         target.draw(m_background, boardStates);
 
-        // 2. THIẾT LẬP VIEWPORT VÀ CULLING
+        // 2. TÍNH TOÁN VIEWPORT CHUẨN (Fix lệch chữ)
         sf::View originalView = target.getView();
         sf::Vector2u winSize = target.getSize();
-        sf::FloatRect globalBounds = getTransform().transformRect(m_background.getGlobalBounds());
+
+        // Lấy vùng giới hạn của Board trong hệ 1920x1080
+        sf::FloatRect logicBounds = getTransform().transformRect(m_background.getGlobalBounds());
+
+        // Chuyển đổi: Tọa độ 1920x1080 -> Pixel thực trên màn hình (đã tính Letterbox)
+        sf::Vector2i topLeftPx = target.mapCoordsToPixel({logicBounds.left, logicBounds.top});
+        sf::Vector2i bottomRightPx = target.mapCoordsToPixel({logicBounds.left + logicBounds.width, logicBounds.top + logicBounds.height});
+
+        // Tính tỉ lệ Viewport (0.0 -> 1.0) dựa trên pixel thực
+        float vX = (float)topLeftPx.x / winSize.x;
+        float vY = (float)topLeftPx.y / winSize.y;
+        float vW = (float)(bottomRightPx.x - topLeftPx.x) / winSize.x;
+        float vH = (float)(bottomRightPx.y - topLeftPx.y) / winSize.y;
 
         sf::View contentView;
         contentView.setSize(m_width, m_height);
         contentView.setCenter(m_width / 2.f, (m_height / 2.f) + m_scrollSpring.position);
-
-        contentView.setViewport(sf::FloatRect(
-            globalBounds.left / static_cast<float>(winSize.x),
-            globalBounds.top / static_cast<float>(winSize.y),
-            globalBounds.width / static_cast<float>(winSize.x),
-            globalBounds.height / static_cast<float>(winSize.y)
-        ));
+        contentView.setViewport(sf::FloatRect(vX, vY, vW, vH));
 
         target.setView(contentView);
 
@@ -634,8 +689,9 @@ namespace GUI
                     float iconRotation = visualT * 90.f;
 
                     // 2. Vẽ Header: dùng boardContentAlpha để hiện dần ra cùng với Board
-                    drawRow(target, sf::RenderStates::Default, op.name,
-                            L"\uE13A", currentY, true, false, boardContentAlpha, iconRotation);
+                    drawRow(target, sf::RenderStates::Default, op.name, L"\uE13A",
+                            currentY, true, false, boardContentAlpha, iconRotation,
+                            *m_iconFont, *m_textFont);
                 }
             }
 
@@ -673,8 +729,9 @@ namespace GUI
                         bool isActive = (op.subSteps[i].snapshotIndex == m_activeSnapshotIdx);
 
                         // Truyền rowAlpha vào drawRow để làm mờ
-                        drawRow(target, sf::RenderStates::Default, sub.description,
-                                L"\uECE0", animatedY, false, isActive, rowAlpha, 0);
+                        drawRow(target, sf::RenderStates::Default, op.subSteps[i].description,
+                                L"\uECE0", animatedY, false, isActive, rowAlpha, 0,
+                                *m_iconFont, *m_textFont);
                     }
 //                    drawRow(target, sf::RenderStates::Default, sub.description, L"\uF017", animatedY, false, isActive);
                 }
@@ -695,9 +752,9 @@ namespace GUI
             sf::Text emptyIcon, emptyMsg, subMsg;
 
             // Thiết lập Font và Size
-            emptyIcon.setFont(res.getFont("assets/fonts/Phosphor.ttf"));
-            emptyMsg.setFont(res.getFont("assets/fonts/SFProText-Regular.ttf"));
-            subMsg.setFont(res.getFont("assets/fonts/SFProText-Regular.ttf"));
+            emptyIcon.setFont(*m_iconFont);
+            emptyMsg.setFont(*m_textFont);
+            subMsg.setFont(*m_textFont);
 
             emptyIcon.setString(L"\uF15B"); // Icon tờ giấy/lịch sử
             emptyMsg.setString("No History Yet");
@@ -735,5 +792,11 @@ namespace GUI
         // 4. KHÔI PHỤC VIEW VÀ VẼ SCROLLBAR
         target.setView(originalView);
         target.draw(m_scrollbar, boardStates);
+
+        // VẼ NHÁP ĐỂ KIỂM TRA:
+//        sf::RectangleShape debugRect({10.f, m_height});
+//        debugRect.setFillColor(sf::Color::Red);
+//        debugRect.setPosition(m_width - 10.f, 0.f); // Vẽ một thanh màu đỏ sát lề phải Board
+//        target.draw(debugRect, boardStates);
     }
 }

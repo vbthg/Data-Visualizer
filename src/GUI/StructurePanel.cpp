@@ -578,7 +578,7 @@ void StructurePanel::syncGraphObjects(const Core::RenderFrame& frame, float dt)
         }
     }
 
-    std::cout << m_isAutoFollow << " " << m_needsReposition << " " << m_isPanning << "\n";
+//    std::cout << m_isAutoFollow << " " << m_needsReposition << " " << m_isPanning << "\n";
 
     // --- 5. SMART FIT VIEW (Logic Base State) ---
     // Chỉ gọi fitView nếu m_isAutoFollow đang bật và người dùng không can thiệp

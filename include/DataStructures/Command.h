@@ -31,11 +31,12 @@ namespace DS // Namespace DataStructures (Optional, cho gọn)
     // 3. Command Struct: Định nghĩa một nút bấm
     struct Command
     {
-        sf::String name;           // Tên hiển thị trên nút
+        sf::String iconCode;           // code của icon cho Button
+        std::string name;              // tên hiển thị trên popover
         InputType inputType;        // Loại Input UI cần vẽ
         std::function<void(InputArgs)> action; // Hàm callback logic
 
-        Command(sf::String n, InputType type, std::function<void(InputArgs)> act)
-            : name(n), inputType(type), action(act) {}
+        Command(sf::String code, std::string _name, InputType type, std::function<void(InputArgs)> act)
+            : iconCode(code), name(_name), inputType(type), action(act) {}
     };
 }

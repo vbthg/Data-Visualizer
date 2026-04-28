@@ -240,7 +240,7 @@ namespace GUI
                     return true;
                 }
 
-                if(inputType == Type::String && testString.length() > 25)
+                if(inputType == Type::String && testString.length() > 255)
                 {
                     triggerErrorShake();
                     return true;

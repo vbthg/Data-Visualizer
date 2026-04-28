@@ -162,89 +162,75 @@ namespace GUI
         }
 
         // 3. Nếu bảng đang mở (hoặc đang mở dở), vẽ nội dung với glScissor
-        if (m_alphaSpring.position > 5.0f)
+        if(m_alphaSpring.position > 5.0f)
         {
+            // --- BẮT ĐẦU LOGIC SCISSOR CHUẨN ---
+
+            // 1. Xác định vùng cắt trong hệ tọa độ Logic (1920x1080)
+            float logicX = m_xSpring.position + 5.0f;
+            float logicY = m_ySpring.position + 5.0f;
+            float logicW = std::max(0.0f, m_wSpring.position - 10.0f);
+            float logicH = std::max(0.0f, m_hSpring.position - 10.0f);
+
+            // 2. Tìm tọa độ Pixel thực của góc trên-trái và dưới-phải
+            sf::Vector2i topLeftPx = window.mapCoordsToPixel({logicX, logicY});
+            sf::Vector2i bottomRightPx = window.mapCoordsToPixel({logicX + logicW, logicY + logicH});
+
+            // 3. Tính toán thông số cho glScissor (Screen Space)
+            GLint scissorX = topLeftPx.x;
+            GLsizei scissorW = bottomRightPx.x - topLeftPx.x;
+            GLsizei scissorH = bottomRightPx.y - topLeftPx.y;
+
+            // Quan trọng: OpenGL Y tính từ dưới lên, nên ta lấy chiều cao cửa sổ trừ đi đáy của vùng cắt
+            // window.getSize().y trả về chiều cao thực tế của cửa sổ (ví dụ 720 hoặc 1080)
+            GLint scissorY = window.getSize().y - bottomRightPx.y;
+
             glEnable(GL_SCISSOR_TEST);
+            glScissor(scissorX, scissorY, scissorW, scissorH);
 
-            // Cắt đúng bằng kích thước hình nền hiện tại (Thụt vào 5px để không lẹm viền)
-            float clipX = m_xSpring.position + 5.0f;
-            float clipY = m_ySpring.position + 5.0f;
-            float clipW = std::max(0.0f, m_wSpring.position - 10.0f);
-            float clipH = std::max(0.0f, m_hSpring.position - 10.0f);
+            // --- VẼ NỘI DUNG (Mọi thứ ở đây vẫn dùng tọa độ Logic) ---
 
-            float glY = m_windowHeight - (clipY + clipH);
-
-            glScissor(static_cast<GLint>(clipX), static_cast<GLint>(glY),
-                      static_cast<GLsizei>(clipW), static_cast<GLsizei>(clipH));
-
-            // =====================================
-            // TODO: Vẽ m_titleText, m_parsedCode, m_variables ở đây
-            // (Nhớ set FillColor có alpha bằng biến m_alphaSpring.position trước khi vẽ)
-            // =====================================
-
-            // (Nằm bên trong block glEnable(GL_SCISSOR_TEST))
-
-            // --- 1. Vẽ Tiêu đề (Title) ---
+            // Vẽ Title
             m_titleText.setPosition(m_xSpring.position + 20.0f, m_ySpring.position + 15.0f);
-
-            // Ép độ mờ (Alpha) theo hiệu ứng Morphing
             sf::Color tColor = m_titleText.getFillColor();
             tColor.a = static_cast<sf::Uint8>(std::max(0.0f, std::min(m_alphaSpring.position, 255.0f)));
             m_titleText.setFillColor(tColor);
-
             window.draw(m_titleText);
 
-
-
-            // --- 1.5. VẼ THANH HIGHLIGHTER TRƯỢT ---
-            // Chiều rộng bằng khung trừ đi 2 bên lề (20px * 2)
+            // Vẽ Highlighter
             float hlWidth = m_wSpring.position - 40.0f;
-            // Chiều cao bao trọn dòng chữ (lineSpacing + padding)
-            float hlHeight = 28.0f + 8.0f - 8.f;
-
+            float hlHeight = 28.0f;
             m_highlighter.setSize({std::max(0.0f, hlWidth), hlHeight});
-
-            // Tọa độ X giữ cố định (cách lề trái 20), Tọa độ Y thì đuổi theo lò xo
             m_highlighter.setPosition(m_xSpring.position + 20.0f, m_ySpring.position + m_highlightYSpring.position);
 
-            // Đồng bộ Alpha để nó cũng mờ đi khi bảng thu nhỏ thành viên thuốc
             sf::Color hlColor = m_highlighter.getFillColor();
-            // Map từ dải alphaSpring (0-255) sang độ mờ gốc của thanh (0-60)
             hlColor.a = static_cast<sf::Uint8>(std::max(0.0f, std::min(60.0f, m_alphaSpring.position * (60.0f / 255.0f))));
             m_highlighter.setFillColor(hlColor);
-
             window.draw(m_highlighter);
 
+            // Vẽ Code
+            float startY = m_ySpring.position + 60.0f;
+            float lineSpacing = 28.0f;
 
-
-            // --- 2. Vẽ Các dòng Code đã được Parse ---
-            float startY = m_ySpring.position + 60.0f; // Bắt đầu vẽ cách viền trên 60px
-            float lineSpacing = 28.0f;                 // Khoảng cách mỗi dòng code
-
-            for (size_t lineIdx = 0; lineIdx < m_parsedCode.size(); ++lineIdx)
+            for(size_t lineIdx = 0; lineIdx < m_parsedCode.size(); ++lineIdx)
             {
-                float currentX = m_xSpring.position + 20.0f; // Lề trái
+                float currentX = m_xSpring.position + 20.0f;
                 float currentY = startY + (lineIdx * lineSpacing);
 
-                for (auto& token : m_parsedCode[lineIdx])
+                for(auto& token : m_parsedCode[lineIdx])
                 {
                     token.text.setPosition(currentX, currentY);
-
-                    // Đồng bộ Alpha với Morphing
                     sf::Color c = token.text.getFillColor();
                     c.a = static_cast<sf::Uint8>(std::max(0.0f, std::min(m_alphaSpring.position, 255.0f)));
                     token.text.setFillColor(c);
-
                     window.draw(token.text);
-
-                    // Dịch X sang phải một đoạn bằng đúng chiều rộng của chữ vừa vẽ
                     currentX += token.text.getLocalBounds().width;
                 }
             }
 
             glDisable(GL_SCISSOR_TEST);
 
-            // GỌI HÀM VẼ BIẾN Ở ĐÂY:
+            // Vẽ Variables (thường nằm ngoài vùng Scissor của Code nên vẽ sau)
             drawVariables(window);
         }
     }

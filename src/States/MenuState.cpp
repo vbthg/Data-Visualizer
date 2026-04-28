@@ -63,28 +63,28 @@ void MenuState::initData()
 
         {
             1,
-            "Doubly Linked List",
+            "Coming soon",
             "02",
-            "abc",
-            "short desc",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         },
 
         {
             2,
-            "Stack & Queue",
+            "Coming soon",
             "03",
-            "abc",
-            "short desc",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         },
 
         {
             3,
-            "Circular List",
+            "Coming soon",
             "04",
-            "abc",
-            "short desc",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         }
     };
@@ -109,24 +109,24 @@ void MenuState::initData()
             "06",
             "A perfectly balanced binary search tree. Automatically rotates after every action to maintain optimal query speeds at all times.",
             "Self-balancing precision.",
-            "assets/textures/singly_linked_list_icon.png"
+            "assets/textures/avl_tree_icon.png"
         },
 
         {
             6,
-            "Red-Black Tree",
+            "Trie",
             "07",
-            "A harmony of color rules and branching logic. Guarantees rock-solid performance and stability in the most demanding environments.",
-            "Color-coded efficiency.",
+            "A tree that stores strings by prefix, enabling lightning-fast search and seamless autocomplete.",
+            "Built for prefixes.",
             "assets/textures/singly_linked_list_icon.png"
         },
 
         {
             7,
-            "2-3-4 Tree",
+            "Coming soon",
             "08",
-            "abc",
-            "short desc",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         }
     };
@@ -141,37 +141,64 @@ void MenuState::initData()
             "09",
             "Powered by Kruskal's algorithm. Connects the entire network with zero gaps, zero cycles, and the absolute minimum resource cost.",
             "Optimal connectivity.",
-            "assets/textures/singly_linked_list_icon.png"
+            "assets/textures/mst_icon.png"
         },
 
         {
             9,
-            "Graph (BFS/DFS)",
+            "Shortest Path",
             "10",
-            "abc",
-            "short desc",
-            "assets/textures/singly_linked_list_icon.png"
+            "Powered by Dijkstra's algorithm. Scans every branch to pinpoint the exact shortest route. Unrivaled speed for precise navigation.",
+            "The fastest route.",
+            "assets/textures/shortest_path_icon.png"
         },
 
         {
             10,
-            "Shortest Path",
+            "Coming soon",
             "11",
-            "Powered by Dijkstra's algorithm. Scans every branch to pinpoint the exact shortest route. Unrivaled speed for precise navigation.",
-            "The fastest route.",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         },
 
         {
             11,
-            "Dijkstra",
+            "Coming soon",
             "12",
-            "abc",
-            "short desc",
+            "Coming soon",
+            "Coming soon",
             "assets/textures/singly_linked_list_icon.png"
         }
     };
     allData.push_back(cat3);
+}
+
+std::unique_ptr<DS::DataStructure> MenuState::createDataStructureById(int id)
+{
+    switch(id)
+    {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            return std::make_unique<DS::SinglyLinkedList>();
+
+        case 4: return std::make_unique<DS::Heap>();
+        case 5: return std::make_unique<DS::AVLTree>();
+        case 6:
+        case 7:
+            return std::make_unique<DS::Trie>();
+
+        case 8:
+            return std::make_unique<DS::MST>();
+        case 9:
+        case 10:
+        case 11:
+            return std::make_unique<DS::ShortestPath>();
+
+        default: return nullptr;
+    }
 }
 
 void MenuState::init()
@@ -204,12 +231,15 @@ void MenuState::init()
     titleText.setOrigin(tb.left, tb.top + tb.height/2.0f);
 
     // Đặt vị trí: Cách lề 50px để chừa chỗ cho mũi tên
-    titleText.setPosition(headerX + 50.0f, headerY + 40.0f);
+    titleText.setPosition(headerX + 50.0f, 190.f);
 
     subTitleText.setFont(res.getFont("assets/fonts/font.ttf"));
     subTitleText.setString("Select to visualize");
     subTitleText.setCharacterSize(18);
     subTitleText.setFillColor(Theme::Color::TextSecondary);
+    sf::FloatRect stb = subTitleText.getLocalBounds();
+    subTitleText.setOrigin(stb.left, stb.top + tb.height / 2.f);
+    subTitleText.setPosition(headerX + 50.f, 235.f);
 
 
     // --- B. SETUP BACK ICON (Thêm mới) ---
@@ -225,7 +255,7 @@ void MenuState::init()
     backIcon.setOrigin(ib.left + ib.width/2.0f, ib.top + ib.height/2.0f);
 
     // Đặt vị trí: Nằm bên trái Text (cách lề 20px)
-    backIcon.setPosition(headerX + 20.0f, headerY + 40.0f);
+    backIcon.setPosition(headerX + 20.0f, 190.f);
 
 
     // --- C. SETUP GHOST BUTTON (Controller) ---
@@ -240,7 +270,7 @@ void MenuState::init()
     btnBack->applyPreset(GUI::ButtonPreset::Ghost);
     btnBack->setCornerRadius(12.0f);
 
-    btnBack->setPosition({headerX + btnWidth/2.0f, headerY + 40.0f});
+    btnBack->setPosition({headerX + btnWidth/2.0f, 190.f});
 
     // Logic Click (Giữ nguyên)
     btnBack->onClick = [this]() {
@@ -621,12 +651,18 @@ void MenuState::handleInput(sf::Event& event)
         };
 
         auto onStart = [this, i]() {
-            // Lấy đúng ID thuật toán từ thẻ
             int algoID = this->cards[i]->getId();
-            std::cout << "START ALGO ID: " << algoID << std::endl;
-            // TODO: Chuyển Scene sang VisualizeState tại đây
 
-            states.push(new VisualizerState(window, states, new DS::SinglyLinkedList()));  ///**************************
+            // Tạo ra pointer thông minh
+            auto selectedDS = this->createDataStructureById(algoID);
+
+            if(selectedDS)
+            {
+                // Chuyển giao quyền sở hữu qua VisualizerState bằng std::move
+                auto* vState = new VisualizerState(window, states, std::move(selectedDS));
+                vState->init();
+                states.push(vState);
+            }
         };
 
         auto onBack = [this]() {

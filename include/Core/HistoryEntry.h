@@ -18,6 +18,7 @@ namespace Core
         std::string name = "";
         sf::String iconCode = ""; // Lưu mã Unicode của Icon
         std::vector<HistorySubStep> subSteps = {};
+        int macroID = -1;
 
         int finalSnapshotIndex = 0; // Snapshot khi thao tác này kết thúc hoàn toàn
         bool isExpanded = true; // Trạng thái UI (Mở/Đóng folder)

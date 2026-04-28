@@ -2,9 +2,11 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <memory>
+#include <functional>
 #include "GUI/Notch.h"
 #include "NotchEnums.h"
 #include "WindowConfig.h"
+#include "ISnapshot.h"
 
 namespace GUI
 {
@@ -30,7 +32,9 @@ namespace GUI
         // Ví dụ: pushNotification(Scenario::Processing, "Comparing", "15 > 10", "MagnifyingGlass");
         void pushNotification(Scenario type, const sf::String& title = "", const sf::String& subtitle = "", const sf::String& iconCode = "");
 
-        void update(float dt);
+        void updateFromContext(const Core::NotchContext& ctx, float playbackSpeed, float cursor, int macroStartIdx);
+
+        void update(float dt, sf::RenderWindow& window);
 
         void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
         void updateMousePos(sf::Vector2i mousePos, const sf::RenderWindow& window);
@@ -44,6 +48,13 @@ namespace GUI
                 m_notch->setScenario(GUI::Scenario::Processing);
                 m_notch->setStepInfo(current, total, duration);
             }
+        }
+
+        using FileDroppedCallback = std::function<void(const std::string&)>;
+
+        void setOnFileDroppedCallback(FileDroppedCallback cb)
+        {
+            m_onFileDroppedCallback = cb;
         }
 
     protected:
@@ -63,15 +74,24 @@ namespace GUI
         NotchSize m_currentSizeState;
         sf::Vector2f m_screenSize;
 
+        std::string m_lastTitle; // Thêm dòng này để lưu tiêu đề cuối cùng
+        std::string m_lastSubtitle;
+        int m_lastStep; // Thêm dòng này để chặn reset progress bar
+
         // Hệ thống tự động thu hồi (Auto-dismiss)
         float m_dismissTimer;
         float m_dismissTargetTime;
         bool m_isAutoDismissing;
 
+        sf::Clock m_clickClock;
+        const float DOUBLE_CLICK_THRESHOLD = 0.25f; // Ngưỡng 250ms
+
+        FileDroppedCallback m_onFileDroppedCallback = nullptr;
+
         // Bộ thông số chuẩn Apple (Kích thước: x = width, y = height)
         const sf::Vector2f SIZE_COMPACT = {220.f, 40.f};
         const sf::Vector2f SIZE_STANDARD = {400.f, 50.f};
-        const sf::Vector2f SIZE_EXPANDED = {500.f, 80.f};
+        const sf::Vector2f SIZE_EXPANDED = {400.f, 65.f};
         const sf::Vector2f SIZE_TRAY = {320.f, 180.f};
         const sf::Vector2f SIZE_INPUT = {650.f, 55.f};
 

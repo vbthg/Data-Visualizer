@@ -108,6 +108,7 @@
 		<Unit filename="include/States/IntroState.h" />
 		<Unit filename="include/States/MenuState.h" />
 		<Unit filename="include/States/VisualizerState.h" />
+		<Unit filename="include/UIManager.h" />
 		<Unit filename="include/Utils/Animation/AnimationUtils.h" />
 		<Unit filename="include/Utils/Graphics/Align.h" />
 		<Unit filename="include/Utils/Graphics/AnimationManager.h" />

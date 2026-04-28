@@ -19,7 +19,10 @@
 
 int main()
 {
+    ResourceManager::getInstance().getTexture("assets/textures/macOS Big Sur.png");
+
     Application app;
+
     app.run();
     return 0;
 }

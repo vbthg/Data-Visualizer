@@ -7,7 +7,7 @@ namespace GUI
     namespace Theme = Utils::Graphics::Theme;
 
     // Giá trị khởi tạo giả để tránh lỗi con trỏ
-    DS::Command emptyCmd("Empty", DS::InputType::None, [](DS::InputArgs){});
+    DS::Command emptyCmd("Empty", "Empty", DS::InputType::None, [](DS::InputArgs){});
 
     InputPopover::InputPopover(const sf::Font& font)
         : currentState(State::Closed), currentCommand(emptyCmd)

@@ -104,7 +104,9 @@ namespace GUI
 
         FileDropManager::shutdown();
         FileDropManager::init(windowRef.getSystemHandle());
-        Utils::System::applyLetterboxView(windowRef, lastSize.x, lastSize.y);
+
+        sf::Vector2u winSize = windowRef.getSize();
+        Utils::System::applyLetterboxView(windowRef, winSize.x, winSize.y);
     }
 
     void TitleBar::updateMaximizeIcon()

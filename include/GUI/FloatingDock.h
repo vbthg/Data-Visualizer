@@ -15,6 +15,13 @@ namespace GUI
     {
     private:
         std::vector<DockItem*> m_items;
+        std::vector<std::string> m_itemNames;
+
+        sf::Text m_tooltipText;
+        float m_popoverAlpha = 0.0f;
+        float m_hoverTimer = 0.0f;
+        int m_hoveredIndex = -1; // Lưu index của nút đang được hover
+        const float HOVER_THRESHOLD = 0.3f; // 0.3 giây để hiện popover
 
         float dockHeight;
         sf::Vector2f position;
@@ -46,7 +53,7 @@ namespace GUI
 
         // API MỚI: Thêm Component bất kỳ vào Dock
         void clearItems();
-        void addItem(DockItem* item);
+        void addItem(DockItem* item, std::string name = "");
 
         // Hàm tương thích ngược với cấu trúc cũ
         void setCommands(const std::vector<DS::Command>& cmds, const sf::Font& iconFont);

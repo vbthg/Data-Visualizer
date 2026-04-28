@@ -22,6 +22,12 @@ namespace DS
             if(m_timeline) m_timeline->clear();
         }
 
+        // Trả về true nếu nạp thành công, false nếu file lỗi định dạng
+        virtual bool loadFromFile(const std::string& path) {} ;
+
+        // Trả về một thông báo lỗi cụ thể để Notch hiển thị nếu load thất bại
+        virtual std::string getLastError() const { return "Invalid file format."; }
+
         virtual void updateNodePosition(int id, sf::Vector2f newPos) { };
 
         // BẮT BUỘC: Lớp con phải trả về danh sách các lệnh (Insert, Delete,...) để UI tạo nút bấm

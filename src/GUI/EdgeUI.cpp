@@ -309,6 +309,7 @@ namespace GUI
                 if (normalizedT <= m_fillProgress - softEdgeWidth)
                 {
                     vertexColor = m_fillColor; // Vùng đã lan xong 100%
+                    vertexColor.a *= m_opacity;
                 }
                 else if (normalizedT < m_fillProgress)
                 {
@@ -327,11 +328,12 @@ namespace GUI
                     vertexColor = sf::Color(static_cast<sf::Uint8>(r),
                                             static_cast<sf::Uint8>(g),
                                             static_cast<sf::Uint8>(b),
-                                            static_cast<sf::Uint8>(a));
+                                            static_cast<sf::Uint8>(a * m_opacity));
                 }
                 else
                 {
                     vertexColor = m_baseFillColor; // Vùng chưa lan tới
+                    vertexColor.a *= m_opacity;
                 }
             }
 
@@ -349,6 +351,7 @@ namespace GUI
                     intensity = intensity * intensity * (3.0f - 2.0f * intensity);
 
                     vertexColor = Utils::Math::Easing::lerpColor(m_currentColor, m_pulseColor, intensity);
+                    vertexColor.a *= m_opacity;
                 }
             }
 

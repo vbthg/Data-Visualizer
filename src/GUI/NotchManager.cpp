@@ -15,7 +15,10 @@ namespace GUI
           m_currentSizeState(NotchSize::Compact),
           m_dismissTimer(0.f),
           m_dismissTargetTime(0.f),
-          m_isAutoDismissing(false)
+          m_isAutoDismissing(false),
+          m_lastTitle(""), // Khởi tạo ở đây
+          m_lastSubtitle(""),
+          m_lastStep(-1) // Khởi tạo giá trị không tưởng
     {
     }
 
@@ -70,64 +73,35 @@ namespace GUI
         }
     }
 
-    void GUI::NotchManager::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
+    void NotchManager::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     {
-        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
-        {
-            sf::Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
-            if(Utils::ViewHandler::isMouseInFrame(mousePos, window, getBounds()))
-            {
-                if(m_currentScenario == Scenario::Initial)
-                {
-                    pushNotification(Scenario::Input, "", "", "");
-                    return;
-                }
-            }
-        }
-
-        // 1. Logic TỰ ĐỘNG GIÃN NOTCH (Khi đang dragging file)
-        if (FileDropManager::isDragging())
-        {
-            if (m_currentScenario != Scenario::FileTray)
-            {
-                // Ép Notch hiện FileTray ngay khi file vừa chạm vào cửa sổ
-                pushNotification(Scenario::FileTray, "Import Data", "Drop to load file", "\xef\x84\x9e");
-            }
-
-            // Cập nhật hiệu ứng Hover Cyan nếu chuột nằm trong Notch
-            auto tray = dynamic_cast<FileTrayContent*>(m_notch->getContent());
-            if (tray) {
-                sf::Vector2f mousePos = FileDropManager::getHoverPosition();
-                // Nếu chuột đang đè lên Notch
-                tray->setHoverState(getBounds().contains(mousePos));
-            }
-        }
-        // Nếu hết dragging mà không thả file (Drag Leave) -> Quay về trạng thái chờ
-        else if (m_currentScenario == Scenario::FileTray && !FileDropManager::hasDroppedFiles())
-        {
-            // pushNotification(Scenario::Initial, "Import Data", "Click to load file", "\xea\x8a");
-        }
-
-        // 2. Logic XỬ LÝ FILE KHI THẢ (Drop)
-        if (FileDropManager::hasDroppedFiles())
-        {
-            auto files = FileDropManager::popDroppedFiles();
-            if (!files.empty())
-            {
-                // Lấy file đầu tiên để xử lý
-                std::string path = files[0];
-
-                // Kích hoạt chuỗi hiệu ứng: Processing -> Success
-                pushNotification(Scenario::Processing, "Importing...", path, "\xef\x84\x9e");
-                m_notch->getProgressBar().setStep(1, 1, 1.5f);
-            }
-        }
-
-        // 2. QUAN TRỌNG: Chuyển tiếp TẤT CẢ sự kiện vào Content hiện tại
-        // (Bao gồm TextEntered, KeyPressed, MouseMove...)
-        if (m_notch && m_notch->getContent())
+        // 1. Chuyển tiếp sự kiện cho Content (Quan trọng để InputContent gõ phím)
+        if(m_notch && m_notch->getContent())
         {
             m_notch->getContent()->handleEvent(event, window);
+        }
+
+        // 2. Logic Double Click để mở Input
+        if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        {
+            sf::Vector2i pixelPos(event.mouseButton.x, event.mouseButton.y);
+
+            // Dùng hàm cũ của em để kiểm tra tọa độ logic
+            if(Utils::ViewHandler::isMouseInFrame(pixelPos, window, getBounds()))
+            {
+                float elapsed = m_clickClock.getElapsedTime().asSeconds();
+
+                if(elapsed < DOUBLE_CLICK_THRESHOLD)
+                {
+                    // Nhận diện Double Click thành công!
+                    if(m_currentScenario == Scenario::Idle || m_currentScenario == Scenario::Success)
+                    {
+                        pushNotification(Scenario::Input);
+                    }
+                }
+
+                m_clickClock.restart(); // Reset đồng hồ sau mỗi lần click
+            }
         }
     }
 
@@ -180,7 +154,7 @@ namespace GUI
 //        if(type == Scenario::FileTray) std::cout << "start PushNoti: title = " << title << "\n";
 
         NotchSize targetSize = NotchSize::Compact;
-        m_isAutoDismissing = true;
+        m_isAutoDismissing = false;
         m_dismissTimer = 0.f;
 
         switch(type)
@@ -259,20 +233,27 @@ namespace GUI
 
         m_notch -> setScenario(type);
 
-        if (type == Scenario::Input)
+        if(type == Scenario::Input)
         {
             auto content = std::make_unique<GUI::InputContent>(ResourceManager::getInstance().getFont("assets/fonts/SFProText-Regular.ttf"));
 
-            // Khi nhấn Enter
-            content->setOnSubmit([this](std::string path) {
-                // Kiểm tra file tồn tại ở đây hoặc báo Processing
-                this->pushNotification(Scenario::Processing, "Loading...", path, "\xef\x84\x9e");
-                m_notch->getProgressBar().setStep(1, 1, 0.8f);
+            // Khi người dùng nhấn Enter sau khi gõ đường dẫn
+            content->setOnSubmit([this](std::string path)
+            {
+                // Kiểm tra xem đã có "dây nối" callback chưa
+                if(m_onFileDroppedCallback)
+                {
+                    // Gọi callback để bắt đầu quá trình nạp file thực sự
+                    // Bên trong hàm loadFromFile của Structure sẽ tự lo việc hiện Processing/Success
+                    m_onFileDroppedCallback(path);
+                }
             });
 
-            // Khi nhấn Escape
-            content->setOnCancel([this]() {
-                this->pushNotification(Scenario::Initial, "Import Data", "Click to load file", "\xea\x8a");
+            // Khi người dùng nhấn Escape để hủy việc nhập liệu
+            content->setOnCancel([this]()
+            {
+                // Quay về trạng thái Idle (Viên thuốc tối giản)
+                this->pushNotification(Scenario::Idle);
             });
 
             m_notch->changeContent(std::move(content));
@@ -288,7 +269,7 @@ namespace GUI
                 this->pushNotification(Scenario::Processing, "Importing Data", path, "\xef\x84\x9e");
 
                 // Chạy thanh bar ảo (Cách 1 đã thống nhất)
-                this->m_notch->getProgressBar().setStep(1, 1, 1.5f);
+//                this->m_notch->getProgressBar().setStep(1, 1, 1.5f);
             });
 
             // 3. Đẩy vào Notch để bắt đầu Morphing
@@ -314,38 +295,147 @@ namespace GUI
         }
     }
 
-    void NotchManager::update(float dt)
+    void NotchManager::updateFromContext(const Core::NotchContext& ctx, float playbackSpeed, float cursor, int macroStartIdx)
     {
-        if(FileDropManager::isDragging() && m_currentScenario != Scenario::FileTray)
+        if(m_currentScenario != ctx.scenario || m_lastTitle != ctx.title || m_lastSubtitle != ctx.subtitle)
         {
-            pushNotification(Scenario::FileTray, "Drop File", "Release to import", "\xef\x84\x9e");
+            this->pushNotification(ctx.scenario, ctx.title, ctx.subtitle, ctx.iconCode);
+            m_lastTitle = ctx.title;
+            m_lastSubtitle = ctx.subtitle;
         }
 
-        if(m_isAutoDismissing)
+//        if(m_currentScenario == Scenario::Processing)
+//        {
+//            // Số quãng đường nối giữa N điểm là N - 1
+//            int totalSegments = ctx.total - 1;
+//
+//            if(totalSegments > 0)
+//            {
+//                // Tính p dựa trên độ lệch cursor so với điểm bắt đầu macro
+//                float p = (cursor - static_cast<float>(macroStartIdx)) / static_cast<float>(totalSegments);
+//
+//                // Cập nhật số lượng segment cho ProgressBar
+//                m_notch->setStepInfo(0, totalSegments, 1.0f);
+//                m_notch->getProgressBar().setPercent(p);
+//            }
+//            else
+//            {
+//                m_notch->getProgressBar().setPercent(1.0f);
+//            }
+//        }
+    }
+
+void NotchManager::update(float dt, sf::RenderWindow& window)
+{
+    // 1. ĐỒNG BỘ VIEW ĐỂ MAP TỌA ĐỘ (Xử lý Letterboxing)
+//    sf::View oldView = window.getView();
+//    window.setView(uiView);
+
+    // 2. XỬ LÝ TỌA ĐỘ CHUỘT
+    sf::Vector2i pixelPos;
+    if(FileDropManager::isDragging())
+    {
+        sf::Vector2f hover = FileDropManager::getHoverPosition();
+        pixelPos = sf::Vector2i(static_cast<int>(hover.x), static_cast<int>(hover.y));
+    }
+    else
+    {
+        pixelPos = sf::Mouse::getPosition(window);
+    }
+
+    // 3. KIỂM TRA HOVER (Dùng hàm cũ của em trong ViewHandler)
+    sf::FloatRect notchBounds = getBounds();
+    bool isHoveringNotch = Utils::ViewHandler::isMouseInFrame(pixelPos, window, notchBounds);
+    bool currentlyDragging = FileDropManager::isDragging();
+
+    // 1. XỬ LÝ DRAG & DROP (Vẫn là ưu tiên số 1)
+    if (currentlyDragging)
+    {
+        if (m_currentScenario != Scenario::FileTray)
         {
-            m_dismissTimer += dt;
-//            if(m_dismissTimer >= m_dismissTargetTime)
-            if(m_dismissTimer >= m_dismissTargetTime)
-            {
-                pushNotification(Scenario::Idle);
-            }
+            pushNotification(Scenario::FileTray, "Import Data", "Drop file to load", "\xef\x84\x9e");
         }
 
-        if(m_notch)
+        auto tray = dynamic_cast<FileTrayContent*>(m_notch->getContent());
+        if (tray) tray->setHoverState(isHoveringNotch);
+    }
+    // 2. XỬ LÝ KHI THẢ FILE
+    else if (FileDropManager::hasDroppedFiles())
+    {
+        auto files = FileDropManager::popDroppedFiles();
+        if (isHoveringNotch && !files.empty())
         {
-            m_notch->update(dt);
-
-            // Tự động chuyển cảnh khi nạp xong dữ liệu
-            if (m_currentScenario == Scenario::Processing)
-            {
-                if (m_notch->getProgressBar().isFinished())
-                {
-                    // Đổi sang Success với Tick xanh (mã icon \xef\x80\x8c)
-                    pushNotification(Scenario::Success, "Imported", "Ready to visualize", "\xef\x80\x8c");
-                }
-            }
+            if (m_onFileDroppedCallback) m_onFileDroppedCallback(files[0]);
+        }
+        else
+        {
+            // Nếu thoát khỏi dragging mà không có file dropped trúng đích
+            pushNotification(Scenario::Idle, "Import Data", "Drop file or double click here");
         }
     }
+    // 3. LOGIC HỦY DRAG
+    else if (m_currentScenario == Scenario::FileTray)
+    {
+        pushNotification(Scenario::Idle, "Import Data", "Drop file or double click here");
+    }
+
+    // 4. HIỆU ỨNG HOVER CHO IDLE (Quan trọng để gợi ý tương tác)
+    if (!currentlyDragging)
+    {
+        if (m_currentScenario == Scenario::Idle)
+        {
+            // Khi hover vào viên thuốc, nó sẽ nở nhẹ ra và có thể đổi màu viền nhẹ
+            m_notch->setScaleTarget(isHoveringNotch ? 1.05f : 1.0f);
+        }
+        else
+        {
+            m_notch->setScaleTarget(1.0f);
+        }
+    }
+
+    // 6. LOGIC AUTO-DISMISS (Logic cũ của em: Success/Error tự ẩn sau x giây)
+    if(m_isAutoDismissing)
+    {
+        m_dismissTimer += dt;
+        if(m_dismissTimer >= m_dismissTargetTime)
+        {
+            // Hết giờ thì quay về trạng thái nghỉ (Idle)
+            pushNotification(Scenario::Idle);
+        }
+    }
+
+    // 7. LOGIC CHUYỂN CẢNH TỰ ĐỘNG (Ví dụ: Processing xong thì sang Success)
+    // Đoạn này trong code cũ của em đang bị comment, anh mở lại nếu em cần:
+//    if(m_currentScenario == Scenario::Processing)
+//    {
+//        if(m_notch->getProgressBar().isFinished())
+//        {
+//            pushNotification(Scenario::Success, "Imported", "Ready to visualize", "\xef\x80\x8c");
+//        }
+//    }
+
+//    // 8. HIỆU ỨNG SCALE HOVER (Chỉ giãn ra khi ở trạng thái chờ)
+//    if(!FileDropManager::isDragging())
+//    {
+//        if(m_currentScenario == Scenario::Initial || m_currentScenario == Scenario::Idle)
+//        {
+//            m_notch->setScaleTarget(isHoveringNotch ? 1.03f : 1.0f);
+//        }
+//        else
+//        {
+//            m_notch->setScaleTarget(1.0f); // Reset scale nếu đang ở scenario khác
+//        }
+//    }
+
+    // 9. CẬP NHẬT VẬT LÝ LÒ XO CỦA NOTCH CORE
+    if(m_notch)
+    {
+        m_notch->update(dt);
+    }
+
+    // 10. TRẢ LẠI VIEW CŨ
+//    window.setView(oldView);
+}
 
     void NotchManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
     {

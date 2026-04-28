@@ -253,13 +253,13 @@ namespace GUI
 
             // Vẽ ngay trước khi bind(NULL)
             // 3. VẼ PROGRESS BAR Ở DƯỚI ĐÁY (THÊM ĐOẠN NÀY)
-            if(m_currentScenario == GUI::Scenario::Processing)
-            {
-                sf::RenderStates barStates = states;
-                barStates.shader = nullptr;
-                barStates.transform.translate(25.f, m_size.y - m_progressBar.getSize().y - 5.f); // Dịch lên 10.0f để tránh bị che khuất ở mép dưới
-                target.draw(m_progressBar, barStates);
-            }
+//            if(m_currentScenario == GUI::Scenario::Processing)
+//            {
+//                sf::RenderStates barStates = states;
+//                barStates.shader = nullptr;
+//                barStates.transform.translate(25.f, m_size.y - m_progressBar.getSize().y - 5.f); // Dịch lên 10.0f để tránh bị che khuất ở mép dưới
+//                target.draw(m_progressBar, barStates);
+//            }
 
 
             // 2. NGẮT SHADER NGAY LẬP TỨC ĐỂ CỨU SFML TEXT
@@ -271,7 +271,7 @@ namespace GUI
 
             // 3. Vẽ nội dung bằng trạng thái sạch
             if(m_currentScenario != GUI::Scenario::FileTray) target.draw(m_waveform, cleanStates);
-            if(m_oldContent) target.draw(*m_oldContent, cleanStates);
+//            if(m_oldContent) target.draw(*m_oldContent, cleanStates);
             if(m_currentContent) target.draw(*m_currentContent, cleanStates);
 
 //            target.draw(m_waveform, states); // THÊM DÒNG NÀY VÀO NGAY SAU

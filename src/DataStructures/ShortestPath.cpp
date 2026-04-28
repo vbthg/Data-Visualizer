@@ -1,6 +1,9 @@
 #include "ShortestPath.h"
-#include <algorithm>
+#include "ResourceManager.h"
+#include <fstream>
 #include <sstream>
+#include <queue>
+#include <algorithm>
 
 namespace DS
 {
@@ -8,35 +11,40 @@ namespace DS
 
     void ShortestPath::addNode(int id, sf::Vector2f pos)
     {
-        m_nodes.push_back({id, pos, std::numeric_limits<float>::infinity(), -1, false});
-        // Đồng bộ lại counter để tránh trùng ID khi người dùng mix giữa addEdge và click chuột
-        if(id >= m_nextNodeId)
+        if(findNode(id)) return;
+
+        sf::Vector2f safePos = pos;
+        // Nếu vị trí chỉ định bị đè, tự động tìm vị trí mới quanh đó
+        if(!isPositionSafe(pos, 100.0f))
         {
-            m_nextNodeId = id + 1;
+            safePos = findBestPosition(pos);
         }
+
+        m_nodes.push_back({id, safePos, std::numeric_limits<float>::infinity(), -1, false});
+        if(id >= m_nextNodeId) m_nextNodeId = id + 1;
     }
 
     void ShortestPath::addEdge(int u, int v, float weight)
     {
-        if(!findNode(u)) addNode(u, sf::Vector2f(100.f, 100.f));
+        m_timeline->onNewMacroStarted();
+        createSnapshot(GUI::Scenario::Processing, "Add Edge", "Adding connection between " + std::to_string(u) + " and " + std::to_string(v), -1);
 
-        if(!findNode(v))
-        {
-            GraphNode* nodeU = findNode(u);
-            addNode(v, nodeU ? findBestPosition(nodeU->pos) : sf::Vector2f(200.f, 200.f));
-        }
+        if(!findNode(u)) addNode(u, sf::Vector2f(200.f, 200.f));
+        if(!findNode(v)) addNode(v, findBestPosition(findNode(u)->pos));
 
-        // Bây giờ push_back sẽ cực kỳ an toàn nhờ constructor
         m_edges.push_back(GraphEdge(m_nextEdgeId++, u, v, weight));
 
-        createSnapshot(GUI::Scenario::Success, "Added edge (" + std::to_string(u) + "," + std::to_string(v) + ")", -1);
+        createSnapshot(GUI::Scenario::Success, "Edge Added", "Weight: " + std::to_string((int)weight), -1);
+        m_timeline->onMacroFinished();
     }
 
     void ShortestPath::runDijkstra(int startNodeId, int endNodeId)
     {
         if(m_nodes.empty()) return;
+        m_timeline->onNewMacroStarted();
 
-        // Reset dữ liệu trước khi chạy (quan trọng để chạy lại nhiều lần không lỗi)
+        createSnapshot(GUI::Scenario::Processing, "Dijkstra Initializing", "Resetting all nodes to infinity", -1);
+
         for(auto& n : m_nodes)
         {
             n.dist = std::numeric_limits<float>::infinity();
@@ -45,17 +53,20 @@ namespace DS
         }
         for(auto& e : m_edges)
         {
-            e.visualFill = 0.0f;
-            e.visualColor = sf::Color(150, 150, 150, 100);
-            e.inPath = false;
+            e.lastFillProgress = 0.0f;
+            e.inFinalPath = false;
         }
 
         GraphNode* startNode = findNode(startNodeId);
-        if(!startNode) return;
-        startNode->dist = 0;
+        if(!startNode)
+        {
+            createSnapshot(GUI::Scenario::Error, "Error", "Source node not found!", -1);
+            m_timeline->onMacroFinished();
+            return;
+        }
 
-        m_timeline->onNewMacroStarted();
-        createSnapshot(GUI::Scenario::Processing, "Initialize Dijkstra from source " + std::to_string(startNodeId), 0);
+        startNode->dist = 0;
+        createSnapshot(GUI::Scenario::Processing, "Source Found", "Distance[source] = 0", 0, startNodeId);
 
         using pii = std::pair<float, int>;
         std::priority_queue<pii, std::vector<pii>, std::greater<pii>> pq;
@@ -63,214 +74,285 @@ namespace DS
 
         while(!pq.empty())
         {
-            float d = pq.top().first;
             int u = pq.top().second;
+            float d = pq.top().first;
             pq.pop();
 
             GraphNode* nodeU = findNode(u);
             if(d > nodeU->dist) continue;
 
-            // ĐÁNH DẤU FINALIZED TRƯỚC (Đúng như em yêu cầu)
+            createSnapshot(GUI::Scenario::Processing, "Extract Min", "Considering node " + std::to_string(u), 4, u, -1, -1, {{"u", std::to_string(u)}, {"dist", std::to_string((int)d)}});
+
             nodeU->finalized = true;
+            createSnapshot(GUI::Scenario::Processing, "Finalize", "Node " + std::to_string(u) + " marked as finalized", 6, u);
 
-            // Snapshot này sẽ cho thấy đỉnh u chuyển sang màu vàng (Focus)
-            // nhưng thực tế nó đã được gán finalized ngầm bên dưới.
-            createSnapshot(GUI::Scenario::Processing, "Processing node " + std::to_string(u), 4, u);
-
+            // FIX FLICKERING: Gom nhóm các cạnh theo đỉnh kề
+            std::map<int, GraphEdge*> bestNeighbors;
             for(auto& edge : m_edges)
             {
-                int v = -1;
-                if(edge.u == u) v = edge.v;
-                else if(edge.v == u) v = edge.u;
+                int neighbor = -1;
+                if(edge.u == u) neighbor = edge.v;
+                else if(edge.v == u) neighbor = edge.u;
 
-                if(v != -1)
+                if(neighbor != -1)
                 {
-                    GraphNode* nodeV = findNode(v);
-                    if(nodeV->finalized) continue;
-
-                    createSnapshot(GUI::Scenario::Processing, "Checking edge to neighbor " + std::to_string(v), 7, u, v, edge.id);
-
-                    if(nodeU->dist + edge.weight < nodeV->dist)
+                    // Chỉ lấy cạnh ngắn nhất nối tới 'neighbor' này
+                    if(bestNeighbors.find(neighbor) == bestNeighbors.end() || edge.weight < bestNeighbors[neighbor]->weight)
                     {
-                        nodeV->dist = nodeU->dist + edge.weight;
-                        nodeV->parentId = u;
-                        pq.push({nodeV->dist, v});
+                        bestNeighbors[neighbor] = &edge;
+                    }
+                }
+            }
 
-                        edge.visualFill = 1.0f;
-                        edge.visualColor = COLOR_RELAX;
-                        createSnapshot(GUI::Scenario::Success, "Distance updated!", 11, u, v, edge.id);
-                    }
-                    else
-                    {
-                        edge.visualFill = 1.0f;
-                        edge.visualColor = sf::Color(255, 69, 58, 80); // Đỏ mờ
-                        createSnapshot(GUI::Scenario::Warning, "Not a better path", 9, u, v, edge.id);
-                    }
+            // Duyệt qua các hàng xóm dựa trên cạnh tốt nhất đã lọc
+            for(auto const& [v, edge] : bestNeighbors)
+            {
+                GraphNode* nodeV = findNode(v);
+                if(nodeV->finalized) continue;
+
+                createSnapshot(GUI::Scenario::Processing, "Relaxing", "Checking path to " + std::to_string(v), 9, u, v, edge->id);
+
+                float newDist = nodeU->dist + edge->weight;
+                if(newDist < nodeV->dist)
+                {
+                    nodeV->dist = newDist;
+                    nodeV->parentId = u;
+                    pq.push({newDist, v});
+
+                    // Lưu lại trạng thái để các frame sau vẫn thấy cạnh này đã được "duyệt qua"
+                    edge->lastFillProgress = 1.0f;
+                    edge->lastColor = COLOR_VISITED;
+
+                    createSnapshot(GUI::Scenario::Success, "Relaxed", "Better path found! New dist: " + std::to_string((int)newDist), 11, u, v, edge->id);
+                }
+                else
+                {
+                    createSnapshot(GUI::Scenario::Warning, "Ignored", "Not a better path", 9, u, v, edge->id);
                 }
             }
         }
 
-        // SNAPSHOT CUỐI CÙNG: Dọn dẹp highlight (currentU = -1, currentV = -1)
-        // Snapshot này sẽ làm đỉnh cuối cùng biến từ Vàng sang Xanh (Finalized)
-        createSnapshot(GUI::Scenario::Success, "Dijkstra completed!", 16, -1, -1, -1);
-
-        // Truy vết đường đi nếu có endNode
+        // TRUY VẾT: Nếu có endNodeId, highlight con đường ngắn nhất
         if(endNodeId != -1)
         {
-            int curr = endNodeId;
-            while(curr != -1)
+            GraphNode* targetNode = findNode(endNodeId);
+            if(targetNode && targetNode->dist != std::numeric_limits<float>::infinity())
             {
-                GraphNode* nodeCurr = findNode(curr);
-                int p = nodeCurr->parentId;
-                if(p != -1)
+                createSnapshot(GUI::Scenario::Processing, "Traceback", "Reconstructing path from target " + std::to_string(endNodeId), -1);
+
+                int curr = endNodeId;
+                while(curr != -1)
                 {
-                    GraphEdge* e = findEdge(p, curr);
-                    if(e) e->inPath = true;
+                    GraphNode* n = findNode(curr);
+                    int p = n->parentId;
+                    if(p != -1)
+                    {
+                        GraphEdge* bestE = findBestEdge(p, curr);
+                        if(bestE) bestE->inFinalPath = true;
+                    }
+                    curr = p;
                 }
-                curr = p;
+                createSnapshot(GUI::Scenario::Success, "Path Found", "Shortest path traced successfully!", 16);
             }
-            createSnapshot(GUI::Scenario::Success, "Shortest path shown in green", 16);
+            else
+            {
+                createSnapshot(GUI::Scenario::Error, "No Path", "Cannot reach node " + std::to_string(endNodeId), -1);
+            }
         }
+        else
+        {
+            createSnapshot(GUI::Scenario::Success, "Done", "Dijkstra completed for all reachable nodes", 16);
+        }
+
+        m_timeline->onMacroFinished();
     }
 
-    void ShortestPath::createSnapshot(GUI::Scenario scenario, const std::string& message, int lineIdx, int currentU, int currentV, int relaxingEdgeId, std::vector<std::pair<std::string, std::string>> vars)
+    // Luôn tìm cạnh có trọng số nhỏ nhất để truy vết/hiển thị
+    GraphEdge* ShortestPath::findBestEdge(int u, int v)
+    {
+        GraphEdge* best = nullptr;
+        for(auto& e : m_edges)
+        {
+            if((e.u == u && e.v == v) || (e.u == v && e.v == u))
+            {
+                if(!best || e.weight < best->weight) best = &e;
+            }
+        }
+        return best;
+    }
+
+    void ShortestPath::createSnapshot(GUI::Scenario scenario, const std::string& title, const std::string& subtitle, int lineIdx, int currentU, int currentV, int activeEdgeId, std::vector<std::pair<std::string, std::string>> vars)
     {
         auto snap = std::make_shared<Core::ISnapshot>();
-        snap->scenario = scenario;
-        snap->logMessage = message;
-        snap->operationName = "DIJKSTRA";
-        snap->macroKey = "dijkstra_shortest_path";
-        snap->pseudoCodeLine = lineIdx;
-        snap->variableStates = vars;
+        snap->notchData = {scenario, title, subtitle, ""};
+        snap->codeData = {"dijkstra_shortest_path", lineIdx, vars};
 
-        // Snapshot Nodes
         for(const auto& n : m_nodes)
         {
             Core::NodeState ns;
             ns.id = n.id;
             ns.position = n.pos;
             ns.value = std::to_string(n.id);
+            ns.subText = (n.dist == std::numeric_limits<float>::infinity()) ? "inf" : std::to_string((int)n.dist);
+            ns.scale = (n.id == currentU || n.id == currentV) ? 1.15f : 1.0f;
+            ns.opacity = 1.0f;
+            ns.isDraggable = true;
 
-            // Hiển thị khoảng cách ở subText
-            if(n.dist == std::numeric_limits<float>::infinity()) ns.subText = "d: INF";
-            else ns.subText = "d: " + std::to_string((int)n.dist);
-
-            // Màu sắc theo trạng thái
             if(n.id == currentU) ns.fillColor = COLOR_FOCUS;
-            else if(n.id == currentV) ns.fillColor = COLOR_RELAX;
+            else if(n.id == currentV) ns.fillColor = COLOR_VISITED;
             else if(n.finalized) ns.fillColor = COLOR_SUCCESS;
             else ns.fillColor = COLOR_DEFAULT;
 
-            ns.scale = (n.id == currentU || n.id == currentV) ? 1.2f : 1.0f;
-            ns.isDraggable = true;
+            ns.textColor = (ns.fillColor == COLOR_DEFAULT) ? sf::Color::Black : sf::Color::Black;
             snap->nodeStates.push_back(ns);
         }
 
-        // Snapshot Edges
-        for(auto& e : m_edges)
+        for(const auto& e : m_edges)
         {
             Core::EdgeState es;
-            es.startNodeId = e.u;
-            es.endNodeId = e.v;
+            es.startNodeId = e.u; es.endNodeId = e.v;
             es.subText = std::to_string((int)e.weight);
+            es.opacity = 1.0f;
 
-            if(e.id == relaxingEdgeId)
+            // Cạnh trong đường đi cuối cùng sẽ dày hơn
+            es.thickness = e.inFinalPath ? 6.0f : 4.0f;
+
+            if(e.id == activeEdgeId)
             {
-                // Cạnh đang được active thì fill theo hướng từ u sang v
-                es.baseFillColor = e.visualColor;
-                es.fillColor = (scenario == GUI::Scenario::Success) ? COLOR_SUCCESS : (scenario == GUI::Scenario::Warning ? COLOR_ERROR : COLOR_FOCUS);
+                es.isFocused = true;
                 es.fillProgress = 1.0f;
-                es.fillFromStart = (e.u == currentU);
+                es.fillFromStart = (e.u == currentU); // Lan tỏa từ node đang xét
+
+                if(scenario == GUI::Scenario::Success) es.fillColor = COLOR_SUCCESS;
+                else if(scenario == GUI::Scenario::Warning) es.fillColor = COLOR_SKIP;
+                else es.fillColor = COLOR_FOCUS;
             }
             else
             {
-                // CẬP NHẬT QUAN TRỌNG:
-                // Nếu không phải cạnh đang xét, hãy dùng giá trị visual đã lưu từ các bước trước
-                es.fillProgress = e.visualFill;
-                es.fillColor = e.visualColor;
-                // Giữ nguyên hướng fill cũ (có thể lưu thêm fillFromStart vào GraphEdge nếu cần chính xác tuyệt đối)
-                es.fillFromStart = true;
+                es.isFocused = false;
+                es.fillProgress = e.lastFillProgress;
+                es.fillColor = e.inFinalPath ? COLOR_SUCCESS : e.lastColor;
             }
-
-            // Nếu nằm trong đường đi cuối cùng (sau khi Reconstruct Path)
-            if(e.inPath)
-            {
-                es.fillColor = COLOR_SUCCESS;
-                es.fillProgress = 1.0f;
-                es.thickness = 6.0f;
-            }
-
             snap->edgeStates.push_back(es);
         }
-
-        if(m_timeline) m_timeline->addSnapshot(snap);
+        m_timeline->addSnapshot(snap);
     }
 
-    // --- CÁC HÀM PHỤ TRỢ (Helper Functions) ---
-
-    GraphNode* ShortestPath::findNode(int id)
+    bool ShortestPath::loadFromFile(const std::string& path)
     {
-        for(auto& n : m_nodes) if(n.id == id) return &n;
-        return nullptr;
-    }
+        m_timeline->onNewMacroStarted();
+        // Snapshot 1: Thông báo đang đọc dữ liệu
+        createSnapshot(GUI::Scenario::Processing, "Importing data", "Reading file: " + path, -1);
 
-    GraphEdge* ShortestPath::findEdge(int u, int v)
-    {
-        for(auto& e : m_edges)
+        std::ifstream ifs(path);
+        if(!ifs.is_open())
         {
-            if((e.u == u && e.v == v) || (e.u == v && e.v == u)) return &e;
+            m_lastError = "Could not open file.";
+            createSnapshot(GUI::Scenario::Error, "Load Failed", "File not found: " + path, -1);
+            m_timeline->onMacroFinished();
+            return false;
         }
-        return nullptr;
+
+        m_nodes.clear();
+        m_edges.clear();
+
+        int n, m;
+        if(ifs >> n >> m)
+        {
+            // 1. Tự động sinh n node từ 1 đến n
+            // Đặt node đầu tiên ở trung tâm, các node sau sẽ tự tìm vị trí an toàn
+            sf::Vector2f startPivot(400.f, 300.f);
+            for(int i = 1; i <= n; ++i)
+            {
+                addNode(i, startPivot);
+            }
+
+            // 2. Đọc m cạnh và nối chúng lại
+            for(int i = 0; i < m; ++i)
+            {
+                int u, v;
+                float w;
+                if(ifs >> u >> v >> w)
+                {
+                    // Kiểm tra u, v có nằm trong danh sách node vừa tạo không
+                    if(findNode(u) && findNode(v))
+                    {
+                        m_edges.push_back(GraphEdge(m_nextEdgeId++, u, v, w));
+                    }
+                }
+            }
+        }
+
+        // Snapshot 2: Thông báo hoàn tất nạp dữ liệu
+        createSnapshot(GUI::Scenario::Success, "Import Success",
+                       "Generated " + std::to_string(m_nodes.size()) + " nodes and " + std::to_string(m_edges.size()) + " edges", -1);
+
+        m_timeline->onMacroFinished();
+        return true;
     }
 
-    void ShortestPath::updateNodePosition(int id, sf::Vector2f newPos)
-    {
-        GraphNode* n = findNode(id);
-        if(n) n->pos = newPos;
-    }
-
+    // Các hàm helper giữ nguyên logic an toàn tọa độ
     sf::Vector2f ShortestPath::findBestPosition(sf::Vector2f pivotPos)
     {
-        float radius = 180.f;
-        for(float angle = 0; angle < 360; angle += 45)
+        float radius = 150.0f;
+        for(int circle = 1; circle <= 3; circle++)
         {
-            float rad = angle * 3.14159f / 180.f;
-            sf::Vector2f testPos = pivotPos + sf::Vector2f(cos(rad) * radius, sin(rad) * radius);
-            if(isPositionSafe(testPos, 120.f)) return testPos;
+            for(float angle = 0; angle < 360.0f; angle += 30.0f)
+            {
+                float rad = angle * (3.14159f / 180.0f);
+                sf::Vector2f testPos = pivotPos + sf::Vector2f(std::cos(rad) * radius * circle, std::sin(rad) * radius * circle);
+                if(isPositionSafe(testPos, 100.0f)) return testPos;
+            }
         }
-        return pivotPos + sf::Vector2f(radius, 0.f);
+        return pivotPos + sf::Vector2f(200, 0);
     }
 
     bool ShortestPath::isPositionSafe(sf::Vector2f pos, float minDistance)
     {
         for(const auto& n : m_nodes)
         {
-            float dx = n.pos.x - pos.x;
-            float dy = n.pos.y - pos.y;
+            float dx = pos.x - n.pos.x, dy = pos.y - n.pos.y;
             if(dx*dx + dy*dy < minDistance * minDistance) return false;
         }
         return true;
     }
 
+    void ShortestPath::updateNodePosition(int id, sf::Vector2f newPos)
+    {
+        if(auto n = findNode(id)) n->pos = newPos;
+        m_timeline->updateNodePositionInHistory(id, newPos);
+    }
+
+    GraphNode* ShortestPath::findNode(int id) { for(auto& n : m_nodes) if(n.id == id) return &n; return nullptr; }
+
     std::vector<Command> ShortestPath::getCommands()
     {
         std::vector<Command> cmds;
-        cmds.push_back(Command("Add Edge (u v w)", InputType::String, [this](InputArgs args) {
-            std::stringstream ss(args.sVal);
-            int u, v; float w;
+        // Thêm cạnh
+        cmds.push_back(Command(L"\uE6D2", "Add Edge (u v w)", InputType::String, [this](InputArgs args) {
+            std::stringstream ss(args.sVal); int u, v; float w;
             if(ss >> u >> v >> w) this->addEdge(u, v, w);
         }));
-        cmds.push_back(Command("Run Dijkstra (start [end])", InputType::String, [this](InputArgs args) {
-            std::stringstream ss(args.sVal);
-            int s, t = -1;
-            if(ss >> s) { if(!(ss >> t)) t = -1; this->runDijkstra(s, t); }
+
+        // Tìm đường đi cụ thể s -> t (Có truy vết)
+        cmds.push_back(Command(L"\uE47C", "Path s -> t", InputType::String, [this](InputArgs args) {
+            std::stringstream ss(args.sVal); int s, t;
+            if(ss >> s >> t) this->runDijkstra(s, t);
         }));
-        cmds.push_back(Command("Clear", InputType::None, [this](InputArgs args) {
-            this->m_nodes.clear(); this->m_edges.clear();
+
+        // Chạy Dijkstra từ nguồn s (Không giới hạn đích)
+        cmds.push_back(Command(L"\uEB58", "Dijkstra from s", InputType::String, [this](InputArgs args) {
+            std::stringstream ss(args.sVal); int s;
+            if(ss >> s) this->runDijkstra(s, -1);
+        }));
+
+        cmds.push_back(Command(L"\uEC54", "Clear", InputType::None, [this](InputArgs args) {
             this->m_timeline->onNewMacroStarted();
-            this->createSnapshot(GUI::Scenario::Success, "Canvas cleared", -1);
+            createSnapshot(GUI::Scenario::Processing, "Clearing", "Wiping graph data", -1);
+            this->m_nodes.clear(); this->m_edges.clear();
+            createSnapshot(GUI::Scenario::Success, "Cleared", "Canvas is now empty", -1);
+            this->m_timeline->onMacroFinished();
         }));
         return cmds;
     }
-
-} // namespace DS
+}

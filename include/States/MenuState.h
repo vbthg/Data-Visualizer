@@ -2,11 +2,13 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <stack>
+#include <memory>
 #include "State.h"
 #include "MenuCard.h"
 #include "Button.h"
 #include "Squircle.h"         // <--- Thay RoundedRect bằng Squircle
 #include "Theme.h" // <--- Include Theme
+#include "DataStructure.h"
 
 // Struct dữ liệu (định nghĩa ngay tại đây hoặc trong 1 file common)
 struct AlgoInfo
@@ -78,4 +80,6 @@ private:
 
     // Hàm update riêng cho hiệu ứng
     void updateInTransition(float dt);
+
+    std::unique_ptr<DS::DataStructure> createDataStructureById(int id);
 };

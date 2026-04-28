@@ -200,8 +200,8 @@ void CategoriesState::updateLayout(float dt)
     // Update Text (Giữ nguyên)
     float startX = (winW - containerW) / 2.f;
     float startY = (winH - containerH) / 2.f + 30.f;
-    titleText.setPosition(startX, startY - 80.f);
-    subTitleText.setPosition(startX, startY - 40.f);
+    titleText.setPosition(startX, startY - 160.f);
+    subTitleText.setPosition(startX, startY - 110.f);
 
     // LOGIC CHIA CỘT MỚI (Dựa trên tâm)
     // Categories có 3 thẻ.

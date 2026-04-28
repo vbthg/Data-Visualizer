@@ -1,37 +1,47 @@
 // ISnapshot.h
 #pragma once
-#include <vector>
-#include <string>
-#include "AnimationMetadata.h" // Chứa NodeState, EdgeState, TransitionType
+
+#include "AnimationMetadata.h"
 #include "NotchEnums.h"
+#include "vector"
+#include "string"
 
 namespace Core
 {
-    // Để NotchManager biết nên hiện màu gì (Xanh, Đỏ, Vàng...)
+    struct NotchContext
+    {
+        GUI::Scenario scenario;    // Để biết là Processing, Success, hay Error...
+        std::string title;         // Chính là operationName (VD: "AVL Rotation")
+        std::string subtitle;      // Chính là logMessage (VD: "Left-Left case detected")
+        std::string iconCode;      // Mã icon (VD: "\xef\x80\x8c" cho dấu tick)
+
+        int step = 0;              // Bước thứ i trong Macro
+        int total = 0;             // Tổng bước trong Macro
+
+        // Nếu em muốn mỗi bước có màu riêng (hiếm nhưng có thể),
+        // có thể thêm sf::Color customColor ở đây.
+    };
+
+    struct CodeContext
+    {
+        std::string macroKey;
+        int pseudoCodeLine = 0;
+        std::vector<std::pair<std::string, std::string>> variableStates;
+    };
 
     class ISnapshot
     {
     public:
         virtual ~ISnapshot() = default;
 
-        // --- DỮ LIỆU ĐỒ HỌA (Cái để vẽ) ---
         std::vector<NodeState> nodeStates;
         std::vector<EdgeState> edgeStates;
 
-        // --- DỮ LIỆU NGỮ CẢNH (Cái để nói) ---
-        GUI::Scenario scenario; // Dùng đúng Enum của Notch
-        std::string operationName; // VD: "AVL Insertion"
-        std::string logMessage;    // VD: "Comparing 50 with 30..."
-//        StatusType status;         // Màu sắc của Notch lúc đó
+        NotchContext notchData;
+        CodeContext codeData;
 
-        std::string macroKey; // Lưu key như "trie_insert", "trie_search"
-        int pseudoCodeLine;        // Dòng code cần highlight trong PseudoCodeBox
-
-        // Thêm vào class ISnapshot
-        std::vector<std::pair<std::string, std::string>> variableStates;
-
-        // --- DỮ LIỆU LIÊN KẾT (Cái để quản lý) ---
-        int snapshotIndex;         // Vị trí của chính nó trong Timeline
-        int macroStepID;           // ID của Big Step trong HistoryBoard (để biết nó thuộc cụm nào)
+        // Các metadata khác
+        int snapshotIndex;
+        int macroStepID;
     };
 }

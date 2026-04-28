@@ -7,6 +7,7 @@
 #include "Smoothing.h"
 #include "PseudoCodeBox.h"
 #include "PseudoCodeRegistry.h"
+#include "NotchManager.h"
 #include <iostream>
 
 namespace Core
@@ -22,6 +23,8 @@ namespace Core
         bool m_isReviewing; // Bật khi người dùng tương tác với HistoryBoard
         std::string m_lastLoadedMacroKey = "";
         GUI::PseudoCodeBox* codeBox = nullptr;
+        int m_currentOpStartIdx = 0; // Lưu vị trí bắt đầu của Macro hiện tại
+        int m_lastSyncIdx = -1;
 
     public:
         TimelineManager() : m_cursor(0.0f), m_targetCursor(0.f), m_playbackSpeed(1.4f), m_isPlaying(false), m_isReviewing(false) {}
@@ -38,21 +41,40 @@ namespace Core
 
             // Đặt đích đến là snapshot cuối cùng của macro cũ
             m_targetCursor = (float)m_snapshots.size() - 1.0f;
+            m_currentOpStartIdx = static_cast<int>(m_snapshots.size());
             m_isPlaying = true;
+        }
+
+
+        // Hàm này để "chốt sổ" sau khi thuật toán chạy xong
+        void onMacroFinished()
+        {
+            int total = (int)m_snapshots.size() - m_currentOpStartIdx;
+
+            // Nếu thuật toán không tạo ra snapshot nào (trường hợp cực đoan)
+            if(total <= 0) return;
+
+            for(int i = m_currentOpStartIdx; i < (int)m_snapshots.size(); ++i)
+            {
+                m_snapshots[i]->macroStepID = m_currentOpStartIdx;
+                m_snapshots[i]->snapshotIndex = i;
+                m_snapshots[i]->notchData.step = (i - m_currentOpStartIdx) + 1;
+                m_snapshots[i]->notchData.total = total;
+            }
         }
 
         void addSnapshot(std::shared_ptr<ISnapshot> s)
         {
-            if(m_isReviewing)
-            {
-                // Nếu đang xem lại mà có hành động mới -> Cắt bỏ tương lai
-                int currentIdx = (int)m_cursor;
-                if(currentIdx < (int)m_snapshots.size() - 1)
-                {
-                    m_snapshots.erase(m_snapshots.begin() + currentIdx + 1, m_snapshots.end());
-                }
-                m_isReviewing = false; // Thoát chế độ xem lại để quay về chế độ Real-time
-            }
+//            if(m_isReviewing)
+//            {
+//                // Nếu đang xem lại mà có hành động mới -> Cắt bỏ tương lai
+//                int currentIdx = (int)m_cursor;
+//                if(currentIdx < (int)m_snapshots.size() - 1)
+//                {
+//                    m_snapshots.erase(m_snapshots.begin() + currentIdx + 1, m_snapshots.end());
+//                }
+//                m_isReviewing = false; // Thoát chế độ xem lại để quay về chế độ Real-time
+//            }
 
             m_snapshots.push_back(s);
             m_isPlaying = true;
@@ -93,7 +115,9 @@ namespace Core
                 m_isPlaying = false;
             }
 
-            syncUI(codeBox);
+            syncComponents();
+
+
 
 //            std::cout << "[M_CURSOR]: " << m_cursor << "\n";
         }
@@ -190,7 +214,7 @@ namespace Core
             return frame;
         }
 
-        void seek(int index) { m_cursor = (float)std::clamp(index, 0, (int)m_snapshots.size() - 1); }
+        void seek(int index) { m_cursor = (float)std::clamp(index, 0, (int)m_snapshots.size() - 1); m_targetCursor = m_cursor; }
 
         // --- TRUY XUẤT (Getters) ---
 
@@ -225,28 +249,65 @@ namespace Core
         bool isPlaying() const { return m_isPlaying; }
 
 
-        void syncUI(GUI::PseudoCodeBox* codeBox)
+        void syncUI()
         {
-            if(m_snapshots.empty()) return;
+            if(m_snapshots.empty())
+            {
+                return;
+            }
 
             // Lấy snapshot tại vị trí con trỏ hiện tại (phần nguyên)
             auto currentSnap = m_snapshots[getCurrentIdx()];
 
-            // 1. Kiểm tra nếu Macro thay đổi thì mới nạp lại bộ code (Tránh nạp lại mỗi frame)
-            if(currentSnap->macroKey != m_lastLoadedMacroKey)
+            // 1. Kiểm tra nếu Macro thay đổi thì mới nạp lại bộ code (Sử dụng codeData.macroKey)
+            if(currentSnap->codeData.macroKey != m_lastLoadedMacroKey)
             {
-                m_lastLoadedMacroKey = currentSnap->macroKey;
+                m_lastLoadedMacroKey = currentSnap->codeData.macroKey;
 
-                // Lấy Resource từ Registry mà chúng ta đã làm ở bước trước
+                // Lấy Resource từ Registry
                 if(Resources::PseudoCodeRegistry.count(m_lastLoadedMacroKey))
                 {
-                    codeBox->loadCode(currentSnap->operationName,
-                                     Resources::PseudoCodeRegistry.at(m_lastLoadedMacroKey));
+                    // SỬA TẠI ĐÂY: operationName giờ là notchData.title (hoặc notchData.operationName tùy em đặt)
+                    codeBox->loadCode(currentSnap->notchData.title,
+                                      Resources::PseudoCodeRegistry.at(m_lastLoadedMacroKey));
                 }
             }
 
-            // 2. Luôn cập nhật dòng highlighter và giá trị biến
-            codeBox->updateStep(currentSnap->pseudoCodeLine, currentSnap->variableStates);
+            // 2. Luôn cập nhật dòng highlighter và giá trị biến (Truy xuất qua codeData)
+            codeBox->updateStep(currentSnap->codeData.pseudoCodeLine, currentSnap->codeData.variableStates);
+        }
+
+        // TimelineManager.h
+        void syncComponents()
+        {
+            if(m_snapshots.empty()) return;
+
+            int currentIdx = getCurrentIdx();
+            int nextIdx = getNextIdx(); // Frame mà chúng ta đang hướng tới
+            float alpha = getAlpha();
+
+            // Lấy thông tin Notch từ Frame TIẾP THEO
+            auto nextSnap = m_snapshots[nextIdx];
+            // Lấy thông tin Macro từ Frame HIỆN TẠI
+            auto startSnap = m_snapshots[currentIdx];
+
+            // Đồng bộ Notch
+            GUI::NotchManager::getInstance().updateFromContext(
+                nextSnap->notchData,
+                m_playbackSpeed,
+                m_cursor,
+                startSnap->macroStepID
+            );
+
+            // Đồng bộ CodeBox (Vẫn theo frame hiện tại hoặc áp đảo tùy em, nhưng thường là currentIdx)
+            if(codeBox)
+            {
+                syncUI();
+                // Highlight dòng code của frame hiện tại để người dùng biết lệnh nào đang chạy
+//                codeBox->updateStep(startSnap->codeData.pseudoCodeLine, startSnap->codeData.variableStates);
+            }
+
+            m_lastSyncIdx = currentIdx;
         }
 
         // TimelineManager.h hoặc .cpp
@@ -272,6 +333,50 @@ namespace Core
                     // Nếu đây là ArcSwing, có thể bạn cần tính toán lại arcPivot
                     // nhưng tạm thời hãy cứ cập nhật position trước.
                 }
+            }
+        }
+
+        void jumpToNextMacro()
+        {
+            if(m_snapshots.empty()) return;
+            int currentIdx = getCurrentIdx();
+            int currentID = m_snapshots[currentIdx]->macroStepID;
+
+            for(int i = currentIdx + 1; i < (int)m_snapshots.size(); ++i)
+            {
+                if(m_snapshots[i]->macroStepID != currentID)
+                {
+                    seek(i);
+                    return;
+                }
+            }
+            // Nếu không tìm thấy Macro tiếp theo, nhảy về cuối cùng
+            seek((int)m_snapshots.size() - 1);
+        }
+
+        void jumpToPreviousMacro()
+        {
+            if(m_snapshots.empty()) return;
+            int currentIdx = getCurrentIdx();
+            int currentID = m_snapshots[currentIdx]->macroStepID;
+
+            // Nếu đang ở giữa Macro, quay về đầu Macro đó trước
+            if(currentIdx > currentID)
+            {
+                seek(currentID);
+            }
+            else // Nếu đã ở đầu Macro rồi, tìm Macro phía trước
+            {
+                for(int i = currentIdx - 1; i >= 0; --i)
+                {
+                    if(m_snapshots[i]->macroStepID != currentID)
+                    {
+                        // Nhảy về đầu của Macro phía trước đó
+                        seek(m_snapshots[i]->macroStepID);
+                        return;
+                    }
+                }
+                seek(0); // Về tận cùng nếu không còn gì
             }
         }
     };

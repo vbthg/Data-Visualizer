@@ -1,309 +1,287 @@
 #include "Heap.h"
-#include "TreeLayoutUtils.h"
-#include "Theme.h"
-#include <iostream>
-#include <ctime>
-#include <cstdlib>
+#include "TimelineManager.h"
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <algorithm>
 
 namespace DS
 {
-    namespace Theme = Utils::Graphics::Theme;
-
-    Heap::Heap( bool isMax)
-        : m_isMaxHeap(isMax)
+    Heap::Heap() : m_isMaxHeap(true), m_nextId(0)
     {
-        // Khởi tạo hạt giống ngẫu nhiên
-        std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-//        if (m_timeline) {
-//            m_timeline->clear();
-//        }
     }
 
-    // --- MATHEMATICAL HELPERS ---
-
-    sf::Vector2f Heap::getPos(int i)
+    sf::Vector2f Heap::calculateNodePos(int index)
     {
-        if(m_data.empty() || i < 0) return {START_X, START_Y};
+        if(index == 0) return { 800.0f, 120.0f };
 
-        int depth = static_cast<int>(std::log2(i + 1));
-        int maxDepth = static_cast<int>(std::log2(m_data.size()));
+        int level = static_cast<int>(std::log2(index + 1));
+        int posInLevel = index - (static_cast<int>(std::pow(2, level)) - 1);
+        int totalNodesInLevel = static_cast<int>(std::pow(2, level));
 
-        // 1. TÍNH TOÁN V_GAP ĐỘNG (Ý tưởng của bạn)
-        // Mỗi khi cây thêm 1 tầng, chúng ta kéo dãn khoảng cách dọc của TẤT CẢ các tầng
-        // Ví dụ: Mỗi tầng tăng thêm 20px cho mỗi cấp độ sâu của cây
-        float dynamicVGap = V_GAP + (maxDepth * 20.0f);
+        // Tầng càng sâu thì khoảng cách ngang giữa các node càng thu hẹp lại
+        float offset = (BASE_X_GAP / std::pow(2, level - 1));
+        float startX = 800.0f - (totalNodesInLevel - 1) * offset / 2.0f;
 
-        // 2. TÍNH TOÁN H_GAP ĐỘNG (Để tránh đè nhau)
-        // H_GAP cơ sở cũng nên thu nhỏ lại một chút khi cây quá sâu
-        float baseHGap = H_GAP;
-        if(maxDepth > 3)
-        {
-            baseHGap *= std::pow(0.8f, maxDepth - 3);
-        }
+        float x = startX + posInLevel * offset;
+        float y = 120.0f + level * LEVEL_HEIGHT;
 
-        // 3. TÍNH TOÁN X (Đảm bảo trung trực)
-        // Sử dụng cơ chế: x = START_X + (offset_tương_đối)
-        float x = START_X;
-        int tempIdx = i;
-
-        // Duyệt ngược từ node i lên Root để xác định vị trí X
-        // Mỗi bước lên cha, chúng ta cộng/trừ một khoảng cách lũy thừa của 2
-        int currentD = depth;
-        while(tempIdx > 0)
-        {
-            // Khoảng cách ngang giữa cha và con ở tầng currentD-1
-            float levelOffset = baseHGap * std::pow(2.0f, maxDepth - currentD);
-
-            if(tempIdx % 2 == 1) x -= levelOffset; // Nếu là con trái thì node ở bên trái cha
-            else x += levelOffset;                 // Nếu là con phải thì node ở bên phải cha
-
-            tempIdx = (tempIdx - 1) / 2;
-            currentD--;
-        }
-
-        // 4. TÍNH TOÁN Y
-        // Sử dụng V_GAP đã được dãn ra cho toàn bộ cây
-        float y = START_Y + depth * dynamicVGap;
-
-        return {x, y};
+        return { x, y };
     }
 
-    bool Heap::compare(int childVal, int parentVal)
+    void Heap::saveState(std::string title, std::string subtitle, GUI::Scenario scenario,
+                         std::string macroKey, int line, int activeIdx, int targetIdx)
     {
-        // Logic so sánh dựa trên loại Heap (Max/Min)
-        return m_isMaxHeap ? (childVal > parentVal) : (childVal < parentVal);
-    }
+        if(!m_timeline) return;
 
-    // --- VISUALIZING HELPERS ---
-
-    // --- TRONG HÀM CREATE BASE SNAPSHOT ---
-    std::shared_ptr<Core::ISnapshot> Heap::createBaseSnapshot(std::string op, std::string msg, const std::map<int, sf::Color>& overrides)
-    {
         auto snap = std::make_shared<Core::ISnapshot>();
-        // ... (giữ nguyên logic title/msg)
 
+        // 1. Snapshot Nodes
         for(int i = 0; i < (int)m_data.size(); ++i)
         {
             Core::NodeState ns;
-            // QUAN TRỌNG: ID phải lấy từ mảng m_nodeIds, không phải lấy chỉ số i
-            ns.id = m_nodeIds[i];
-            ns.value = std::to_string(m_data[i]);
-            ns.position = getPos(i);
+            ns.id = m_data[i].id; // ID duy nhất đi theo giá trị để Orbital hoạt động
+            ns.value = std::to_string(m_data[i].value);
+            ns.position = calculateNodePos(i);
+            ns.transition = Core::TransitionType::Orbital;
+            ns.scale = 1.0f;
+            ns.opacity = 1.0f;
 
-            // Logic override màu sắc:
-            // Lưu ý: overrides.find(i) ở đây 'i' vẫn là index, điều này ổn
-            // nếu bạn truyền index từ hàm recordSwap vào.
-            auto it = overrides.find(i);
-            if(it != overrides.end())
+            // Màu sắc mặc định: Off-white Apple
+            ns.fillColor = sf::Color(242, 242, 247);
+            ns.outlineColor = sf::Color(200, 200, 200, 180);
+            ns.textColor = sf::Color(60, 60, 67);
+
+            if(i == activeIdx)
             {
-                ns.fillColor = it->second;
+                ns.fillColor = sf::Color(0, 122, 255); // Blue
+                ns.textColor = sf::Color::White;
             }
-            else
+            else if(i == targetIdx)
             {
-                ns.fillColor = sf::Color(230, 183, 167);
+                ns.fillColor = sf::Color(255, 149, 0); // Orange
+                ns.textColor = sf::Color::White;
             }
 
-            ns.transition = Core::TransitionType::Linear;
             snap->nodeStates.push_back(ns);
         }
 
-        // Cập nhật cạnh (Edges) cũng phải dựa trên ID
+        // 2. Snapshot Edges
         for(int i = 1; i < (int)m_data.size(); ++i)
         {
             Core::EdgeState es;
-            es.startNodeId = m_nodeIds[(i - 1) / 2]; // ID của cha
-            es.endNodeId = m_nodeIds[i];           // ID của con
+            es.startNodeId = m_data[getParent(i)].id;
+            es.endNodeId = m_data[i].id;
+            es.fillProgress = 1.0f;
+            es.opacity = 0.5f;
+            es.thickness = 3.0f;
             snap->edgeStates.push_back(es);
         }
 
-        return snap;
-    }
+        // 3. Notch & Code Context
+        snap->notchData.title = title;
+        snap->notchData.subtitle = subtitle;
+        snap->notchData.scenario = scenario;
 
-    void Heap::recordCompare(int idx1, int idx2, std::string msg)
-    {
-        // Chỉ định node idx1 và idx2 là màu vàng
-        std::map<int, sf::Color> colors = {{idx1, sf::Color::Yellow}, {idx2, sf::Color::Yellow}};
-        auto snap = createBaseSnapshot("Comparing", msg, colors);
+        snap->codeData.macroKey = macroKey;
+        snap->codeData.pseudoCodeLine = line;
+
+        // Variable States
+        if(activeIdx != -1)
+            snap->codeData.variableStates.push_back({"current_idx", std::to_string(activeIdx)});
+        if(targetIdx != -1)
+            snap->codeData.variableStates.push_back({"target_idx", std::to_string(targetIdx)});
+
         m_timeline->addSnapshot(snap);
     }
 
-    void Heap::recordSwap(int idx1, int idx2, std::string msg)
+    void Heap::siftUp(int index, std::string macroTitle)
     {
-        // DUY TRÌ màu vàng cho idx1 và idx2 trong khi chúng hoán đổi vị trí
-        std::map<int, sf::Color> colors = {{idx1, sf::Color::Yellow}, {idx2, sf::Color::Yellow}};
-        auto snap = createBaseSnapshot("Swapping", msg, colors);
-
-
-        // Lấy ID thực tế của 2 node để kiểm tra cạnh
-        int id1 = m_nodeIds[idx1];
-        int id2 = m_nodeIds[idx2];
-
-        for(auto& edge : snap->edgeStates)
+        int curr = index;
+        while(curr > 0)
         {
-            // Nếu cạnh có bất kỳ đầu mút nào là node đang di chuyển
-            int cnt = (edge.startNodeId == id1 || edge.startNodeId == id2) + (edge.endNodeId == id1 || edge.endNodeId == id2);
-            if(cnt == 1)
+            int p = getParent(curr);
+            bool violation = m_isMaxHeap ? (m_data[curr].value > m_data[p].value)
+                                         : (m_data[curr].value < m_data[p].value);
+
+            saveState(macroTitle, "Comparing child with parent", GUI::Scenario::Processing, "heap_insert", 2, curr, p);
+
+            if(violation)
             {
-                // Làm mờ hẳn đi để không gây rối mắt khi chúng cắt nhau
-                edge.opacity = 0.4f;
+                std::swap(m_data[curr], m_data[p]);
+                saveState(macroTitle, "Swapping to maintain property", GUI::Scenario::Processing, "heap_insert", 4, p, curr);
+                curr = p;
+            }
+            else
+            {
+                break;
             }
         }
-
-        if(idx1 < (int)snap->nodeStates.size()) snap->nodeStates[idx1].transition = Core::TransitionType::Orbital;
-        if(idx2 < (int)snap->nodeStates.size()) snap->nodeStates[idx2].transition = Core::TransitionType::Orbital;
-
-        m_timeline->addSnapshot(snap);
     }
 
-    void Heap::recordSuccess(std::string op, std::string msg)
+    void Heap::siftDown(int index, std::string macroTitle)
     {
-        auto snap = createBaseSnapshot(op, msg);
-        snap->scenario = GUI::Scenario::Success;
+        int curr = index;
+        int n = (int)m_data.size();
 
-        // Đổi màu xanh lá cho toàn bộ cây khi hoàn thành thao tác
-        for (auto& node : snap->nodeStates) node.fillColor = sf::Color(150, 255, 150);
+        while(true)
+        {
+            int best = curr;
+            int l = getLeft(curr);
+            int r = getRight(curr);
 
-        m_timeline->addSnapshot(snap);
+            saveState(macroTitle, "Comparing node with its children", GUI::Scenario::Processing, "heap_extract", 4, curr);
+
+            if(l < n && (m_isMaxHeap ? m_data[l].value > m_data[best].value : m_data[l].value < m_data[best].value))
+                best = l;
+            if(r < n && (m_isMaxHeap ? m_data[r].value > m_data[best].value : m_data[r].value < m_data[best].value))
+                best = r;
+
+            if(best != curr)
+            {
+                std::swap(m_data[curr], m_data[best]);
+                saveState(macroTitle, "Swapping with the " + std::string(m_isMaxHeap ? "larger" : "smaller") + " child",
+                          GUI::Scenario::Processing, "heap_extract", 8, best, curr);
+                curr = best;
+            }
+            else
+            {
+                break;
+            }
+        }
     }
-
-    // --- CORE ALGORITHMS ---
 
     void Heap::insert(int value)
     {
         m_timeline->onNewMacroStarted();
+        std::string title = "Insert(" + std::to_string(value) + ")";
 
-        m_data.push_back(value);
-        m_nodeIds.push_back(m_nextUniqueId++); // Gán một ID duy nhất cho phần tử mới
+        // 1. Base snapshot: Preparing
+        saveState(title, "Preparing to insert new value", GUI::Scenario::Processing, "heap_insert", 0);
 
-        recordSuccess("Insert", "New node " + std::to_string(value) + " added.");
-        siftUp((int)m_data.size() - 1);
-    }
+        m_data.push_back({value, m_nextId++});
+        int curr = (int)m_data.size() - 1;
+        saveState(title, "Value added at the end of heap", GUI::Scenario::Processing, "heap_insert", 1, curr);
 
-    // --- TRONG CÁC HÀM SIFT UP / SIFT DOWN ---
-    // Bạn phải swap cả m_nodeIds!
-    void Heap::siftUp(int index)
-    {
-        while(index > 0)
-        {
-            int parent = (index - 1) / 2;
-            recordCompare(index, parent, "Comparing child with parent.");
+        // 2. Thinking Flow: Sift Up
+        siftUp(curr, title);
 
-            if(compare(m_data[index], m_data[parent]))
-            {
-                // Swap dữ liệu
-                std::swap(m_data[index], m_data[parent]);
-                // Swap cả ID để duy trì danh tính (Identity) của Node
-                std::swap(m_nodeIds[index], m_nodeIds[parent]);
-
-                recordSwap(index, parent, "Heap property violated! Swapping nodes.");
-                index = parent;
-            }
-            else break;
-        }
-        recordSuccess("Sift Up Done", "The node has reached its correct position.");
+        // 3. Base snapshot: Success
+        saveState("Success", "Value " + std::to_string(value) + " has been inserted", GUI::Scenario::Success, "heap_insert", 7);
+        m_timeline->onMacroFinished();
     }
 
     void Heap::extractRoot()
     {
-        m_timeline->onNewMacroStarted();
         if(m_data.empty()) return;
+        m_timeline->onNewMacroStarted();
+        std::string title = "Extract Root";
 
-        recordCompare(0, 0, "Removing the root element.");
+        // 1. Base snapshot: Preparing
+        saveState(title, "Preparing to extract root element", GUI::Scenario::Processing, "heap_extract", 0, 0);
 
-        if(m_data.size() > 1)
+        if(m_data.size() == 1)
         {
-            std::swap(m_data[0], m_data.back());
-            std::swap(m_nodeIds[0], m_nodeIds.back()); // Nhớ swap cả ID nhé!
-
-            recordSwap(0, (int)m_data.size() - 1, "Moving the last leaf to the root.");
-
-            // Xóa phần tử cuối
             m_data.pop_back();
-            m_nodeIds.pop_back();
-
-            // Snapshot này sẽ kích hoạt hiệu ứng "Biến mất" vì Node ID cũ không còn trong mảng nữa
-            recordSuccess("Extract Done", "The node was removed and we start heapifying.");
-
-            siftDown(0);
         }
         else
         {
+            m_data[0] = m_data.back();
             m_data.pop_back();
-            m_nodeIds.pop_back();
-            recordSuccess("Extract Done", "The last remaining node was removed.");
+            saveState(title, "Last element moved to root", GUI::Scenario::Processing, "heap_extract", 2, 0);
+
+            // 2. Thinking Flow: Sift Down
+            siftDown(0, title);
         }
+
+        // 3. Base snapshot: Success
+        saveState("Success", "Root has been extracted", GUI::Scenario::Success, "heap_extract", 11);
+        m_timeline->onMacroFinished();
     }
 
-    void Heap::siftDown(int index)
+    void Heap::updateNodeValue(int index, int newValue)
     {
-        int size = (int)m_data.size();
-        while (true)
-        {
-            int target = index;
-            int left = 2 * index + 1;
-            int right = 2 * index + 2;
-
-            if (left < size && compare(m_data[left], m_data[target])) target = left;
-            if (right < size && compare(m_data[right], m_data[target])) target = right;
-
-            if (target != index)
-            {
-                recordCompare(index, target, "Comparing parent with children.");
-                std::swap(m_data[index], m_data[target]);
-                std::swap(m_nodeIds[index], m_nodeIds[target]);
-                recordSwap(index, target, "Swapping parent with the larger/smaller child.");
-                index = target;
-            }
-            else break;
-        }
-        recordSuccess("Sift Down Done", "Heapification complete.");
-    }
-
-    void Heap::updateNodeValue(int idx, int val)
-    {
+        if(index < 0 || index >= (int)m_data.size()) return;
         m_timeline->onNewMacroStarted();
-        if (idx < 0 || idx >= (int)m_data.size()) return;
+        std::string title = "Update Index " + std::to_string(index);
 
-        int oldVal = m_data[idx];
-        m_data[idx] = val;
+        saveState(title, "Updating value to " + std::to_string(newValue), GUI::Scenario::Processing, "heap_insert", 0, index);
 
-        auto snap = createBaseSnapshot("Update Node", "Changed value at index " + std::to_string(idx) + " to " + std::to_string(val));
-        snap->nodeStates[idx].fillColor = sf::Color::Cyan; // Highlight node vừa cập nhật
-        m_timeline->addSnapshot(snap);
+        int oldVal = m_data[index].value;
+        m_data[index].value = newValue;
 
-        // Tự động quyết định hướng vun đống dựa trên giá trị mới
-        if (compare(val, oldVal)) siftUp(idx);
-        else siftDown(idx);
+        if(m_isMaxHeap ? (newValue > oldVal) : (newValue < oldVal))
+            siftUp(index, title);
+        else
+            siftDown(index, title);
+
+        saveState("Success", "Value updated successfully", GUI::Scenario::Success, "heap_insert", 7);
+        m_timeline->onMacroFinished();
     }
 
     void Heap::toggleHeapType()
     {
         m_timeline->onNewMacroStarted();
         m_isMaxHeap = !m_isMaxHeap;
-        buildHeap();
+        std::string title = m_isMaxHeap ? "Converting to Max-Heap" : "Converting to Min-Heap";
+
+        saveState(title, "Re-building heap from bottom-up", GUI::Scenario::Processing, "heap_build", 0);
+
+        for(int i = (int)m_data.size() / 2 - 1; i >= 0; --i)
+        {
+            siftDown(i, title);
+        }
+
+        saveState("Success", "Conversion completed", GUI::Scenario::Success, "heap_build", 12);
+        m_timeline->onMacroFinished();
     }
 
-    void Heap::buildHeap()
+    bool Heap::loadFromFile(const std::string& path)
     {
-        std::string type = m_isMaxHeap ? "Max Heap" : "Min Heap";
-        recordSuccess("Rebuilding", "Converting structure to " + type);
+        std::ifstream file(path);
+        if(!file.is_open()) return false;
 
-        // Xây dựng lại từ các node trung gian ngược lên gốc
-        for (int i = (int)m_data.size() / 2 - 1; i >= 0; --i)
+        std::string type;
+        file >> type;
+        m_isMaxHeap = (type == "MAX");
+
+        m_data.clear();
+        m_nextId = 0;
+        std::string line;
+        std::getline(file, line); // Skip dư âm dòng đầu
+        std::getline(file, line);
+        std::stringstream ss(line);
+        int val;
+        while(ss >> val)
         {
-            siftDown(i);
+            m_data.push_back({val, m_nextId++});
         }
+
+        // Visualize quy trình Build Heap $O(N)$
+        if(m_timeline)
+        {
+            m_timeline->onNewMacroStarted();
+            saveState("Load & Build Heap", "Building heap from array bottom-up", GUI::Scenario::Processing, "heap_build", 0);
+
+            for(int i = (int)m_data.size() / 2 - 1; i >= 0; --i)
+            {
+                siftDown(i, "Build Heap");
+            }
+
+            saveState("Success", "Heap loaded and built", GUI::Scenario::Success, "heap_build", 12);
+            m_timeline->onMacroFinished();
+        }
+
+        return true;
     }
 
     std::vector<DS::Command> Heap::getCommands()
     {
         return {
-            { L"\uE3D6", DS::InputType::Integer, [this](DS::InputArgs args) { this->insert(args.iVal1); }}, // insert
-            { L"\uE616", DS::InputType::None, [this](DS::InputArgs args) { this->extractRoot(); }},    // extract root
-            { L"\uE3AA", DS::InputType::TwoIntegers, [this](DS::InputArgs args) { this->updateNodeValue(args.iVal1, args.iVal2); }}, // update
-            { L"\uE098", DS::InputType::None, [this](DS::InputArgs args) { this->toggleHeapType(); }}  // toggle max/min
+            { L"\uE3D6", "Insert", DS::InputType::Integer, [this](DS::InputArgs args) { this->insert(args.iVal1); }},
+            { L"\uE616", "Extract Root", DS::InputType::None, [this](DS::InputArgs args) { this->extractRoot(); }},
+//            { L"\xef\x8b\xad", "Update", DS::InputType::TwoIntegers, [this](DS::InputArgs args) { this->updateNodeValue(args.iVal1, args.iVal2); }},
+            { L"\uE094", "Toggle Type", DS::InputType::None, [this](DS::InputArgs args) { this->toggleHeapType(); }}
         };
     }
-
 }

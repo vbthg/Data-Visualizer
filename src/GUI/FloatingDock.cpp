@@ -40,6 +40,11 @@ namespace GUI
         widthSpring.damping = 30.0f;
         widthSpring.position = 0.0f;
         widthSpring.target = 0.0f;
+
+        // Cấu hình font cho Tooltip một lần ở đây
+        m_tooltipText.setFont(ResourceManager::getInstance().getFont("assets/fonts/SFProText-regular.ttf"));
+        m_tooltipText.setCharacterSize(14);
+        m_tooltipText.setFillColor(sf::Color::Black);
     }
 
     FloatingDock::~FloatingDock()
@@ -51,21 +56,23 @@ namespace GUI
     {
         for(auto item : m_items) delete item;
         m_items.clear();
+        m_itemNames.clear();
     }
 
-    void FloatingDock::addItem(DockItem* item)
+    void FloatingDock::addItem(DockItem* item, std::string name)
     {
         m_items.push_back(item);
+        m_itemNames.push_back(name);
         updateLayout();
     }
 
     void FloatingDock::setCommands(const std::vector<DS::Command>& cmds, const sf::Font& iconFont)
     {
-        clearItems();
+//        clearItems();
 
         for(const auto& cmd : cmds)
         {
-            auto btn = new Button(iconFont, cmd.name, {Theme::Style::IconButtonSize, Theme::Style::IconButtonSize});
+            auto btn = new Button(iconFont, cmd.iconCode, {Theme::Style::IconButtonSize, Theme::Style::IconButtonSize});
             btn->applyPreset(ButtonPreset::Ghost);
             btn->setCornerRadius(Theme::Style::DockHighlightRadius);
             btn->setCharacterSize(25);
@@ -86,6 +93,7 @@ namespace GUI
             };
 
             m_items.push_back(btn);
+            m_itemNames.push_back(cmd.name); // Lưu tên vào list riêng để tra cứu
         }
 
         updateLayout();
@@ -166,10 +174,16 @@ namespace GUI
         bool handled = false;
         bool isHoveringAny = false;
 
+//        int id = -1;
         for(auto item : m_items)
         {
+//            ++id;
             // Chuyển sự kiện cho từng item trong Dock
-            if(item->handleEvent(event, window)) handled = true;
+            if(item->handleEvent(event, window))
+            {
+                handled = true;
+//                std::cout << "[BUTTON CLICKED]: " << id << "\n";
+            }
 
 //            if(item->isHovering())
 //            {
@@ -212,10 +226,66 @@ namespace GUI
         background.setOrigin(currentDockWidth / 2.0f, 0.0f);
         background.setPosition(position);
 
-        shadowSprite.setPosition(position.x, position.y + dockHeight / 2.0f);
+//        shadowSprite.setPosition(position.x, position.y + dockHeight / 2.0f);
 
         // 3. Dàn trải lại vị trí các component dựa trên bề ngang đang co dãn
         repositionChildren(currentDockWidth);
+
+
+
+        // 1. Kiểm tra xem chuột đang hover vào item nào
+        int currentHover = -1;
+        for(int i = 0; i < (int)m_items.size(); ++i)
+        {
+            if(m_items[i]->isHovering()) // Giả sử Button của em có hàm này
+            {
+                currentHover = i;
+                break;
+            }
+        }
+
+        // 2. Cập nhật Timer và Target Alpha
+        float targetAlpha = 0.0f;
+        if(currentHover != -1)
+        {
+
+            if(currentHover == m_hoveredIndex)
+            {
+                m_hoverTimer += dt;
+                if(m_hoverTimer >= HOVER_THRESHOLD)
+                {
+                    targetAlpha = 255.0f;
+                }
+            }
+            else
+            {
+                // Nếu vừa chuyển từ nút này sang nút khác, reset timer
+                m_hoveredIndex = currentHover;
+                m_hoverTimer = 0.0f;
+                m_tooltipText.setString(m_itemNames[currentHover]);
+            }
+        }
+        else
+        {
+            m_hoveredIndex = -1;
+            m_hoverTimer = 0.0f;
+            targetAlpha = 0.0f;
+        }
+
+        // 3. Làm mượt Alpha bằng hàm damp của em
+        m_popoverAlpha = Utils::Math::Smoothing::damp(m_popoverAlpha, targetAlpha, 0.001f, dt, 500.0f);
+
+        // 4. Cập nhật vị trí Tooltip nếu nó đang hiển thị
+        if(m_popoverAlpha > 1.0f && m_hoveredIndex != -1)
+        {
+            sf::Vector2f btnPos = m_items[m_hoveredIndex]->getPosition();
+            // Căn giữa text theo chiều ngang của Button
+            float textWidth = m_tooltipText.getLocalBounds().width;
+            m_tooltipText.setOrigin(textWidth / 2.0f, m_tooltipText.getLocalBounds().height);
+            m_tooltipText.setPosition(btnPos.x, btnPos.y - Theme::Style::IconButtonSize / 1.5f - 30.0f);
+            m_tooltipText.setFillColor(sf::Color(255, 255, 255, (sf::Uint8)m_popoverAlpha));
+        }
+
 
         // 4. Update các component con
         for(auto item : m_items)
@@ -239,7 +309,7 @@ namespace GUI
 
     void FloatingDock::draw(sf::RenderWindow& window)
     {
-        window.draw(shadowSprite);
+//        window.draw(shadowSprite);
 
         // Dùng m_blurTexture nếu đã được set
         window.draw(background);
@@ -252,6 +322,12 @@ namespace GUI
         for(auto item : m_items)
         {
             item->draw(window);
+        }
+
+        if(m_popoverAlpha > 1.0f)
+        {
+            // Có thể vẽ thêm một cái background nhỏ (rounded rect) cho chữ nếu muốn đẹp hơn
+            window.draw(m_tooltipText);
         }
     }
 

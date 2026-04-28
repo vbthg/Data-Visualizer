@@ -19,7 +19,7 @@ void Scrollbar::show()
     m_hideTimer = 2.0f;
 }
 
-void Scrollbar::update(float dt, float currentScroll, float contentHeight, float viewportHeight, const sf::Vector2f& localMouse)
+void Scrollbar::update(float dt, float currentScroll, float contentHeight, float viewportHeight, float viewportWidth, const sf::Vector2f& localMouse)
 {
     // 1. CLAMP LOGIC: Nếu nội dung không đủ để cuộn thì không hiện thanh cuộn
     if(contentHeight <= viewportHeight)
@@ -74,25 +74,29 @@ void Scrollbar::update(float dt, float currentScroll, float contentHeight, float
     }
 
 
-    // 5. HOVER EFFECT (Dùng ViewHandler's localMouse)
-    sf::FloatRect trackArea(350.f - 15.f, 0.f, 15.f, viewportHeight);
+    // 5. HOVER EFFECT (Sử dụng viewportWidth thay vì 350)
+    // Vùng check hover là một dải 15px bên cạnh phải
+    // Left: -15 (cách lề phải 15px), Top: -viewportHeight (lề trên)
+    sf::FloatRect trackArea(-15.f, -viewportHeight, 15.f, viewportHeight);
     m_isHovered = trackArea.contains(localMouse);
+
+
     m_thicknessSpring.target = (m_isHovered || m_isDragging) ? 8.f : 4.f;
     m_thicknessSpring.update(dt);
 
-    if(m_isHovered)
-    {
-        show();
-    }
+    if(m_isHovered) show();
 
     // GÁN VÀO BIẾN THÀNH VIÊN Ở ĐÂY
     m_currentThumbHeight = displayedHeight;
 
-    // 6. CẬP NHẬT VISUAL
-    m_thumb.setSize({m_thicknessSpring.position, displayedHeight});
-    m_thumb.setRadius(m_thicknessSpring.position / 2.f);
+    // 6. POSITION (Trong hệ tọa độ âm)
+    m_thumb.setSize({m_thicknessSpring.position, m_currentThumbHeight});
     m_thumb.setOrigin(m_thicknessSpring.position, 0.f);
-    m_thumb.setPosition(350.f - 4.f, thumbY);
+    m_thumb.setRadius(m_thicknessSpring.position / 2.f);
+
+    // x = -4 (cách lề phải 4px)
+    // y = -viewportHeight + thumbY (bắt đầu từ đỉnh bảng và cộng thêm đoạn đã cuộn)
+    m_thumb.setPosition(-4.f, -viewportHeight + thumbY);
 
     sf::Uint8 a = static_cast<sf::Uint8>(m_alpha * 180.f);
     m_thumb.setFillColor(sf::Color(255, 255, 255, a));

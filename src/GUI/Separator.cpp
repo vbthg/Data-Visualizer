@@ -8,7 +8,7 @@ namespace GUI
     Separator::Separator(float dockHeight)
     {
         m_width = 2.0f; // Rất mỏng
-        float height = dockHeight * 0.5f; // Cao bằng 50% thanh Dock
+        float height = dockHeight * 0.6f; // Cao bằng 50% thanh Dock
 
         m_line.setSize({m_width, height});
 

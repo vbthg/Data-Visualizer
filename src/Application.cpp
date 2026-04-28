@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "WindowConfig.h"
 #include "IntroState.h"
+#include "CategoriesState.h"
 #include "NotchManager.h"
 #include "FileTrayContent.h"
 #include "FileDropManager.h"
@@ -26,7 +27,7 @@ Application::Application()
     titleBar = new GUI::TitleBar(window, iconFont);
 
     // 4. Push IntroState (Không cần truyền resource manager nữa)
-    pushState(new IntroState(window, states));
+    pushState(new CategoriesState(window, states));
 }
 
 Application::~Application()
@@ -116,6 +117,7 @@ void Application::handleGlobalInput(sf::Event& event)
     if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F11)
     {
         titleBar->toggleFullscreen();
+//        Utils::System::applyLetterboxView(window, event.size.width, event.size.height);
     }
 
     // Fix méo hình khi resize

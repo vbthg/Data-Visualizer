@@ -69,6 +69,22 @@ namespace Resources
             "}"
         }},
 
+        { "avl_search", {
+            "while(curr != null)",
+            "    if(val == curr.data) return true",
+            "    curr = (val < curr.data) ? curr.left : curr.right",
+            "return false"
+        }},
+        { "avl_remove", {
+            "node = recursive_remove(node, val)",
+            "if node == null return null",
+            "update_height(node)",
+            "balance = get_balance(node)",
+            "if balance requires rotations...",
+            "    perform_rotations()",
+            "return node"
+        }},
+
 
         { "kruskal_mst", {
             "Sort all edges by weight",
@@ -142,6 +158,31 @@ namespace Resources
             "curr.next = temp.next",
             "delete temp",
             "update positions"
+        }},
+
+
+        { "heap_insert", {
+            "data.push_back(value)",
+            "curr = data.size() - 1",
+            "while curr > 0 and data[curr] > data[parent]",
+            "{",
+            "    swap(data[curr], data[parent])",
+            "    curr = parent",
+            "}",
+            "return"
+        }},
+        { "heap_extract", {
+            "root = data[0]",
+            "data[0] = data.back()",
+            "data.pop_back()",
+            "heapifyDown(0)",
+            "while hasChild(curr)",
+            "{",
+            "    maxChild = getGreaterChild(curr)",
+            "    if data[curr] < data[maxChild]",
+            "        swap(data[curr], data[maxChild])",
+            "    else break",
+            "}"
         }}
     };
 }
